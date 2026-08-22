@@ -162,6 +162,33 @@ jobs:
           test -f apps/weblibre/assets/sites/sites.db
           test -f apps/weblibre/assets/ublock/assets.json
 
+      - name: Prepare CI release signing
+        shell: bash
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          CI_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          CI_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+
+          KEY_PATH="${RUNNER_TEMP}/weblibre-ci.keystore"
+
+          test -n "${KEYSTORE_BASE64}"
+          test -n "${CI_KEYSTORE_PASSWORD}"
+          test -n "${CI_KEY_ALIAS}"
+
+          printf '%s' "${KEYSTORE_BASE64}" | base64 --decode > "${KEY_PATH}"
+
+          test -s "${KEY_PATH}"
+
+          keytool -list             -keystore "${KEY_PATH}"             -storepass "${CI_KEYSTORE_PASSWORD}"             -alias "${CI_KEY_ALIAS}" >/dev/null
+
+          {
+            echo "KEY_PATH=${KEY_PATH}"
+            echo "KEY_ALIAS=${CI_KEY_ALIAS}"
+            echo "KEY_PASSWORD=${CI_KEYSTORE_PASSWORD}"
+          } >> "${GITHUB_ENV}"
+
       - name: Flutter dependencies
         shell: bash
         run: |
