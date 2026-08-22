@@ -44,6 +44,15 @@ jobs:
           go-version: '1.25.0'
           cache: true
 
+      - name: Setup Node 24
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: |
+            packages/flutter_mozilla_components/javascript/container_proxy/package-lock.json
+            packages/flutter_mozilla_components/javascript/readability/package-lock.json
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2.23.0
         with:
@@ -130,6 +139,28 @@ jobs:
           fi
 
           ls -lh "$AAR"
+
+      - name: Prepare WebLibre assets and components
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          bash scripts/update-assets.sh
+
+          sh scripts/build-container-proxy.sh
+          sh scripts/build-readability.sh
+          python3 scripts/build_quotes_db.py
+          python3 scripts/build_sites_db.py
+
+      - name: Verify generated assets
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -f packages/flutter_mozilla_components/android/src/main/assets/extensions/browser_extension/readability.min.js
+          test -f apps/weblibre/assets/quotes/quotes.db
+          test -f apps/weblibre/assets/sites/sites.db
+          test -f apps/weblibre/assets/ublock/assets.json
 
       - name: Flutter dependencies
         shell: bash
