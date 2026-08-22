@@ -92,7 +92,7 @@ jobs:
           git clone \
             --depth 1 \
             --branch "${IPTPROXY_TAG}" \
-            "https://github.com/SagerNet/IPtProxy.git" \
+            "https://github.com/tladesignz/IPtProxy.git" \
             "${GITHUB_WORKSPACE}/../IPtProxy"
 
           git -C "${GITHUB_WORKSPACE}/../IPtProxy" fetch --tags --depth 1 origin "${IPTPROXY_TAG}"
