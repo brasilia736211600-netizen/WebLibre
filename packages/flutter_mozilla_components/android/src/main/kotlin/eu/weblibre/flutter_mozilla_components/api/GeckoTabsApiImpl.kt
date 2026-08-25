@@ -194,8 +194,33 @@ class GeckoTabsApiImpl : GeckoTabsApi {
         onTranslationStateChange: Boolean,
     ) {
         try {
-            val tabs = components.core.store.state.tabs.map { it.copy() }
-            val selectedTab = components.core.store.state.selectedTabId
+            val browserState = components.core.store.state
+
+            val selectedTab =
+                if (onSelectedTabChange) {
+                    browserState.selectedTabId
+                } else {
+                    null
+                }
+
+            val needsTabs =
+                onTabListChange ||
+                onTabContentStateChange ||
+                onIconChange ||
+                onSecurityInfoStateChange ||
+                onReaderableStateChange ||
+                onHistoryStateChange ||
+                onFindResults ||
+                onThumbnailChange ||
+                onTranslationStateChange
+
+            val tabs =
+                if (needsTabs) {
+                    browserState.tabs.map { it.copy() }
+                } else {
+                    emptyList<mozilla.components.browser.state.state.TabSessionState>()
+                }
+
 
             if (onSelectedTabChange) {
                 components.flutterEvents.onSelectedTabChange(
