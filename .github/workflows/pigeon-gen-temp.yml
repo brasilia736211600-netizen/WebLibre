@@ -6,6 +6,7 @@ on:
 jobs:
   generate-pigeon:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -19,12 +20,35 @@ jobs:
 
       - name: Setup Melos and bootstrap locked dependencies
         run: |
+          set -e
           dart pub global activate melos 7.8.1
           melos bootstrap
 
+      - name: Verify source ref
+        run: |
+          set -e
+          echo "=== BRANCH ==="
+          git branch --show-current
+          echo "=== HEAD ==="
+          git rev-parse HEAD
+          echo "=== EXPECTED COMMIT ==="
+          echo "c6e28ee8fc5f1a6b70de70fd4f80069ecf35204d"
+          echo "=== PIGEON SOURCE ==="
+          grep -n "getCurrentTabIds" packages/flutter_mozilla_components/pigeons/gecko.dart
+
       - name: Regenerate Pigeon outputs
         working-directory: packages/flutter_mozilla_components
-        run: flutter pub run pigeon --input pigeons/gecko.dart
+        run: |
+          set -e
+          flutter pub run pigeon --input pigeons/gecko.dart
+
+      - name: Verify generated outputs
+        run: |
+          set -e
+          echo "=== GENERATED DART ==="
+          grep -n "getCurrentTabIds" packages/flutter_mozilla_components/lib/src/pigeons/gecko.g.dart
+          echo "=== GENERATED KOTLIN ==="
+          grep -n "getCurrentTabIds" packages/flutter_mozilla_components/android/src/main/kotlin/eu/weblibre/flutter_mozilla_components/pigeons/Gecko.g.kt
 
       - name: Upload generated Pigeon outputs
         uses: actions/upload-artifact@v4
