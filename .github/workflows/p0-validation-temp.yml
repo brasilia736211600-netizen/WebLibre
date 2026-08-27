@@ -32,14 +32,10 @@ jobs:
       - name: Verify P0 Pigeon bridge
         run: |
           set -e
-          grep -n "getCurrentTabIds" \
-            packages/flutter_mozilla_components/pigeons/gecko.dart
-          grep -n "getCurrentTabIds" \
-            packages/flutter_mozilla_components/lib/src/pigeons/gecko.g.dart
-          grep -n "getCurrentTabIds" \
-            packages/flutter_mozilla_components/android/src/main/kotlin/eu/weblibre/flutter_mozilla_components/pigeons/Gecko.g.kt
-          grep -n "getCurrentTabIds" \
-            packages/flutter_mozilla_components/android/src/main/kotlin/eu/weblibre/flutter_mozilla_components/api/GeckoTabsApiImpl.kt
+          grep -n "getCurrentTabIds" packages/flutter_mozilla_components/pigeons/gecko.dart
+          grep -n "getCurrentTabIds" packages/flutter_mozilla_components/lib/src/pigeons/gecko.g.dart
+          grep -n "getCurrentTabIds" packages/flutter_mozilla_components/android/src/main/kotlin/eu/weblibre/flutter_mozilla_components/pigeons/Gecko.g.kt
+          grep -n "getCurrentTabIds" packages/flutter_mozilla_components/android/src/main/kotlin/eu/weblibre/flutter_mozilla_components/api/GeckoTabsApiImpl.kt
 
       - name: Flutter analyze
         working-directory: apps/weblibre
@@ -95,12 +91,26 @@ jobs:
           git -C "$RUNNER_TEMP/IPtProxy" submodule update --init dnstt
 
       - name: Build combined gomobile runtime
+        id: build_gomobile
+        continue-on-error: true
         env:
           SING_BOX_SOURCE: ${{ runner.temp }}/sing-box
           IPTPROXY_SOURCE: ${{ runner.temp }}/IPtProxy
         run: |
-          set -e
-          melos run build-go-runtime --no-select
+          set -o pipefail
+          melos run build-go-runtime --no-select 2>&1 | tee "$RUNNER_TEMP/gomobile-build.log"
+
+      - name: Upload gomobile build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p0-gomobile-build-log
+          path: ${{ runner.temp }}/gomobile-build.log
+          if-no-files-found: warn
+
+      - name: Fail if gomobile runtime build failed
+        if: steps.build_gomobile.outcome == 'failure'
+        run: exit 1
 
       - name: Verify gomobile runtime AAR
         run: |
