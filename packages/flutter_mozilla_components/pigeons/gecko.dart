@@ -1705,6 +1705,16 @@ abstract class GeckoTabsApi {
     required bool onTranslationStateChange,
   });
 
+  /// Authoritative direct-read of the native tab list.
+  ///
+  /// Returns the tab ids currently held by the BrowserStore at the instant
+  /// this RPC executes, as a typed reply on the requesting channel. Unlike
+  /// syncEvents-derived event emissions, a value returned here provably
+  /// belongs to its own request: it cannot be confused with an in-flight or
+  /// stale debounced tab-list event. Callers must treat this as the only
+  /// safe retain set for destructive reconciliation.
+  List<String> getCurrentTabIds();
+
   void selectTab({required String tabId});
 
   void removeTab({required String tabId});

@@ -51,6 +51,17 @@ class GeckoTabService {
     );
   }
 
+  /// Authoritative direct-read of the native tab list.
+  ///
+  /// The returned ids are produced by the native RPC invocation itself
+  /// (a typed reply for this exact request), so they are safe to use as a
+  /// retain set for destructive reconciliation — unlike tab-list events,
+  /// which carry no request/generation provenance and may be stale
+  /// debounced deliveries.
+  Future<List<String>> getCurrentTabIds() {
+    return _api.getCurrentTabIds();
+  }
+
   Future<void> selectTab({required String tabId}) {
     return _api.selectTab(tabId: tabId);
   }

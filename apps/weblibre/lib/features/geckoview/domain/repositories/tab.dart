@@ -1339,8 +1339,33 @@ class TabRepository extends _$TabRepository {
             (next.value.isNotEmpty || (previous?.value.isNotEmpty ?? false));
 
         if (shouldSyncTabs) {
+          // Destructive reconciliation must run against the AUTHORITATIVE
+          // native tab list, never the possibly-stale provider cache: tab
+          // list events carry no request/generation provenance, so a
+          // partial list here may be an old delivery while restored tabs
+          // are still in flight. Fetch the current native set via direct
+          // RPC; on failure skip this cycle entirely (no deletion).
+          final List<String> retainTabIds;
+          try {
+            retainTabIds = await GeckoTabService().getCurrentTabIds();
+          } catch (error, stackTrace) {
+            logger.e(
+              'Skipping destructive reconciliation: getCurrentTabIds failed',
+              error: error,
+              stackTrace: stackTrace,
+            );
+            return;
+          }
+
+          // Preserve the existing conservative protection against
+          // accidental delete-all: an authoritative EMPTY native list is
+          // not trusted as intent to wipe every database row.
+          if (retainTabIds.isEmpty) {
+            return;
+          }
+
           final syncTabsResult = await db.tabDao.syncTabs(
-            retainTabIds: next.value,
+            retainTabIds: retainTabIds,
           );
           // Capture isolation contexts from rows deleted by syncTabs
           // (orphaned tabs from crashes, or tabs the engine dropped).
@@ -1381,16 +1406,36 @@ class TabRepository extends _$TabRepository {
       restoreComplete,
     ) async {
       if (restoreComplete && !(previous ?? false)) {
-        final currentTabs = ref.read(tabListProvider).value;
-        if (currentTabs.isNotEmpty) {
-          final syncTabsResult = await db.tabDao.syncTabs(
-            retainTabIds: currentTabs,
+        // Same freshness rule as the tab-list listener above: read the
+        // authoritative native set via direct RPC instead of the provider
+        // cache, which may hold a stale pre-restore partial delivery. On
+        // failure skip this cycle; a later legitimate reconciliation
+        // retries.
+        final List<String> retainTabIds;
+        try {
+          retainTabIds = await GeckoTabService().getCurrentTabIds();
+        } catch (error, stackTrace) {
+          logger.e(
+            'Skipping destructive reconciliation: getCurrentTabIds failed',
+            error: error,
+            stackTrace: stackTrace,
           );
-          _pendingIsolationCleanup.addAll(
-            syncTabsResult.deletedIsolationContextIds,
-          );
-          await _drainPendingIsolationCleanup();
+          return;
         }
+
+        // Preserve the existing conservative protection against accidental
+        // delete-all (mirrors the guard in the tab-list listener).
+        if (retainTabIds.isEmpty) {
+          return;
+        }
+
+        final syncTabsResult = await db.tabDao.syncTabs(
+          retainTabIds: retainTabIds,
+        );
+        _pendingIsolationCleanup.addAll(
+          syncTabsResult.deletedIsolationContextIds,
+        );
+        await _drainPendingIsolationCleanup();
       }
     });
 

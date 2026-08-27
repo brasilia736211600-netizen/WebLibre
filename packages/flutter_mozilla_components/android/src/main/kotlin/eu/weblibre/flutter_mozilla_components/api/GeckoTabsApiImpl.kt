@@ -507,6 +507,13 @@ class GeckoTabsApiImpl : GeckoTabsApi {
         }
     }
 
+    // Authoritative direct-read of the native tab list. Runs inside the RPC
+    // invocation, so the returned ids are produced by this request itself and
+    // belong to it by construction — no event-channel provenance is needed.
+    override fun getCurrentTabIds(): List<String> {
+        return components.core.store.state.tabs.map { it.id }
+    }
+
     override fun selectTab(tabId: String) {
         try {
             components.useCases.tabsUseCases.selectTab(tabId = tabId)
