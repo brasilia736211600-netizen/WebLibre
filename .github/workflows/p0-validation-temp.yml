@@ -2,6 +2,9 @@ name: P0 Validation Temp
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - weblibre-p0-container-restore
 
 jobs:
   validate-p0:
