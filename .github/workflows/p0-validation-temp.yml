@@ -5,16 +5,16 @@ on:
   push:
     branches:
       - weblibre-p0-container-restore
+      - p0-apk-unblock
 
 jobs:
   validate-p0:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout P0 branch
         uses: actions/checkout@v4
         with:
-          ref: weblibre-p0-container-restore
+          ref: ${{ github.ref_name }}
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -80,11 +80,9 @@ jobs:
         run: |
           set -euo pipefail
           source native/go_mobile_runtime/pins.env
-
           git clone https://github.com/SagerNet/sing-box.git "$RUNNER_TEMP/sing-box"
           git -C "$RUNNER_TEMP/sing-box" checkout "$SING_BOX_TAG"
           test "$(git -C "$RUNNER_TEMP/sing-box" rev-parse HEAD)" = "$SING_BOX_COMMIT"
-
           git clone https://github.com/tladesignz/IPtProxy.git "$RUNNER_TEMP/IPtProxy"
           git -C "$RUNNER_TEMP/IPtProxy" checkout "$IPTPROXY_TAG"
           test "$(git -C "$RUNNER_TEMP/IPtProxy" rev-parse HEAD)" = "$IPTPROXY_COMMIT"
