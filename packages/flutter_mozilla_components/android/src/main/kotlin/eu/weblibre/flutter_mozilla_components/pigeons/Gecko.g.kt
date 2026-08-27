@@ -9212,6 +9212,17 @@ interface GeckoSessionApi {
 /** Generated interface from Pigeon that represents a handler of messages from Flutter. */
 interface GeckoTabsApi {
   fun syncEvents(onSelectedTabChange: Boolean, onTabListChange: Boolean, onRestoreComplete: Boolean, onTabContentStateChange: Boolean, onIconChange: Boolean, onSecurityInfoStateChange: Boolean, onReaderableStateChange: Boolean, onHistoryStateChange: Boolean, onFindResults: Boolean, onThumbnailChange: Boolean, onBrowserExtensionsChange: Boolean, onPageExtensionsChange: Boolean, onBrowserExtensionIcons: Boolean, onPageExtensionIcons: Boolean, onTranslationStateChange: Boolean)
+  /**
+   * Authoritative direct-read of the native tab list.
+   *
+   * Returns the tab ids currently held by the BrowserStore at the instant
+   * this RPC executes, as a typed reply on the requesting channel. Unlike
+   * syncEvents-derived event emissions, a value returned here provably
+   * belongs to its own request: it cannot be confused with an in-flight or
+   * stale debounced tab-list event. Callers must treat this as the only
+   * safe retain set for destructive reconciliation.
+   */
+  fun getCurrentTabIds(): List<String>
   fun selectTab(tabId: String)
   fun removeTab(tabId: String)
   fun addTab(url: String, selectTab: Boolean, startLoading: Boolean, parentId: String?, flags: LoadUrlFlagsValue, contextId: String?, source: SourceValue, private: Boolean, historyMetadata: HistoryMetadataKey?, additionalHeaders: Map<String, String>?, excludeFromHistory: Boolean): String
@@ -9265,6 +9276,21 @@ interface GeckoTabsApi {
             val wrapped: List<Any?> = try {
               api.syncEvents(onSelectedTabChangeArg, onTabListChangeArg, onRestoreCompleteArg, onTabContentStateChangeArg, onIconChangeArg, onSecurityInfoStateChangeArg, onReaderableStateChangeArg, onHistoryStateChangeArg, onFindResultsArg, onThumbnailChangeArg, onBrowserExtensionsChangeArg, onPageExtensionsChangeArg, onBrowserExtensionIconsArg, onPageExtensionIconsArg, onTranslationStateChangeArg)
               listOf(null)
+            } catch (exception: Throwable) {
+              GeckoPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.flutter_mozilla_components.GeckoTabsApi.getCurrentTabIds$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              listOf(api.getCurrentTabIds())
             } catch (exception: Throwable) {
               GeckoPigeonUtils.wrapError(exception)
             }

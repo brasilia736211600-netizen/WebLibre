@@ -9363,6 +9363,33 @@ class GeckoTabsApi {
     ;
   }
 
+  /// Authoritative direct-read of the native tab list.
+  ///
+  /// Returns the tab ids currently held by the BrowserStore at the instant
+  /// this RPC executes, as a typed reply on the requesting channel. Unlike
+  /// syncEvents-derived event emissions, a value returned here provably
+  /// belongs to its own request: it cannot be confused with an in-flight or
+  /// stale debounced tab-list event. Callers must treat this as the only
+  /// safe retain set for destructive reconciliation.
+  Future<List<String>> getCurrentTabIds() async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.flutter_mozilla_components.GeckoTabsApi.getCurrentTabIds$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: false,
+    )
+    ;
+    return (pigeonVar_replyValue! as List<Object?>).cast<String>();
+  }
+
   Future<void> selectTab({required String tabId}) async {
     final pigeonVar_channelName = 'dev.flutter.pigeon.flutter_mozilla_components.GeckoTabsApi.selectTab$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
