@@ -47,6 +47,12 @@ jobs:
           echo "FLUTTER_ANALYZE_EXIT_CODE=$rc"
           exit 0
 
+      - name: Update external assets
+        run: melos run update-assets --no-select
+
+      - name: Build components
+        run: melos run build-components --no-select
+
       - name: Targeted repository tests
         working-directory: apps/weblibre
         run: flutter test test/features/geckoview/domain/repositories/tab_test.dart
