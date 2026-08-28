@@ -33,6 +33,32 @@ void main() {
 
       expect(tor.usesTorProxy, isTrue);
     });
+
+    test('sanitized removes proxy routing from containers without a contextId', () {
+      final metadata = ContainerMetadata.withDefaults(
+        proxyConnectionId: const SingboxProxyConnectionId('profile-1'),
+        bypassGlobalProxy: true,
+      );
+
+      final sanitized = metadata.sanitized();
+
+      expect(sanitized.proxyConnectionId, isNull);
+      expect(sanitized.bypassGlobalProxy, isFalse);
+    });
+
+    test('sanitized preserves proxy routing for containers with a contextId', () {
+      final metadata = ContainerMetadata.withDefaults(
+        contextualIdentity: 'work',
+        proxyConnectionId: const SingboxProxyConnectionId('profile-1'),
+        bypassGlobalProxy: true,
+      );
+
+      final sanitized = metadata.sanitized();
+
+      expect(sanitized.contextualIdentity, 'work');
+      expect(sanitized.proxyConnectionId, metadata.proxyConnectionId);
+      expect(sanitized.bypassGlobalProxy, isTrue);
+    });
   });
 
   group('ContainerMetadata isolatedAppLinkSettings invariant', () {
