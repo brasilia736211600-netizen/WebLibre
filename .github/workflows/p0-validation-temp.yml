@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - weblibre-p0-container-restore
+      - p0-apk-unblock-clean
 
 jobs:
   validate-p0:
@@ -14,7 +15,7 @@ jobs:
       - name: Checkout P0 branch
         uses: actions/checkout@v4
         with:
-          ref: weblibre-p0-container-restore
+          ref: ${{ github.ref_name }}
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
