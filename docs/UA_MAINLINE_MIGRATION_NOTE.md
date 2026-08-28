@@ -1,0 +1,1 @@
+UA work has been rebased conceptually onto the current mainline. This note records that ContainerMetadata.userAgent is the only model-level addition carried forward from the previous feature branch; CI scaffolding and historical P0-only workflow changes are intentionally not carried forward.
