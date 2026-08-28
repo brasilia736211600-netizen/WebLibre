@@ -120,4 +120,12 @@ jobs:
 
       - name: Debug APK compile
         working-directory: apps/weblibre
-        run: flutter build apk --debug --no-tree-shake-icons
+        run: |
+          set +e
+          flutter build apk --debug --flavor stable --target-platform android-arm64 --no-tree-shake-icons
+          rc=$?
+          echo "APK_OUTPUTS:"
+          find build -type f -name '*.apk' -print 2>/dev/null | sort || true
+          echo "APK_OUTPUT_DIRS:"
+          find build/app/outputs -maxdepth 4 -type d -print 2>/dev/null | sort || true
+          exit $rc
