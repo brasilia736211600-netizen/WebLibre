@@ -56,7 +56,7 @@ void main() {
         isNull,
       );
       expect(
-        ContainerMetadata.fromJson({'userAgent': '   '}).userAgent,
+        ContainerMetadata.fromJson({'userAgent': '   ').userAgent,
         isNull,
       );
     });
@@ -66,6 +66,20 @@ void main() {
       final b = ContainerMetadata.withDefaults(userAgent: 'UA-B');
 
       expect(a, isNot(equals(b)));
+    });
+
+    test('copyWith changes only the user agent', () {
+      final metadata = ContainerMetadata.withDefaults(
+        contextualIdentity: 'work',
+        proxyConnectionId: const SingboxProxyConnectionId('profile-1'),
+        userAgent: 'UA-A',
+      );
+
+      final updated = metadata.copyWith(userAgent: 'UA-B');
+
+      expect(updated.userAgent, 'UA-B');
+      expect(updated.contextualIdentity, metadata.contextualIdentity);
+      expect(updated.proxyConnectionId, metadata.proxyConnectionId);
     });
   });
 
