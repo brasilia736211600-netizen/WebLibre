@@ -41,55 +41,30 @@ class ContainerMetadata with FastEquatable {
   )
   final ProxyConnectionId? proxyConnectionId;
 
+  /// Optional User-Agent override scoped to this container's Gecko sessions.
+  /// A null or blank value means use GeckoView's/default configured UA.
+  final String? userAgent;
+
   @JsonKey(defaultValue: false)
   final bool clearDataOnExit;
 
-  // Read by the `tab_to_history_on_*` SQL triggers via
-  // `json_extract(metadata, '$.excludeFromIndex')`. Keep this key name in
-  // sync with the trigger gate in definitions.drift.
   @JsonKey(defaultValue: false)
   final bool excludeFromIndex;
 
-  // When true, this container's browsing history is not recorded at all: the
-  // history delegate of each of its tabs skips the Mozilla Places write (hard
-  // exclude / "incognito container"), and no visit→container relation row is
-  // written. Gates history recording independently of `excludeFromIndex` (which
-  // only gates the local FTS search index).
-  //
-  // Applies to every container: the exclusion is replicated to native per tab,
-  // not per Gecko contextId, so it works with cookie isolation off — where all
-  // of the container's tabs share the default context — just as well as on.
   @JsonKey(defaultValue: false)
   final bool excludeFromHistory;
 
   @JsonKey(defaultValue: false)
   final bool bypassGlobalProxy;
 
-  // When true, ContainerData.color is used directly as primaryContainer
-  // instead of being fed through ColorScheme.fromSeed. Lets power users pick
-  // any color (including dark/black) at the cost of M3 harmonization.
   @JsonKey(defaultValue: false)
   final bool useCustomColor;
 
   final List<Uri>? assignedSites;
 
-  // When true, tabs in this container may only load origins listed in
-  // [assignedSites]; any other top-level navigation is blocked. Read on the
-  // native side via `json_extract(metadata, '$.strictMode')` (see the
-  // `strictContextAssignments` query in definitions.drift) and pushed to the
-  // container-proxy web extension. Requires a Gecko contextId — the extension
-  // keys strictness on the tab's cookieStoreId — so it is normalized to false
-  // when [contextualIdentity] is null (mirrors [excludeFromHistory]).
   @JsonKey(defaultValue: false)
   final bool strictMode;
 
-  // When true, this container has its own app-link policy (open-in-app mode +
-  // remembered per-site rules) that fully replaces the global one for its tabs.
-  // The override itself lives in `GeneralSettings.appLinkContextOverrides` keyed
-  // by [contextualIdentity]; this flag only gates whether that override is
-  // consulted. Requires a Gecko contextId — the native interceptor keys the
-  // override on the tab's contextId, so it is normalized to false when
-  // [contextualIdentity] is null (mirrors [strictMode]/[excludeFromHistory]).
   @JsonKey(defaultValue: false)
   final bool isolatedAppLinkSettings;
 
@@ -97,6 +72,7 @@ class ContainerMetadata with FastEquatable {
     required this.iconData,
     required this.contextualIdentity,
     required this.proxyConnectionId,
+    required this.userAgent,
     required this.clearDataOnExit,
     required this.excludeFromIndex,
     required this.excludeFromHistory,
@@ -111,6 +87,7 @@ class ContainerMetadata with FastEquatable {
     IconData? iconData,
     String? contextualIdentity,
     ProxyConnectionId? proxyConnectionId,
+    String? userAgent,
     bool? clearDataOnExit,
     bool? excludeFromIndex,
     bool? excludeFromHistory,
@@ -123,46 +100,26 @@ class ContainerMetadata with FastEquatable {
          iconData: iconData,
          contextualIdentity: contextualIdentity,
          proxyConnectionId: proxyConnectionId,
+         userAgent: _normalizeUserAgent(userAgent),
          clearDataOnExit: clearDataOnExit ?? false,
          excludeFromIndex: excludeFromIndex ?? false,
          excludeFromHistory: excludeFromHistory ?? false,
          bypassGlobalProxy: bypassGlobalProxy ?? false,
          useCustomColor: useCustomColor ?? false,
          assignedSites: assignedSites,
-         // Strict mode needs a contextId (the extension keys on cookieStoreId);
-         // normalize away the invalid combination on read, and writers re-apply
-         // it via [sanitized].
          strictMode: (strictMode ?? false) && contextualIdentity != null,
-         // Isolated app-link settings need a contextId — the native interceptor
-         // keys the override on the tab's contextId. Normalize the invalid
-         // combination on read; writers re-apply it via [sanitized].
          isolatedAppLinkSettings:
              (isolatedAppLinkSettings ?? false) && contextualIdentity != null,
        );
 
-  /// Enforce the settings that only mean something for a cookie-isolated
-  /// (contextId-bearing) container before persistence. The primary constructor
-  /// can't normalize (copy_with_extension_gen requires params to map 1:1 to
-  /// fields), so writers route through this.
-  ///
-  /// [excludeFromHistory] is deliberately absent: it is keyed on tabs natively
-  /// and applies to every container.
   ContainerMetadata sanitized() {
     var result = this;
-    // Strict mode is meaningless without a contextId: the extension keys
-    // strictness on the tab's cookieStoreId.
     if (result.strictMode && result.contextualIdentity == null) {
       result = result.copyWith(strictMode: false);
     }
-    // Isolated app-link settings need a contextId: the interceptor keys the
-    // override on the tab's contextId.
     if (result.isolatedAppLinkSettings && result.contextualIdentity == null) {
       result = result.copyWith(isolatedAppLinkSettings: false);
     }
-    // Routing is keyed on the cookie-store context too: the snapshot skips a
-    // container without one, so a proxy or bypass kept here is a setting the
-    // user can see but nothing applies — the container's tabs run in the
-    // general context and follow the global route regardless.
     if (result.contextualIdentity == null &&
         (result.proxyConnectionId != null || result.bypassGlobalProxy)) {
       result = result.copyWith(
@@ -185,6 +142,7 @@ class ContainerMetadata with FastEquatable {
     iconData,
     contextualIdentity,
     proxyConnectionId,
+    userAgent,
     clearDataOnExit,
     excludeFromIndex,
     excludeFromHistory,
@@ -194,6 +152,11 @@ class ContainerMetadata with FastEquatable {
     strictMode,
     isolatedAppLinkSettings,
   ];
+}
+
+String? _normalizeUserAgent(String? value) {
+  final normalized = value?.trim();
+  return normalized == null || normalized.isEmpty ? null : normalized;
 }
 
 @JsonSerializable()
