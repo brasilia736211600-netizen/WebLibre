@@ -56,7 +56,7 @@ void main() {
         isNull,
       );
       expect(
-        ContainerMetadata.fromJson({'userAgent': '   ').userAgent,
+        ContainerMetadata.fromJson({'userAgent': '   '}).userAgent,
         isNull,
       );
     });
@@ -100,10 +100,8 @@ void main() {
         isolatedAppLinkSettings: true,
       );
 
-      // withDefaults normalizes on construction/read.
       expect(metadata.isolatedAppLinkSettings, isFalse);
 
-      // A record that somehow carries the bad combination is re-normalized.
       final restored = ContainerMetadata.fromJson({
         ...metadata.toJson(),
         'isolatedAppLinkSettings': true,
