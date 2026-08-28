@@ -13,6 +13,9 @@ concurrency:
   group: p0-validation-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: write
+
 jobs:
   validate-p0:
     runs-on: ubuntu-latest
@@ -36,11 +39,27 @@ jobs:
           dart pub global activate melos 7.8.1
           melos bootstrap
 
-      - name: Update external assets
-        run: melos run update-assets --no-select
+      - name: Regenerate container model code
+        working-directory: apps/weblibre
+        run: |
+          dart run build_runner build \
+            --delete-conflicting-outputs \
+            --build-filter=lib/features/geckoview/features/tabs/data/models/container_data.g.dart
 
-      - name: Build components
-        run: melos run build-components --no-select
+      - name: Persist regenerated container model code
+        if: github.event_name == 'push'
+        run: |
+          set -euo pipefail
+          generated_file="apps/weblibre/lib/features/geckoview/features/tabs/data/models/container_data.g.dart"
+          if git diff --quiet -- "$generated_file"; then
+            echo "Generated container model code is already committed."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$generated_file"
+          git commit -m "chore: regenerate container metadata code [skip ci]"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
 
       - name: Flutter analyze
         working-directory: apps/weblibre
