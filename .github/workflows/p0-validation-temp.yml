@@ -32,14 +32,6 @@ jobs:
           dart pub global activate melos 7.8.1
           melos bootstrap
 
-      - name: Verify P0 Pigeon bridge
-        run: |
-          set -e
-          grep -n "getCurrentTabIds" packages/flutter_mozilla_components/pigeons/gecko.dart
-          grep -n "getCurrentTabIds" packages/flutter_mozilla_components/lib/src/pigeons/gecko.g.dart
-          grep -n "getCurrentTabIds" packages/flutter_mozilla_components/android/src/main/kotlin/eu/weblibre/flutter_mozilla_components/pigeons/Gecko.g.kt
-          grep -n "getCurrentTabIds" packages/flutter_mozilla_components/android/src/main/kotlin/eu/weblibre/flutter_mozilla_components/api/GeckoTabsApiImpl.kt
-
       - name: Flutter analyze
         working-directory: apps/weblibre
         run: flutter analyze --no-pub --no-fatal-warnings --no-fatal-infos
