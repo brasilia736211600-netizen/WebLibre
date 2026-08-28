@@ -6,6 +6,10 @@ on:
     branches:
       - weblibre-p0-container-restore
 
+concurrency:
+  group: p0-validation-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   validate-p0:
     runs-on: ubuntu-latest
@@ -61,6 +65,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+          cache: gradle
 
       - name: Setup Go
         uses: actions/setup-go@v5
