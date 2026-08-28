@@ -1,6 +1,12 @@
 name: P0 Validation Temp
 
 on:
+  push:
+    branches:
+      - p0-mainline-container-hardening
+  pull_request:
+    branches:
+      - p0-mainline-container-hardening
   workflow_dispatch:
 
 jobs:
