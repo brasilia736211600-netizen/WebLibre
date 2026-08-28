@@ -35,6 +35,40 @@ void main() {
     });
   });
 
+  group('ContainerMetadata userAgent', () {
+    test('round-trips a custom user agent through JSON', () {
+      final metadata = ContainerMetadata.withDefaults(
+        contextualIdentity: 'work',
+        userAgent: 'Mozilla/5.0 Custom-WebLibre-UA',
+      );
+
+      final json = metadata.toJson();
+      final restored = ContainerMetadata.fromJson(json);
+
+      expect(json['userAgent'], 'Mozilla/5.0 Custom-WebLibre-UA');
+      expect(restored.userAgent, metadata.userAgent);
+    });
+
+    test('normalizes blank user agents to null', () {
+      expect(ContainerMetadata.withDefaults(userAgent: '').userAgent, isNull);
+      expect(
+        ContainerMetadata.withDefaults(userAgent: '   ').userAgent,
+        isNull,
+      );
+      expect(
+        ContainerMetadata.fromJson({'userAgent': '   '}).userAgent,
+        isNull,
+      );
+    });
+
+    test('user agent participates in metadata equality', () {
+      final a = ContainerMetadata.withDefaults(userAgent: 'UA-A');
+      final b = ContainerMetadata.withDefaults(userAgent: 'UA-B');
+
+      expect(a, isNot(equals(b)));
+    });
+  });
+
   group('ContainerMetadata isolatedAppLinkSettings invariant', () {
     test('stays enabled when the container has a contextId', () {
       final metadata = ContainerMetadata.withDefaults(
