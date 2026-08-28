@@ -9,6 +9,10 @@ on:
       - p0-mainline-container-hardening
   workflow_dispatch:
 
+concurrency:
+  group: p0-validation-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   validate-p0:
     runs-on: ubuntu-latest
@@ -36,18 +40,96 @@ jobs:
         working-directory: apps/weblibre
         run: flutter analyze --no-pub --no-fatal-warnings --no-fatal-infos
 
+      - name: Update external assets
+        run: melos run update-assets --no-select
+
+      - name: Build components
+        run: melos run build-components --no-select
+
       - name: Targeted repository tests
         working-directory: apps/weblibre
         run: flutter test test/features/geckoview/domain/repositories/tab_test.dart
 
+      - name: Setup Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.x'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Install Android NDK
+        run: |
+          set -e
+          sdkmanager --install "ndk;29.0.14206865"
+          echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/29.0.14206865" >> "$GITHUB_ENV"
+
+      - name: Checkout pinned native runtime sources
+        run: |
+          set -euo pipefail
+          source native/go_mobile_runtime/pins.env
+
+          git clone https://github.com/SagerNet/sing-box.git "$RUNNER_TEMP/sing-box"
+          git -C "$RUNNER_TEMP/sing-box" checkout "$SING_BOX_TAG"
+          test "$(git -C "$RUNNER_TEMP/sing-box" rev-parse HEAD)" = "$SING_BOX_COMMIT"
+
+          git clone https://github.com/tladesignz/IPtProxy.git "$RUNNER_TEMP/IPtProxy"
+          git -C "$RUNNER_TEMP/IPtProxy" checkout "$IPTPROXY_TAG"
+          test "$(git -C "$RUNNER_TEMP/IPtProxy" rev-parse HEAD)" = "$IPTPROXY_COMMIT"
+          git -C "$RUNNER_TEMP/IPtProxy" submodule update --init dnstt
+
+      - name: Build combined gomobile runtime
+        id: build_gomobile
+        continue-on-error: true
+        env:
+          SING_BOX_SOURCE: ${{ runner.temp }}/sing-box
+          IPTPROXY_SOURCE: ${{ runner.temp }}/IPtProxy
+        run: |
+          set -o pipefail
+          melos run build-go-runtime --no-select 2>&1 | tee "$RUNNER_TEMP/gomobile-build.log"
+
+      - name: Upload gomobile build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p0-gomobile-build-log
+          path: ${{ runner.temp }}/gomobile-build.log
+          if-no-files-found: warn
+
+      - name: Fail if gomobile runtime build failed
+        if: steps.build_gomobile.outcome == 'failure'
+        run: exit 1
+
+      - name: Verify gomobile runtime AAR
+        run: |
+          set -e
+          test -f native/go_mobile_runtime/build/weblibre-go.aar
+          ls -lh native/go_mobile_runtime/build/weblibre-go.aar
+
       - name: Debug APK compile
         working-directory: apps/weblibre
-        run: flutter build apk --debug --no-tree-shake-icons
+        run: |
+          set +e
+          flutter build apk --debug --flavor stable --target-platform android-arm64 --no-tree-shake-icons
+          rc=$?
+          echo "APK_OUTPUTS:"
+          find build -type f -name '*.apk' -print 2>/dev/null | sort || true
+          echo "APK_OUTPUT_DIRS:"
+          find build/app/outputs -maxdepth 4 -type d -print 2>/dev/null | sort || true
+          exit $rc
 
       - name: Upload debug APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: weblibre-p0-debug-apk
-          path: apps/weblibre/build/app/outputs/flutter-apk/app-debug.apk
+          path: apps/weblibre/build/app/outputs/flutter-apk/*.apk
           if-no-files-found: error
           retention-days: 7
