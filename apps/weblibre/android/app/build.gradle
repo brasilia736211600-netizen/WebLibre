@@ -164,12 +164,14 @@ flutter {
 
 //Override version code for f-droid
 ext.abiCodes = ["x86_64": 1, "armeabi-v7a": 2, "arm64-v8a": 3]
-import com.android.build.OutputFile
-android.applicationVariants.all { variant ->
-  variant.outputs.each { output ->
-    def abiVersionCode = project.ext.abiCodes.get(output.getFilter(OutputFile.ABI))
-    if (abiVersionCode != null) {
-      output.versionCodeOverride = variant.versionCode * 10 + abiVersionCode
+androidComponents {
+    onVariants(selector().withBuildType("release")) { variant ->
+        variant.outputs.each { output ->
+            def abi = output.filters.find { it.filterType.name() == "ABI" }?.identifier
+            def abiVersionCode = project.ext.abiCodes.get(abi)
+            if (abiVersionCode != null) {
+                output.versionCode.set(variant.versionCode.get() * 10 + abiVersionCode)
+            }
+        }
     }
-  }
 }
