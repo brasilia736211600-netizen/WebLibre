@@ -43,12 +43,7 @@ jobs:
 
       - name: Flutter analyze
         working-directory: apps/weblibre
-        run: |
-          set +e
-          flutter analyze --no-pub --no-fatal-warnings
-          rc=$?
-          echo "FLUTTER_ANALYZE_EXIT_CODE=$rc"
-          exit 0
+        run: flutter analyze --no-pub --no-fatal-warnings
 
       - name: Update external assets
         run: melos run update-assets --no-select
@@ -134,3 +129,11 @@ jobs:
           echo "APK_OUTPUT_DIRS:"
           find build/app/outputs -maxdepth 4 -type d -print 2>/dev/null | sort || true
           exit $rc
+
+      - name: Upload debug APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: weblibre-p0-debug-apk
+          path: apps/weblibre/build/app/outputs/flutter-apk/*.apk
+          if-no-files-found: error
