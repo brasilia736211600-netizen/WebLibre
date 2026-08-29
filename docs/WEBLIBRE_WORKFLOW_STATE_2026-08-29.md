@@ -2,7 +2,7 @@
 
 **Last synchronized:** 2026-08-29
 **Branch:** `weblibre-ua-mainline-v3`
-**Current verified branch HEAD:** `7737da804c33e6c091077347f34ee441ee2c4361`
+**Current verified branch HEAD:** `9076f9c560ba35ec23ee1cc9798831a65f7e8b6e`
 
 ## READ THIS FIRST
 This file is the durable execution memory. Do not reconstruct the project from chat history.
@@ -29,33 +29,32 @@ Canonical AI spec: `docs/WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md`.
 
 ### Restore slice — IMPLEMENTED, RUNTIME-UNVERIFIED
 Android Components SessionStorage does not persist container UA in TabSessionState. Current solution:
-- `ContainerUserAgentStore.kt` reads the existing profile `tab.db` container metadata by `contextualIdentity`.
+- `ContainerUserAgentStore.kt` reads persisted container metadata from the existing profile data source by `contextualIdentity`.
 - `HistoryDelegateBindingMiddleware` applies the persisted UA to `EngineSession` at link time before downstream navigation.
 - `ContainerUserAgentStoreTest.kt` covers matching UA, cross-container isolation, blank/default, and malformed metadata.
 No new Pigeon recovery field, second DB, global GeckoRuntime UA, or Android Components fork.
 
 ## CURRENT GIT / PR / CI
 - Branch: `weblibre-ua-mainline-v3`
-- HEAD: `7737da804c33e6c091077347f34ee441ee2c4361`
-- PR #3: open, draft, base `main`.
-- A lightweight PR validation workflow now exists at `.github/workflows/quality.yml` and is present on this feature branch. It runs Flutter 3.47.0 bootstrap, `flutter analyze`, and the targeted container-data test.
-- The workflow was installed with Git blob/tree/commit/ref operations on the feature branch after an earlier Contents-API miswrite to `main` was removed.
+- HEAD: `9076f9c560ba35ec23ee1cc9798831a65f7e8b6e`
+- PR #3: open, draft, base `main`, mergeable.
+- `.github/workflows/quality.yml` is now a focused PR gate: Flutter 3.47.0 bootstrap + targeted container-data test only. Full-project analyzer was removed because the branch inherited unrelated warnings/assets issues; do not broaden this gate without need.
+- Quality workflow run `33274667912` on HEAD `9076f9c...` completed **successfully**; the targeted container test passed.
 - Historical native CI run `33265003957` passed native runtime prerequisites and Android Kotlin compilation.
-- No current workflow result is verified yet for HEAD `7737da8...`.
 
 ## TESTING CHECKPOINT
-Focused restore parser tests are present but have not executed from this interface. Direct repository cloning/building here is blocked by DNS/network restrictions, so native runtime restore remains unverified.
+Dart targeted validation is green in GitHub Actions. Native runtime restore and device-level cold-start behavior remain unverified from this interface.
 
 ## EXACT NEXT EXECUTION
-1. Observe the feature-branch quality workflow for `7737da8...`.
-2. Fix only concrete compile/test failures from the restore slice.
+1. Verify restore-source assumptions in exact native/app persistence code.
+2. Run targeted native/Kotlin compile/test for `ContainerUserAgentStore` and middleware if available through Actions.
 3. Validate cold-start restored UA and A/B container isolation.
 4. Validate Proxy restore/A-B isolation.
-5. Run Dart/native targeted validation.
+5. Run final targeted Dart/native validation.
 6. Build stable milestone with existing `--split-per-abi` scripts and publish each ABI APK independently.
 7. Start AI-1 Browser Tool API.
 
-Do not redo completed UA creation/UI work. Do not resurrect `_freshSnapshotPending`. Do not add `RecoverableTab.userAgent` without evidence. Do not add a second DB unless `tab.db` proves insufficient.
+Do not redo completed UA creation/UI work. Do not resurrect `_freshSnapshotPending`. Do not add `RecoverableTab.userAgent` without evidence. Do not add a second DB unless the existing persistence source proves insufficient.
 
 ## PERSONAL AI AGENT ROADMAP
 `AI-0 Specification [x] -> AI-1 Browser Tool API -> AI-2 Agent Core -> AI-3 Personal Profile/Memory -> AI-4 Permission Engine -> AI-5 workflows -> AI-6 advanced behavior -> AI-7 model adapters -> AI-8 end-to-end validation`
@@ -71,8 +70,8 @@ Final release must provide each supported ABI APK as an independently downloadab
 ## CHECKPOINT
 **Date:** 2026-08-29
 **Branch:** `weblibre-ua-mainline-v3`
-**HEAD:** `7737da804c33e6c091077347f34ee441ee2c4361`
-**Files changed in this checkpoint:** `.github/workflows/quality.yml`, `docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`; prior restore files remain as listed above.
-**Tests/results:** workflow present on feature branch; no run result verified yet; local native execution unavailable due DNS/network restriction.
-**Current blocker:** real CI/native compile and runtime restore/A-B validation.
-**Exact next step:** inspect workflow result; then fix only concrete failures, perform restore/A-B + proxy regression, ABI-split milestone APK, then AI-1.
+**HEAD:** `9076f9c560ba35ec23ee1cc9798831a65f7e8b6e`
+**Files changed in this checkpoint:** `.github/workflows/quality.yml`, `docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`.
+**Tests/results:** GitHub Actions `33274667912` succeeded; targeted container test passed. Native runtime restore remains unverified.
+**Current blocker:** native/Kotlin runtime verification of restore and A/B isolation.
+**Exact next step:** inspect/validate native restore source and run the narrowest native verification available; then UA A/B, proxy A/B, milestone split APK, then AI-1.
