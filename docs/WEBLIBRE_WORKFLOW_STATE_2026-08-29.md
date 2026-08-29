@@ -2,7 +2,7 @@
 
 **Last synchronized:** 2026-08-29
 **Branch:** `weblibre-ua-mainline-v3`
-**Current verified branch HEAD:** `1eb7d5e5ef70e014842a601985ba791aafad7af5`
+**Current verified branch HEAD before this checkpoint:** `1eb7d5e5ef70e014842a601985ba791aafad7af5`
 
 ## READ THIS FIRST
 
@@ -152,18 +152,32 @@ UA restore
  -> autonomous workflows
  -> model adapters
  -> end-to-end validation
- -> release APK
+ -> release APKs
 ```
 
-## 8. GIT / CI CHECKPOINT
+## 8. APK RELEASE POLICY
+
+The final APK deliverables must **not be bundled into one universal APK when ABI-split artifacts are available**.
+
+Release/build output must provide independently downloadable APKs per supported ABI, for example:
+
+- `arm64-v8a` — separate APK;
+- `armeabi-v7a` — separate APK;
+- `x86_64` — separate APK when supported/built.
+
+Use Flutter/Android ABI split packaging (for example `flutter build apk --split-per-abi`) for the release artifact set. Each ABI APK must be independently downloadable and clearly named. Do not force the user to download a combined APK containing every ABI unless a separate universal APK is explicitly requested.
+
+This is a permanent release requirement for WebLibre.
+
+## 9. GIT / CI CHECKPOINT
 
 - Active branch: `weblibre-ua-mainline-v3`.
 - PR #3 remains open and draft against `main`.
-- Current HEAD: `1eb7d5e5ef70e014842a601985ba791aafad7af5`.
+- Current verified HEAD before this documentation checkpoint: `1eb7d5e5ef70e014842a601985ba791aafad7af5`.
 - Historical native CI run `33265003957` passed the native runtime prerequisites and Kotlin compilation.
-- Documentation/specification checkpoint only; no source-code behavior was changed by this update.
+- This checkpoint changes documentation only; no browser behavior is changed.
 
-## 9. NEW-CHAT RULE
+## 10. NEW-CHAT RULE
 
 A new agent must not ask the user to re-explain the project. It must read the workflow state first, then the AI spec for AI tasks, verify actual GitHub truth, and continue from the exact unchecked item.
 
@@ -171,21 +185,16 @@ Required loop:
 
 `READ -> VERIFY -> RECONCILE -> PLAN -> EXECUTE -> TEST -> DIFF -> COMMIT -> SAVE STATE`
 
-## 10. CHECKPOINT RECORD
+## 11. CHECKPOINT RECORD
 
 **Timestamp:** 2026-08-29
 **Branch:** `weblibre-ua-mainline-v3`
-**HEAD:** `1eb7d5e5ef70e014842a601985ba791aafad7af5`
-**Files changed during the documentation/specification update:**
-- `AGENTS.md`
-- `docs/WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md`
-- `docs/WEBLIBRE_PROJECT_HANDOFF_2026-08-29.md`
-- `docs/GENSPARK_WEBLIBRE_FORK_CONTINUATION_PROMPT_2026-08-29.md`
-- `docs/GENSPARK_WEBLIBRE_OPERATING_PLAYBOOK_2026-08-29.md`
+**HEAD at start of checkpoint:** `1eb7d5e5ef70e014842a601985ba791aafad7af5`
+**Files changed:**
 - `docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`
 
-**Tests/checks:** documentation/specification changes only. No source-code behavior changed in this checkpoint. Historical native CI remains the latest verified code-level check.
+**Tests/checks:** documentation-only change. No source-code behavior changed.
 
-**Result:** the Personal AI Browser Agent is now permanently part of WebLibre's product definition, including selectable/revocable permissions and an explicit user-granted Full Access mode.
+**Result:** separate ABI APKs are now a permanent final-release requirement; the browser and AI roadmap remain unchanged.
 
 **Exact next action:** finish the browser UA cold-start restore blocker; then perform UA/Proxy A-B isolation and targeted validation. After the stable browser milestone, begin AI-1 Browser Tool API.
