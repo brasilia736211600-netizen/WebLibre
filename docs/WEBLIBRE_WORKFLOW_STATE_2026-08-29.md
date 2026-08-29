@@ -2,7 +2,7 @@
 
 **Last synchronized:** 2026-08-29
 **Branch:** `weblibre-ua-mainline-v3`
-**Last verified branch HEAD before this documentation update:** `edca33b5cb2885261a002092b1a72d6d95dfff27`
+**Current verified branch HEAD:** `8fc79ddac6fc2bc939c9449861de137db174a47f`
 
 ## Purpose — READ THIS FIRST
 
@@ -54,30 +54,13 @@ The work completed after that handoff was verified during the current continuati
 
 ### UA Pigeon contract — COMPLETE
 
-`packages/flutter_mozilla_components/pigeons/gecko.dart` currently contains:
-
-```dart
-class AddTabParams {
-  final String url;
-  final bool startLoading;
-  final String? parentId;
-  final LoadUrlFlagsValue flags;
-  final String? contextId;
-  final String? userAgent;
-  final SourceValue source;
-  final bool private;
-  final HistoryMetadataKey? historyMetadata;
-  final Map<String, String>? additionalHeaders;
-}
-```
-
-Therefore do **not** redo UA-01 or add the same field again.
+`packages/flutter_mozilla_components/pigeons/gecko.dart` currently carries `userAgent` through the existing tab-creation contract (`AddTabParams`). Do not add the same field again.
 
 ### Native per-session UA — COMPLETE for the verified creation paths
 
-`GeckoEngineSession` exposes a session-level `userAgentString` backed by GeckoView's `userAgentOverride`.
+`GeckoEngineSession.settings.userAgentString` maps to GeckoView's session-level `userAgentOverride`.
 
-The verified native creation order is conceptually:
+The verified native creation order is:
 
 ```text
 create EngineSession
@@ -87,63 +70,50 @@ create EngineSession
   -> first LoadUrlAction
 ```
 
-This avoids putting UA on the global GeckoRuntime and avoids starting the first navigation with the wrong UA.
+This avoids a global GeckoRuntime UA and avoids starting the first navigation with the wrong UA.
 
 ### Tab creation variants — COMPLETE at code level
 
 The current verified Dart/native path covers:
 
 - normal `addTab`;
-- `addMultipleTabs` with the target container UA treated as authoritative;
-- `duplicateTab` passing the container UA to the native layer.
+- `addMultipleTabs` with the target container UA authoritative;
+- `duplicateTab` passing the container UA to native.
 
 Do not reimplement these paths unless a targeted test or code review finds an actual regression.
 
 ### Per-container UA settings UI — COMPLETE at code level
 
-The existing container edit screen was extended with a User-Agent field and persistence using the existing `ContainerMetadata` path.
+The existing container edit screen has a User-Agent field persisted through `ContainerMetadata`.
 
 Do not create another settings screen or another metadata store.
 
-### Native/Kotlin CI — VERIFIED GREEN
+### Native/Kotlin CI — VERIFIED GREEN (historical)
 
-The temporary UA verification run successfully passed the expensive native prerequisites and Android Kotlin compilation, including:
+The temporary UA verification run successfully passed the native runtime prerequisites and Android Kotlin compilation (recorded in PR #3 as workflow run `33265003957`). The temporary verification workflow was removed afterward.
 
-- Android toolchain/NDK setup;
-- pinned native runtime build;
-- Android Kotlin compilation.
-
-The temporary UA verification workflow was then removed because its purpose was completed.
+This is historical evidence only; the current PR head has no active CI status yet.
 
 ---
 
-## 3. Git/CI cleanup already completed
+## 3. Current Git / PR / CI reconciliation
 
-The branch `weblibre-ua-mainline-v3` is the dedicated UA feature branch.
+The originally referenced P0 branch is no longer the execution branch for this feature:
 
-Obsolete temporary workflow files were removed rather than retained as permanent CI noise. In particular the old Pigeon-generation and P0 temporary workflows referenced stale branches and are no longer part of the working CI path.
+- `weblibre-p0-container-restore` is at `87b450ed584a3f81bb37a4cc4261e7a553d164fa`.
+- The active UA work is on `weblibre-ua-mainline-v3` at `8fc79ddac6fc2bc939c9449861de137db174a47f`.
+- PR #3 is the active feature PR, draft, base `main`, head `weblibre-ua-mainline-v3`.
+- Current combined status for `8fc79dd...`: no status checks reported.
+- Current PR-triggered workflow runs for `8fc79dd...`: none reported.
+- The branch has diverged substantially from the old P0 branch; do not silently switch back to it.
 
-The last recorded branch HEAD before this documentation synchronization was:
-
-`edca33b5cb2885261a002092b1a72d6d95dfff27`
-
-with commit message:
-
-`chore(ci): remove obsolete Pigeon generation workflow`
-
-A previous documentation-only checkpoint was:
-
-`3191afab2210f910092b74ed7f2ded6cbe3148f7`
-
-The workflow-state file itself must be updated whenever the branch moves; the SHA written above is therefore a **historical checkpoint**, not a promise that the branch will remain at that SHA.
+The requested workflow-state file was absent on the default branch and the old P0 branch, but is present on the active UA branch. Therefore the active branch/file pair is the authoritative continuation point.
 
 ---
 
 ## 4. Exact CURRENT engineering checkpoint
 
-### We are NOT at UA-01 anymore.
-
-The current work has moved to **restore/recovery**.
+### Restore/recovery is the current blocker.
 
 The verified restore chain is:
 
@@ -156,56 +126,50 @@ restoreTabsByList()
   -> TabListAction.RestoreAction
   -> RecoverableTab.toTabSessionState()
   -> TabSessionState
-  -> Engine/session restoration path
+  -> EngineAction.CreateEngineSessionAction
+  -> engine.createSession(private, contextId)
+  -> engineSession.restoreState(engineSessionState)
 ```
 
-The important verified fact is that the current `RecoverableTab`/`TabState` recovery model carries `engineSessionState` and container `contextId`, but does **not** carry the per-container `userAgent`.
+### Materialization finding — VERIFIED 2026-08-29
 
-`TabListReducer` only converts the recoverable state into tab session state. It is **not** the correct place to configure Gecko's UA.
+The concrete native materialization path was inspected in Android Components:
 
-### Therefore the exact next implementation/inspection point is:
+- `CreateEngineSessionMiddleware` creates the session from `TabSessionState.private/contextId` and restores the engine session state before linking.
+- `GeckoEngineSession.restoreState()` calls `GeckoSession.restoreState(...)`.
+- `GeckoSession.restoreState()` restores saved browser session data; current GeckoView documentation describes restored data as history, scroll position, zoom, and form data, not session settings/user-agent override. citeturn112577search7
+- `GeckoEngineSession.settings.userAgentString` is a separate `GeckoSession.settings.userAgentOverride` value.
 
-**Find the concrete EngineSession creation/reuse path used when a restored `TabSessionState` is materialized.**
+The repository's Android Components session-storage serializer was also inspected:
 
-Determine whether the existing local WebLibre layer lets us apply the container UA at that point without changing the recovery model.
+- `BrowserStateWriter` serializes `TabSessionState` fields and `engineSession` separately, but there is no UA field in the persisted tab state.
+- `BrowserStateReader` reconstructs `RecoverableTab.state` from those same fields; there is no UA field.
+- therefore UA is **not** persisted/restored by the existing Android Components session-storage contract.
 
-Only if the code proves that the UA cannot reach that point otherwise should we extend `RecoverableTab`/Pigeon or introduce another field.
+### Important consequence
 
-This is the next blocker.
+A Pigeon-only `RecoverableTab.userAgent` addition would fix only the Dart-driven `restoreTabsByList` path. It would **not** fix the native cold-start restore from `SessionStorage`, which occurs inside `GlobalComponents.setUp()` before Flutter can supply Dart container metadata.
+
+Therefore do **not** add a recovery field yet. The next implementation must address the cold-start/native restore path as well, with the smallest local mechanism that can provide the container UA before `CreateEngineSessionMiddleware` calls `restoreState()`.
 
 ---
 
-## 5. Restore decision tree — do not over-engineer
+## 5. Current design decision tree — updated
 
-Use this decision order:
+### Preferred Case A — native restore can obtain persisted container UA before session creation
 
-### Case A — restore already reaches a local session-creation function that knows `contextId`
+Use the existing WebLibre native startup/persistence pattern to make a minimal native lookup available to the restore materialization path, then apply the UA to the just-created session before `restoreState()` / first restored load.
 
-Prefer the smallest local change that derives the container UA from existing state and applies it before first restored navigation.
+Avoid global GeckoRuntime settings.
+Avoid changing Android Components upstream if the local integration can do it.
 
-No Pigeon change if not needed.
-No new recovery model if not needed.
+### Case B — native restore cannot access persisted container UA without extending the recovery/storage contract
 
-### Case B — restore has no access to the container UA at session creation
+Only after proving Case A impossible, extend the smallest local persistence/recovery contract necessary. Keep Dart and native generated Pigeon outputs synchronized through the official generation path if Pigeon changes.
 
-Prove that with source inspection first.
+### Case C — a prepared EngineSession can be injected into the restore path
 
-Only then consider adding the minimum required UA field to the recovery contract.
-
-If Pigeon must change:
-
-```text
-source Pigeon
- -> official generation
- -> generated Dart/Kotlin outputs
- -> targeted compile/test
-```
-
-Do not hand-edit generated outputs as independent sources of truth.
-
-### Case C — restore can recover an already-prepared EngineSession
-
-Prefer reusing that capability rather than creating a second UA abstraction.
+Prefer reusing that capability rather than introducing a second UA abstraction.
 
 ---
 
@@ -250,22 +214,25 @@ Therefore `_freshSnapshotPending`-style arrival-order heuristics are unsound.
 
 Do not reopen this work merely because restore is being investigated. Only touch it if the actual restore implementation proves it requires a reliable sync correlation mechanism.
 
-If later required, the safe direction is explicit request/generation/sequence provenance followed by official Pigeon regeneration.
-
 ---
 
 ## 8. Files already touched for the UA vertical slice
 
 Known feature-related areas include:
 
-- `ContainerMetadata` model/serialization/tests;
-- `packages/flutter_mozilla_components/pigeons/gecko.dart`;
-- generated Pigeon outputs corresponding to the source contract;
-- `GeckoTabsApiImpl` and related native session creation code;
-- `TabRepository` / tab creation propagation paths;
-- existing container edit/settings UI;
-- targeted CI workflow(s), which were later cleaned up after verification;
-- this workflow state document.
+- `apps/weblibre/lib/features/geckoview/features/tabs/data/models/container_data.dart`
+- `apps/weblibre/lib/features/geckoview/domain/repositories/tab.dart`
+- `apps/weblibre/lib/features/geckoview/domain/providers/tab_state.dart`
+- `apps/weblibre/lib/features/geckoview/features/tabs/data/database/daos/container.dart`
+- `packages/flutter_mozilla_components/pigeons/gecko.dart`
+- generated Pigeon outputs corresponding to the current source contract;
+- `packages/flutter_mozilla_components/lib/src/domain/services/gecko_tab.dart`
+- `packages/flutter_mozilla_components/android/.../api/GeckoTabsApiImpl.kt`
+- `packages/flutter_mozilla_components/android/.../components/Core.kt`
+- `packages/flutter_mozilla_components/android/.../middleware/HistoryDelegateBindingMiddleware.kt`
+- existing container settings UI;
+- targeted CI workflow(s), later cleaned up after verification;
+- this workflow-state document.
 
 Do not assume every historical file remains changed on current HEAD. Always inspect the actual current tree/diff before editing.
 
@@ -285,8 +252,6 @@ focused source inspection
  -> targeted integration/build
  -> full APK only at a stable milestone
 ```
-
-A previous full APK build spent significant time in Gradle/Rust and ended in APK artifact discovery rather than proving the feature itself was invalid. Do not repeat a full build merely to diagnose a narrow failure.
 
 The user has limited mobile data, so prefer CI/in-repo evidence over repeated device/APK downloads.
 
@@ -311,7 +276,7 @@ Do **not**:
 - create temporary CI workflows unless strictly necessary;
 - modify Android Components upstream when local integration can solve it;
 - add Pigeon fields before proving the field is required;
-- redesign `syncEvents` while working on UA restore;
+- redesign `syncEvents` provenance;
 - run a full APK build before cheaper checks pass.
 
 ---
@@ -385,17 +350,17 @@ The agent must treat that as an instruction to read the repository's durable mem
 
 ## 14. Current exact next action
 
-**NEXT:** inspect the concrete restored-tab EngineSession materialization path in local `flutter_mozilla_components` and determine the smallest place where the already-known container UA can be applied before the first restored navigation.
+**NEXT:** identify the smallest existing native persistence/snapshot mechanism that can expose `container contextId -> userAgent` during `GlobalComponents.setUp()` before `restoreBrowserState()` creates restored engine sessions.
 
-Do not:
+Inspect existing native startup snapshots and their Dart writers first. Do not add a new Pigeon contract until those routes are exhausted.
 
-- redo `AddTabParams.userAgent`;
-- redo normal/multi/duplicate propagation;
-- redo the native creation implementation already verified;
-- build another UI;
-- modify `syncEvents` provenance.
+Once a concrete native pre-restore mapping exists:
 
-If the restore path proves it cannot access the UA, make the minimum recovery-contract change required and no more.
+1. apply UA to restored sessions before `restoreState()`;
+2. add focused regression coverage for restore;
+3. prove A/B runtime isolation;
+4. run targeted validation;
+5. only then build the milestone APK.
 
 ---
 
@@ -410,7 +375,7 @@ UA is complete only when all are true:
 - [x] duplicate-tab path;
 - [x] native session-level override before first navigation for those creation paths;
 - [x] existing container settings UI path;
-- [ ] restored-tab path preserves and applies the container UA before first restored navigation;
+- [ ] cold-start/restored-tab path preserves and applies the container UA before first restored navigation;
 - [ ] runtime A/B isolation regression test;
 - [ ] targeted validation of all affected layers;
 - [ ] final stable-milestone APK validation.
@@ -421,10 +386,10 @@ Proxy hardening and the separate event-correlation track remain distinct workstr
 
 ## 16. Historical correction log
 
-### Correction 2026-08-29
+### Correction 2026-08-29 — Git state and restore path
 
-Earlier versions of this document stated that UA-01 through UA-04 and the UI were pending. Subsequent verified source/CI inspection showed those portions had already been implemented on the feature branch.
+The older state file incorrectly left the branch HEAD at `edca33b5...` and treated the materialization path as still unknown. Current Git truth is `weblibre-ua-mainline-v3` at `8fc79dd...`.
 
-Those earlier claims are retained only as historical context. They are **not** current TODOs.
+Current source inspection now proves the restored-session materialization path and proves that Android Components `SessionStorage` does not serialize container UA in `TabSessionState`.
 
-The project must always prefer the latest verified source/CI evidence and the newest checkpoint in this file.
+This is a correction of the execution state, not a request to redo any completed UA creation work.
