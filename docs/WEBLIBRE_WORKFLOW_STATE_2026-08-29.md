@@ -2,7 +2,7 @@
 
 **Last synchronized:** 2026-08-29
 **Branch:** `weblibre-ua-mainline-v3`
-**Current HEAD:** `f96693775344f17c703cb88d46788f9471fc23eb`
+**Current HEAD:** `7248fa581e8296df73e605d026c8ad4de4e48c4b`
 
 ## READ THIS FIRST
 This file is the durable execution memory. Do not reconstruct the project from chat history.
@@ -19,46 +19,55 @@ Remote inputs are ordinary natural language plus links/context/constraints; rigi
 
 Canonical AI spec: `docs/WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md`.
 
-## BROWSER STATUS
-### Complete
+## CURRENT EXECUTION TRUTH
+GitHub is the source of truth for code. This workflow state supersedes older handoff claims only when they conflict with verified source/CI.
+
+### Browser / UA implementation
+The current branch already contains the verified implementation pieces for the per-container UA vertical slice:
 - `ContainerMetadata.userAgent` persistence/serialization/normalization.
-- `AddTabParams.userAgent` source contract and generated bindings.
+- `AddTabParams.userAgent` source contract and generated Pigeon bindings.
 - Normal, multi, and duplicate tab UA creation paths.
 - Existing per-container UA UI.
+- `ContainerUserAgentStore.kt` reads the existing per-profile `tab.db` and resolves UA by `contextualIdentity` from persisted container metadata.
+- `HistoryDelegateBindingMiddleware.kt` runs before `EngineMiddleware`; on `EngineAction.LinkEngineSessionAction` it resolves the tab/session `contextId` and applies the persisted container UA to `engineSession.settings.userAgentString` before downstream engine linking.
+- The same middleware also covers an already-attached session arriving with `TabListAction.AddTabAction`.
 
-### Restore slice — IMPLEMENTED, RUNTIME-UNVERIFIED
-Android Components SessionStorage does not serialize container UA in `TabSessionState`. Current solution:
-- `ContainerUserAgentStore.kt` reads the existing WebLibre per-profile Drift `tab.db`, whose `container.metadata` JSON is the persisted source for container metadata.
-- `HistoryDelegateBindingMiddleware` looks up by `contextualIdentity` at `LinkEngineSessionAction` and applies `userAgentString` to the session.
-- `ContainerUserAgentStoreTest.kt` covers matching UA, cross-container isolation, blank/default, and malformed metadata.
-- Verified source: `ProfileContext.getDatabasePath()` maps `tab.db` to the active profile database directory; Drift's `ContainerData` persists metadata JSON containing `contextualIdentity` + `userAgent`.
-No new Pigeon recovery field, second DB, global GeckoRuntime UA, or Android Components fork.
+No global GeckoRuntime UA, no `_freshSnapshotPending` arrival-order heuristic, no second persistence DB, and no Android Components fork were added.
+
+### Restore status
+`UA cold-start/restored-tab integration: IMPLEMENTED IN SOURCE, RUNTIME-UNVERIFIED.`
+
+Verified source facts:
+- `RecoverableTab` does not need a new UA field because the restore path retains `contextId` and the native middleware sees the actual engine session.
+- `tab.db` is the existing WebLibre Drift database and `container.metadata` is the persisted JSON source for `contextualIdentity` + `userAgent`.
+- `HistoryDelegateBindingMiddleware` is registered before `EngineMiddleware.create(...)` in `Core.store`.
 
 ## CURRENT GIT / PR / CI
 - Branch: `weblibre-ua-mainline-v3`
-- Current HEAD: `f96693775344f17c703cb88d46788f9471fc23eb`
-- PR #3: open, draft, mergeable.
-- `.github/workflows/quality.yml` is a focused PR gate: Flutter 3.47.0 bootstrap, targeted container test, then native plugin unit tests in `packages/flutter_mozilla_components/android` using the runner's `gradle --no-daemon test`. It intentionally does not run full-project analyzer or full APK build.
-- Prior targeted container validation run passed: 11 tests.
-- Prior native test run failed only because the workflow invoked nonexistent `./gradlew`; this was a workflow error, not a product/compiler result.
-- Current quality run `33277147630` is/was for the previous workflow commit; current HEAD `f966937...` has a fresh quality run `33277147630` lineage pending/active after the corrected Gradle invocation. Do not treat the old failure as a failure of current native code.
-- Historical native runtime build and Kotlin compilation passed in `33265003957`.
+- Current HEAD: `7248fa581e8296df73e605d026c8ad4de4e48c4b`
+- PR #3: open, draft, currently mergeable.
+- Base: `main` at `c82e189b1b78dcc5ded582305c63bd1222eec19c` for PR #3.
+- `quality.yml` is intentionally a focused gate: Flutter 3.47.0 bootstrap, targeted container Dart test, then targeted Android unit tests.
+- Latest completed quality run `33277537960` checked an older PR merge ref and reached the native step; its native failure was only a workflow command problem (`gradle test --tests ...` rejected `--tests` for the selected lifecycle task). The Dart targeted suite passed 11/11.
+- HEAD was then corrected to use `testDebugUnitTest --tests ...`; a new run is expected from PR synchronization. Do not treat the old run as validation of current HEAD.
+- Historical native runtime build/Kotlin compilation passed in run `33265003957`.
 
 ## TESTING CHECKPOINT
-- Dart targeted container serialization/metadata test: GREEN (11 tests passed).
-- Kotlin/native restore parser test: present but full native test execution on the corrected workflow is the next automated proof.
-- Cold-start restore runtime and A/B isolation remain unverified until a real APK/device path is exercised.
+- Dart targeted container metadata test: GREEN — 11 tests passed in the latest completed quality run.
+- Native restore parser test: source present; current-head native execution pending after corrected Gradle task selection.
+- Full cold-start restore runtime: NOT YET VERIFIED.
+- A/B UA isolation: NOT YET VERIFIED.
+- Proxy regression/A-B: NOT YET VERIFIED.
 
 ## EXACT NEXT EXECUTION
-1. Inspect the quality run triggered by HEAD `f966937...`; confirm the native Gradle unit tests actually execute and record result.
-2. If native tests fail, fix only the first causal compiler/test error.
-3. If they pass, build/validate a debug APK through the existing release prerequisite path (gomobile runtime + assets) only when needed for native runtime proof.
-4. Validate cold-start UA restore and A/B isolation; then Proxy restore/A-B regression.
-5. Final targeted Dart/native validation.
-6. Build stable release through existing `build-browser` with `--split-per-abi`; publish each supported ABI APK separately, not a merged universal APK.
-7. Start AI-1 Browser Tool API.
-
-Do not redo completed UA creation/UI work. Do not resurrect `_freshSnapshotPending`. Do not add `RecoverableTab.userAgent` without evidence. Do not add a second DB unless the existing persistence source proves insufficient.
+1. Confirm a fresh quality run for HEAD `7248fa5...` and record native test result.
+2. If native fails, repair only the first causal compiler/test failure.
+3. Once native passes, use the existing full build prerequisite path only for the runtime milestone; do not repeatedly build APKs for narrow changes.
+4. Validate cold-start persisted UA restore and concurrent Container A/B UA isolation.
+5. Validate Proxy A/B regression and fail-closed behavior required by the existing routing design.
+6. Run final targeted Dart/native validation.
+7. Build stable release using existing `build-browser` and `--split-per-abi`; publish every supported ABI APK as an independent downloadable artifact. Current scripts target `android-arm,android-arm64`; do not promise x86/x86_64 without a successful build.
+8. Start AI-1 Browser Tool API only after the browser milestone is stable.
 
 ## PERSONAL AI AGENT ROADMAP
 `AI-0 Specification [x] -> AI-1 Browser Tool API -> AI-2 Agent Core -> AI-3 Personal Profile/Memory -> AI-4 Permission Engine -> AI-5 workflows -> AI-6 advanced behavior -> AI-7 model adapters -> AI-8 end-to-end validation`
@@ -68,13 +77,17 @@ Permanent requirements: natural-language task understanding, links/context, dire
 ## RELEASE APK POLICY
 Final release must provide each supported ABI APK as an independently downloadable artifact. Preserve existing `--split-per-abi` behavior. Current release scripts target `android-arm,android-arm64`; publish resulting APKs separately. Do not promise x86/x86_64 unless a build proves support.
 
+## YAGNI / SAFETY BOUNDARY
+Do not redo completed creation/UI work. Do not add `RecoverableTab.userAgent` unless the existing `contextId` + native middleware path proves insufficient. Do not add a new Pigeon API or a second DB without a concrete test failure demonstrating the need. Do not use event-arrival order as request provenance. Do not refactor unrelated code to make CI green.
+
 ## MANDATORY LOOP
 `READ -> VERIFY -> RECONCILE -> PLAN -> EXECUTE -> TEST -> DIFF -> COMMIT -> SAVE STATE`
 
 ## CHECKPOINT
 **Date:** 2026-08-29
 **Branch:** `weblibre-ua-mainline-v3`
-**HEAD:** `f96693775344f17c703cb88d46788f9471fc23eb`
-**Files changed since prior checkpoint:** `.github/workflows/quality.yml` only in the most recent commit; workflow state is being synchronized by this checkpoint.
-**Tests/results:** previous Dart targeted test = 11 passed; previous native job reached native step but failed only because `./gradlew` was not present. Corrected workflow now uses `gradle --no-daemon test`; fresh PR quality run is expected for this HEAD.
-**Exact next step:** inspect fresh run for `f966937...`, then proceed to native runtime/restore A-B verification if green.
+**HEAD:** `7248fa581e8296df73e605d026c8ad4de4e48c4b`
+**Files changed in the latest implementation checkpoint:** `.github/workflows/quality.yml` only in the latest CI correction; the UA source implementation remains in the PR and was verified by source inspection.
+**Tests/results:** latest completed quality run — Dart targeted tests 11/11 passed; native step failed only because the selected Gradle task rejected `--tests`. Corrected workflow now uses `testDebugUnitTest --tests ...`; fresh run pending.
+**Blocker:** runtime/device cold-start validation is not yet available from the current CI path.
+**Exact next step:** inspect the fresh quality run for `7248fa5...`; if green, proceed to runtime restore/A-B and Proxy A/B validation, then the split-ABI milestone and AI-1.
