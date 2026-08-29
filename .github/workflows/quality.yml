@@ -35,5 +35,4 @@ jobs:
           gradle-version: 9.4.1
       - name: Run targeted native container tests
         working-directory: packages/flutter_mozilla_components/android
-        run: |
-          gradle --no-daemon test --tests eu.weblibre.flutter_mozilla_components.feature.ContainerUserAgentStoreTest --tests eu.weblibre.flutter_mozilla_components.feature.ContainerProxyFeatureTest
+        run: gradle --no-daemon testDebugUnitTest --tests 'eu.weblibre.flutter_mozilla_components.feature.ContainerUserAgentStoreTest' --tests 'eu.weblibre.flutter_mozilla_components.feature.ContainerProxyFeatureTest'
