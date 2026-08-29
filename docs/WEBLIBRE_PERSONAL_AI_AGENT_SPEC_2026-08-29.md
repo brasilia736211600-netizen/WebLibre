@@ -3,7 +3,11 @@
 **Date:** 2026-08-29
 **Status:** Product requirement and architecture plan; implementation starts after the current UA/restore milestone.
 
-## 1. Product goal
+## Product and release requirements
+
+WebLibre's final product includes the Personal AI Browser Agent defined below. The final Android release must also provide independently downloadable ABI-specific APK artifacts rather than requiring the user to download one bundled universal APK. Supported ABI outputs such as `arm64-v8a`, `armeabi-v7a`, and `x86_64` must be published separately when built/supported. The release build should use ABI split packaging such as `flutter build apk --split-per-abi`.
+
+## Product goal
 
 WebLibre is intended to become a privacy-oriented Android browser with a **personal AI Browser Agent** dedicated to the owner/user.
 
@@ -29,7 +33,7 @@ User goal
   -> completion
 ```
 
-## 2. Personal/private identity
+## Personal/private identity
 
 The agent is intended for one owner/user. It should have a persistent **Personal Agent Profile** containing the owner's explicit instructions, preferences, workflows, trusted sites, memory policy, and permission grants.
 
@@ -39,7 +43,7 @@ The architecture should support an owner-controlled local identity boundary, wit
 
 Do not silently upload all browser data to a model/provider. Data access must follow the permission and data-routing policy selected by the user.
 
-## 3. Full permissions — user-controlled and revocable
+## Full permissions — user-controlled and revocable
 
 The user explicitly requested that the agent be capable of **full browser permissions as selectable options**, granted only when the user chooses and according to the task.
 
@@ -89,7 +93,7 @@ Permissions must support:
 
 The user can change permission level at any time.
 
-## 4. Safety and control model
+## Safety and control model
 
 The agent should never silently escalate its own permissions.
 
@@ -107,7 +111,7 @@ User-configured confirmation behavior should be supported so the owner can choos
 
 A task should be able to request a temporary elevated grant without changing the user's permanent policy.
 
-## 5. Browser Tool API
+## Browser Tool API
 
 Create a model-independent internal tool registry. Initial tool families:
 
@@ -157,7 +161,7 @@ Every tool must declare:
 
 Do not expose unrestricted internal application APIs directly to the model. Put them behind an explicit tool boundary.
 
-## 6. Agent Core
+## Agent Core
 
 The Agent Core is responsible for:
 
@@ -176,7 +180,7 @@ It must be model-agnostic.
 
 The LLM is a reasoning component, not the browser authority. WebLibre remains the source of truth for actual browser state and tool results.
 
-## 7. Personal memory
+## Personal memory
 
 Implement memory as a separate layer with explicit categories:
 
@@ -192,7 +196,7 @@ Memory must have retention/deletion controls and must not silently turn arbitrar
 
 The user should be able to inspect, edit, export, clear, or disable agent memory.
 
-## 8. Data routing
+## Data routing
 
 The architecture must separate:
 
@@ -207,7 +211,7 @@ Only the data necessary for the current inference should be sent to a model prov
 
 The project should support multiple model backends later, including remote and local models. Do not couple the agent architecture to one provider.
 
-## 9. Candidate technology direction
+## Candidate technology direction
 
 Initial technology evaluation should include:
 
@@ -217,9 +221,7 @@ Initial technology evaluation should include:
 
 Current decision: **do not embed any candidate blindly**. First define WebLibre's internal Browser Tool API and adapter boundary, then benchmark candidates against it.
 
-The current public projects document agentic browser control capabilities; Browser Use provides an open-source browser-agent library, Stagehand provides AI-powered browser agents with configurable models/instructions, and Skyvern provides multi-step browser automation with AI actions and local/self-hosted options. These are reference candidates, not final architecture decisions. citeturn658892search3turn658892search7turn658892search0
-
-## 10. Recommended architecture
+## Recommended architecture
 
 ```text
                   ┌────────────────────────┐
@@ -251,7 +253,7 @@ The current public projects document agentic browser control capabilities; Brows
           └───────────────────────────────────┘
 ```
 
-## 11. Implementation phases
+## Implementation phases
 
 ### AI-0 — specification
 - [x] Add this specification to the durable project docs.
@@ -259,6 +261,7 @@ The current public projects document agentic browser control capabilities; Brows
 - [x] Define selectable/revocable full permissions.
 - [x] Define browser-tool boundary.
 - [x] Define model-independent architecture.
+- [x] Define independent ABI APK release artifacts.
 
 ### AI-1 — Browser Tool boundary
 - [ ] Inventory the existing WebLibre APIs that can support agent tools.
@@ -322,8 +325,9 @@ The current public projects document agentic browser control capabilities; Brows
 - [ ] Unauthorized action rejection tests.
 - [ ] Revocation tests.
 - [ ] End-to-end task completion tests.
+- [ ] Verify each supported ABI APK is independently installable/downloadable.
 
-## 12. Integration with current Container Privacy work
+## Integration with current Container Privacy work
 
 The agent must be able to use the browser's existing container identity rather than bypassing it.
 
@@ -343,7 +347,7 @@ A must not mutate B.
 
 Container/UA/proxy work therefore remains a prerequisite for the agent's reliable privacy-aware browsing behavior.
 
-## 13. Definition of Done — Personal AI Browser Agent
+## Definition of Done — Personal AI Browser Agent
 
 The final product is not complete until:
 
@@ -358,9 +362,10 @@ The final product is not complete until:
 - [ ] agent cannot exceed current grants;
 - [ ] model provider can be replaced without redesigning the agent;
 - [ ] runtime isolation is demonstrated;
-- [ ] end-to-end workflows pass on the actual WebLibre browser.
+- [ ] end-to-end workflows pass on the actual WebLibre browser;
+- [ ] final release artifacts are independently downloadable per supported ABI.
 
-## 14. Current priority order
+## Current priority order
 
 Do not begin AI implementation until the current browser foundation reaches a stable milestone:
 
@@ -369,13 +374,14 @@ UA restore
  -> UA A/B isolation
  -> proxy regression
  -> targeted validation
- -> stable debug APK
+ -> stable debug APK (ABI-split artifacts)
  -> Browser Tool API
  -> Agent Core
  -> permissions + memory
  -> first autonomous workflows
  -> model adapters/optimization
- -> release
+ -> end-to-end validation
+ -> release APKs per ABI
 ```
 
 This ordering is deliberate: the agent must operate a stable browser rather than becoming a second source of browser-state bugs.
