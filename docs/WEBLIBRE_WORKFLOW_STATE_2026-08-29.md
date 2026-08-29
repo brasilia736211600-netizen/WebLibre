@@ -2,7 +2,7 @@
 
 **Last synchronized:** 2026-08-29
 **Branch:** `weblibre-ua-mainline-v3`
-**Current verified branch HEAD:** `e66b63b1fbebec444e219be79306a81e9d75c1a6`
+**Current verified branch HEAD:** `791969b4f89c9f1be2b8b1695c3a9f755bde671e`
 
 ## READ THIS FIRST
 
@@ -63,7 +63,7 @@ SessionStorage
  -> restoreState(engineSessionState)
 ```
 
-Android Components SessionStorage does not serialize container UA in TabSessionState. Gecko session restore also does not restore a separate session-level UA override.
+Android Components SessionStorage does not serialize container UA in TabSessionState. Gecko session restore does not restore the separate session-level UA override.
 
 Therefore the remaining browser task is to provide `contextId -> userAgent` to native restore before the first restored navigation.
 
@@ -72,7 +72,7 @@ Therefore the remaining browser task is to provide `contextId -> userAgent` to n
 2. Apply the stored UA to the restored EngineSession before `restoreState()`/first navigation.
 3. Add focused restore regression coverage.
 4. Prove UA A/B isolation.
-5. Verify Proxy restore/A/B isolation.
+5. Verify Proxy restore/A-B isolation.
 6. Run targeted validation.
 7. Build stable debug APK.
 
@@ -124,17 +124,20 @@ Permission modes:
 
 The agent must never silently escalate its own permissions.
 
-### Memory
-Agent memory is separate from browser state. The owner can inspect, edit, export, clear, or disable it. Arbitrary page content must not silently become permanent memory.
+### Agent tool boundary
+The model must never receive unrestricted direct access to internal WebLibre APIs. All browser actions go through an explicit, auditable tool registry with permission requirement, input/output schema, side-effect declaration, reversibility information, and confirmation category where configured.
 
-### Model independence
-Do not hardwire Agent Core to one LLM/provider. Current reference candidates are Browser Use, Stagehand, and Skyvern; they are evaluation references, not committed dependencies.
+### Memory
+Memory is separate from browser state and must be user-controlled. The user must be able to inspect, edit, export, delete, or disable it. Arbitrary page content must not silently become permanent memory.
+
+### Model strategy
+The Agent Core is model/provider independent. Candidate references are Browser Use, Stagehand, and Skyvern; they are not committed dependencies.
 
 ## 5. AI ROADMAP
 
 ```text
 AI-0 Specification                         [x]
-AI-1 Browser Tool API                     [ ]  <- first AI implementation task
+AI-1 Browser Tool API                     [ ]  <- first AI implementation task after browser milestone
 AI-2 Agent Core                           [ ]
 AI-3 Personal Profile + Memory            [ ]
 AI-4 Permission Engine                    [ ]
@@ -187,7 +190,7 @@ The AI agent must operate on top of the stable browser/container primitives, not
 ## 7. GIT / PR / CI
 
 - Active branch: `weblibre-ua-mainline-v3`.
-- Current HEAD is the latest documentation checkpoint shown at the top of this file.
+- Current verified HEAD is the latest documentation checkpoint recorded at the top of this file.
 - PR #3 is the active open/draft feature PR targeting `main`.
 - Historical CI run `33265003957` passed native runtime prerequisites and Kotlin compilation.
 - No claim of final CI success should be made until the post-change checks run on the current HEAD.
@@ -224,7 +227,16 @@ Then verify GitHub truth and continue from the exact next action.
 
 **Timestamp:** 2026-08-29
 **Branch:** `weblibre-ua-mainline-v3`
-**Files changed in this documentation checkpoint:**
+**Latest durable documentation commits:**
+- `3059e18598ba723431c411b8a219861c5699672d` — personal AI specification added.
+- `193aa5675943ee7d9452bf490631a9eda245952d` — current AGENTS rules updated.
+- `e56d0c9a4116dc78fc9c3366c30c0277054af893` — current project handoff added.
+- `e66b63b1fbebec444e219be79306a81e9d75c1a6` — current continuation prompt added.
+- `791969b4f89c9f1be2b8b1695c3a9f755bde671e` — current operating playbook added.
+
+**Current state file commit:** this checkpoint is being written after the latest documentation commits.
+
+**Files changed by this documentation work:**
 - `AGENTS.md`
 - `docs/WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md`
 - `docs/WEBLIBRE_PROJECT_HANDOFF_2026-08-29.md`
@@ -232,8 +244,8 @@ Then verify GitHub truth and continue from the exact next action.
 - `docs/GENSPARK_WEBLIBRE_OPERATING_PLAYBOOK_2026-08-29.md`
 - `docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`
 
-**Tests/checks:** documentation/specification changes only; no source code was changed in this checkpoint. Historical native CI remains the last verified code check.
+**Tests/checks:** documentation/specification changes only; no source code changed in this checkpoint. Historical native CI remains the latest verified code check.
 
-**Result:** Personal AI Browser Agent is now part of the permanent product definition, including owner-controlled Full Access and granular/revocable permissions.
+**Result:** the Personal AI Browser Agent is permanently defined as a final WebLibre product requirement, with owner-only identity, selectable/revocable permissions, and an explicit user-granted `Full Access` mode.
 
-**Exact next action:** finish the browser UA cold-start restore path; then run A/B isolation and targeted validation. After the stable browser milestone, begin `AI-1 Browser Tool API`.
+**Exact next action:** close the browser UA cold-start restore blocker; then verify UA/Proxy A/B isolation and targeted validation. After the stable browser milestone, start `AI-1 Browser Tool API`.
