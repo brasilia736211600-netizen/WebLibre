@@ -29,6 +29,10 @@ jobs:
       - name: Run targeted container tests
         working-directory: apps/weblibre
         run: flutter test test/features/geckoview/features/tabs/data/models/container_data_test.dart
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+        with:
+          gradle-version: 9.4.1
       - name: Run native plugin unit tests
         working-directory: packages/flutter_mozilla_components/android
         run: gradle --no-daemon test
