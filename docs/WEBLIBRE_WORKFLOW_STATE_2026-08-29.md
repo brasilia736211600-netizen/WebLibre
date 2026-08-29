@@ -2,7 +2,7 @@
 
 **Last synchronized:** 2026-08-29
 **Branch:** `weblibre-ua-mainline-v3`
-**Current verified branch HEAD:** `2f6e26683786403f74af6cc1f369153119ca3091`
+**Current verified branch HEAD:** `49a6f45ea0dfa67622b7a623c35b10094188b727`
 
 ## READ THIS FIRST
 
@@ -22,22 +22,27 @@ The 2026-08-28 documents are historical references only when they do not conflic
 
 WebLibre has two dependent product tracks:
 
-1. Privacy-oriented browser foundation: per-container Proxy + User-Agent, persistence/restore, strict isolation, validation, release.
+1. Privacy-oriented browser foundation: per-container Proxy + User-Agent, persistence/restore, strict A/B isolation, validation, release.
 2. Personal AI Browser Agent: owner-only, model/provider independent, operates the real browser through an explicit Browser Tool API, has user-controlled memory and selectable/revocable permissions including Full Access.
 
 The Personal AI Agent is NOT the Acode AI Agent and is NOT an OpenRouter feature.
 
-The agent will have multiple control surfaces using one Agent Core:
+It has multiple control surfaces using one Agent Core:
 
 ```text
 WebLibre in-browser UI ───────┐
-                             ├─> Personal Agent Core
-Remote phone / Telegram /    │       -> Permission Engine
-WhatsApp / future channel ───┘       -> Browser Tool API
-                                         -> WebLibre
+Remote phone / Telegram /    ├─> Authenticated Control Gateway
+WhatsApp / future channel ───┘             ↓
+                                      Personal Agent Core
+                                             ↓
+                                      Permission Engine
+                                             ↓
+                                      Browser Tool API
+                                             ↓
+                                          WebLibre
 ```
 
-Remote control must authenticate the owner/device/channel and use the same permission system as the in-browser interface. Natural-language task instructions and supplied links are first-class inputs; the agent must infer the required sequence of browser operations rather than requiring rigid command syntax.
+Remote messages are normal natural-language tasks and can include links, context, constraints, and follow-up corrections. The agent must infer the needed browser sequence rather than requiring rigid command syntax. Remote authentication identifies the owner/device/channel but never bypasses the normal Permission Engine. The transport is replaceable; the Agent Core and permissions are not.
 
 Canonical AI spec: `docs/WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md`.
 
@@ -53,65 +58,83 @@ Canonical AI spec: `docs/WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md`.
 - existing per-container UA settings UI.
 
 ### Current restore work — IMPLEMENTED, NOT YET RUNTIME-VERIFIED
-The existing per-profile `tab.db` is the same source of truth used by Dart for container metadata. `ProfileContext.getDatabasePath()` points native callers at the selected profile's database directory. A new small native `ContainerUserAgentStore` reads persisted container `metadata` from the existing `container` table and returns the matching `userAgent` by `contextualIdentity`.
+The existing per-profile `tab.db` is the source of truth used by Dart for container metadata. Native `ProfileContext.getDatabasePath()` points at that profile's database directory.
 
-`HistoryDelegateBindingMiddleware` now uses that store on `EngineAction.LinkEngineSessionAction` and assigns `engineSession.settings.userAgentString` before calling `next(action)`. This reuses the already-existing pre-link middleware hook; no new Pigeon recovery field, no second database, and no Android Components fork were added.
+Added:
+- `ContainerUserAgentStore.kt`: read-only lookup of `ContainerMetadata.userAgent` from the existing `container.metadata` JSON in `tab.db`, matched by `contextualIdentity`.
+- `HistoryDelegateBindingMiddleware.kt`: on `EngineAction.LinkEngineSessionAction`, read the persisted UA from the existing profile DB and assign `engineSession.settings.userAgentString` before `next(action)` continues downstream linking/loading.
+- `ContainerUserAgentStoreTest.kt`: focused parser tests for matching container, cross-container isolation, blank/default behavior, and malformed metadata.
 
-This is the smallest currently identified cold-start restore path. It must still be validated by an actual native build/test and, ideally, an end-to-end restored-tab run.
+Design intentionally avoids:
+- a second persistence database;
+- a new Pigeon recovery field;
+- global GeckoRuntime UA;
+- an Android Components fork;
+- `syncEvents` arrival-order heuristics.
+
+The implementation still requires execution in a real Android/native build and an end-to-end restored-tab test before UA restore is marked complete.
 
 ### Restore invariant
 
 ```text
-persisted container.contextualIdentity
-        + persisted container.metadata.userAgent
+existing container row in profile tab.db
+        -> contextualIdentity + metadata.userAgent
         -> restored EngineSession link
         -> session UA applied
-        -> downstream linking/load
+        -> downstream linking/navigation
 ```
 
-If persisted lookup fails (database absent/locked/unreadable or malformed row), the implementation logs and falls back without crashing. A malformed unrelated row does not prevent another container's row from being found.
+If the database is absent, unavailable, or malformed, lookup fails safely and the session keeps the normal/default UA rather than crashing.
 
 ## CURRENT GIT / PR / CI
 
 - Active branch: `weblibre-ua-mainline-v3`.
-- Current HEAD: `2f6e26683786403f74af6cc1f369153119ca3091`.
-- PR #3 is open, draft, base `main`, and currently reports mergeable.
-- No status checks were reported for the earlier `64e196c...` code checkpoint; a current status/PR recheck is required after the latest commits.
+- Current HEAD: `49a6f45ea0dfa67622b7a623c35b10094188b727`.
+- PR #3 is open and draft against `main`.
+- Latest PR metadata reports `mergeable=false` at the time of this checkpoint; recheck after the next push because this may be transient GitHub mergeability state.
+- No CI workflow run is reported for the current HEAD by the PR-triggered workflow query.
 - Historical native CI run `33265003957` passed native runtime prerequisites and Android Kotlin compilation.
 
-## FILES CHANGED IN CURRENT RESTORE SLICE
+## CURRENT RESTORE COMMITS
 
-- `packages/flutter_mozilla_components/android/src/main/kotlin/eu/weblibre/flutter_mozilla_components/feature/ContainerUserAgentStore.kt`
-- `packages/flutter_mozilla_components/android/src/main/kotlin/eu/weblibre/flutter_mozilla_components/middleware/HistoryDelegateBindingMiddleware.kt`
-- `packages/flutter_mozilla_components/android/src/test/kotlin/eu/weblibre/flutter_mozilla_components/feature/ContainerUserAgentStoreTest.kt`
+Recent feature-chain commits, all in the active branch history:
+- `31ff87d...` — add `ContainerUserAgentStore`.
+- `64e196c...` — bind the actual profile context.
+- `435999f...` — avoid native SQLite JSON1 dependency.
+- `8ad5f98...` — add parser visibility for tests.
+- `9f74216...` — remove unnecessary test annotation.
+- `2f6e266...` — add focused parser tests.
+- `394d17a...` — save the durable restore checkpoint.
+- `49a6f45...` — extend the canonical AI specification with direct and remote control surfaces.
 
-The restore implementation intentionally does not modify the Pigeon contract or Android Components dependency.
+A temporary attempt to add a quality workflow via the GitHub contents API was detected to have created the file on `main` instead of the feature branch. That workflow file was immediately deleted from `main`; it is **not part of the feature branch** and must not be recreated using the same unsafe path. No lingering `quality.yml` file remains on the feature branch as a result of that attempt.
 
 ## TESTING CHECKPOINT
 
-A focused unit-test file was added for persisted metadata parsing:
+Tests added for the new parser path:
 - matching container returns trimmed UA;
 - different container is ignored;
-- blank UA is treated as default/null;
-- malformed metadata is ignored.
+- blank UA becomes null/default;
+- malformed JSON is ignored.
 
-Those tests have **not yet been executed in an actual build environment from this interface**. Therefore the restore feature remains marked `IMPLEMENTED, NOT YET RUNTIME-VERIFIED`.
+**Execution status:** not yet run in an actual build environment from this interface. Therefore native compile and runtime restore are still unverified.
 
-The native package's Gradle configuration uses JVM unit tests and has the required Kotlin test and `org.json` test dependencies.
+A web check of GeckoView's current `GeckoSessionSettings` confirms that `userAgentOverride` is a real session-level setting and is distinct from global runtime state. citeturn823750search0turn823750search1
 
-## NEXT EXECUTION
+## EXACT NEXT EXECUTION
 
-1. Recheck current HEAD/PR/status.
-2. Run the cheapest available native unit/compile validation for `flutter_mozilla_components`.
-3. If compilation passes, validate the restore lifecycle and container A/B UA isolation.
-4. Then validate per-container Proxy restore/A-B behavior.
-5. When browser foundation is stable, build the milestone APK using existing `--split-per-abi` scripts.
-6. Then begin AI-1 Browser Tool API.
+1. Validate the current restore code with the cheapest available Android/native compile or unit-test path.
+2. If compilation is clean, run a restored-tab scenario and verify Container A/Container B retain distinct UAs.
+3. Validate proxy restore and A/B isolation.
+4. Run Dart analyze/tests and targeted native checks.
+5. Build the stable milestone using the existing ABI-split APK scripts.
+6. Start AI-1 Browser Tool API immediately after the browser milestone.
 
-Do not redo any completed UA creation path.
+Do not redo completed UA creation/UI work.
 Do not add global GeckoRuntime UA.
+Do not add `RecoverableTab.userAgent` merely as a cosmetic fix.
 Do not resurrect `_freshSnapshotPending`.
-Do not add a new persistence subsystem unless the current `tab.db` path proves insufficient.
+Do not add another database unless the existing profile `tab.db` path proves insufficient.
 
 ## PERSONAL AI AGENT ROADMAP
 
@@ -127,43 +150,36 @@ AI-7 Model/provider adapters            [ ]
 AI-8 End-to-end validation              [ ]
 ```
 
-AI-1 must inventory existing WebLibre capabilities first and expose only stable, explicit browser tools with permission requirements, input/output schemas, side-effect/reversibility metadata, and audit events.
+AI-1 must inventory existing WebLibre capabilities and expose a small stable Browser Tool API with schemas, permission requirements, side-effect/reversibility metadata, and audit events.
 
-The final AI implementation must support:
-- in-browser control;
-- remote control from another phone through Telegram/WhatsApp or another authenticated channel;
-- natural-language goals plus links/context;
-- owner-only persistent identity/profile;
-- inspectable/editable/exportable/deletable memory;
-- permission modes `Read Only | Browser Control | Task Control | Trusted Automation | Full Access`;
-- task/session/persistent and container/site-scoped grants where useful;
-- immediate revocation;
-- no silent privilege escalation;
-- model/provider replacement without redesign.
+Later AI stages must implement the task loop, owner profile/memory, selectable permissions including Full Access, autonomous workflows, model adapters, and end-to-end validation. Both direct in-browser and authenticated remote control must feed the same Agent Core/task context.
 
 ## RELEASE APK POLICY
 
-Final release artifacts must be independently downloadable per supported ABI, not forced into a single universal APK. The existing `pubspec.yaml` build scripts already use `--split-per-abi` for stable/alpha/legacy. Preserve that behavior and publish each supported ABI APK as its own artifact. A universal APK may only be an optional extra.
+Final release artifacts must be independently downloadable per supported ABI, not forced into one universal APK. Existing stable/alpha/alphaLegacy scripts already use `--split-per-abi`; preserve them and publish each supported ABI APK as a separate artifact. A universal APK is optional only.
 
 ## MANDATORY AGENT LOOP
 
 `READ -> VERIFY -> RECONCILE -> PLAN -> EXECUTE -> TEST -> DIFF -> COMMIT -> SAVE STATE`
 
-After every meaningful step update this file with:
-- branch;
-- HEAD;
-- files changed;
-- tests/checks and exact result;
-- current blocker;
-- exact next action.
+After every meaningful implementation/checkpoint update this file with branch, HEAD, files, tests/results, blocker, and exact next action.
 
 ## CHECKPOINT RECORD
 
 **Date:** 2026-08-29
 **Branch:** `weblibre-ua-mainline-v3`
-**HEAD:** `2f6e26683786403f74af6cc1f369153119ca3091`
-**Work completed:** implemented the minimal native persisted-container-UA lookup and bound it in the existing session-link middleware; added focused parser tests.
-**Tests/results:** tests added but not yet executed from this interface.
-**Result:** code path is implemented with no new Pigeon contract, no second persistence store, and no upstream Android Components fork.
-**Current blocker:** runtime/native validation of the new restore path.
-**Exact next action:** run the cheapest native unit/compile validation available, then perform restore/A-B isolation verification.
+**HEAD:** `49a6f45ea0dfa67622b7a623c35b10094188b727`
+**Files changed in the current implementation/documentation sequence:**
+- `packages/flutter_mozilla_components/android/src/main/kotlin/eu/weblibre/flutter_mozilla_components/feature/ContainerUserAgentStore.kt`
+- `packages/flutter_mozilla_components/android/src/main/kotlin/eu/weblibre/flutter_mozilla_components/middleware/HistoryDelegateBindingMiddleware.kt`
+- `packages/flutter_mozilla_components/android/src/test/kotlin/eu/weblibre/flutter_mozilla_components/feature/ContainerUserAgentStoreTest.kt`
+- `docs/WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md`
+- `docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`
+
+**Tests/checks:** parser tests added; not yet executed here. GeckoView session-UA API independently confirmed by current Mozilla source documentation. CI has not run on the current feature HEAD.
+
+**Result:** native cold-start UA restore path implemented using the existing profile DB and existing session-link middleware, with no new Pigeon recovery field. Personal AI Agent now explicitly supports direct WebLibre control plus authenticated remote-phone control. ABI-separated APK delivery is permanent.
+
+**Current blocker:** real native compile/runtime verification of the restore path.
+
+**Exact next action:** validate the new native restore slice; then A/B UA isolation, proxy regression, targeted validation, stable ABI-split APK, and only then AI-1 Browser Tool API.
