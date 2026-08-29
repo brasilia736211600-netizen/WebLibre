@@ -2,7 +2,7 @@
 
 **Last synchronized:** 2026-08-29
 **Branch:** `weblibre-ua-mainline-v3`
-**Current verified branch HEAD before this checkpoint:** `1eb7d5e5ef70e014842a601985ba791aafad7af5`
+**Current verified branch HEAD before this checkpoint:** `84e3b8f90dadee2037d7cb69b41a6cfa60483079`
 
 ## READ THIS FIRST
 
@@ -18,183 +18,38 @@ This is the project's durable execution memory. Do not reconstruct the project f
 
 The 2026-08-28 documents remain historical references unless explicitly reused.
 
-## 1. FINAL PRODUCT
-
-WebLibre has two dependent tracks.
+## CURRENT EXECUTION
 
 ### Browser foundation
-- independent Proxy per container;
-- independent User-Agent per container;
-- persistence/restoration;
-- strict A/B isolation;
-- targeted validation;
-- stable APK;
-- final release.
+Complete creation paths remain complete. The current blocker is cold-start/restored-tab UA: Android Components SessionStorage does not serialize container UA with TabSessionState, while native restore occurs before Dart can provide container metadata.
+
+**Next browser action:** implement the smallest sound native pre-restore `contextId -> userAgent` persistence/lookup, apply it before restored navigation, then run restore and A/B tests.
+
+Do not redo completed creation paths. Do not add global GeckoRuntime UA. Do not revive `_freshSnapshotPending` arrival-order heuristics.
 
 ### Personal AI Browser Agent
-The final browser must include a dedicated personal AI agent for the owner/user. It must operate the real browser through explicit tools, maintain user-controlled profile/memory, and remain model/provider independent.
+Specification is complete; implementation starts after stable browser milestone. It is a dedicated owner-only browser-operating agent, not Acode AI Agent and not an OpenRouter feature. It has explicit selectable permissions including Full Access, revocation, task/session/persistent scopes, container/site scopes, audit history, personal profile, controlled memory, and a model-independent Browser Tool API.
 
-This is not the Acode AI Agent and not merely an OpenRouter integration.
+AI sequence:
 
-Canonical spec: `docs/WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md`.
+`AI-1 Browser Tool API -> AI-2 Agent Core -> AI-3 Personal Profile/Memory -> AI-4 Permission Engine -> AI-5 workflows -> AI-6 advanced behavior -> AI-7 model adapters -> AI-8 validation`.
 
-## 2. BROWSER STATUS
+### Permanent APK requirement
+Final Android artifacts must be independently downloadable per supported ABI, not forced into one universal APK. Current repository build scripts already use Flutter `--split-per-abi` for stable and alpha APK builds; preserve that behavior and publish each ABI artifact separately (for example `arm64-v8a`, `armeabi-v7a`, and `x86_64` when supported). A universal APK may only be provided as an optional extra.
 
-### Complete
-- ContainerMetadata.userAgent data foundation.
-- Source Pigeon AddTabParams.userAgent contract.
-- Normal tab UA path.
-- Multiple-tab UA path.
-- Duplicate-tab UA path.
-- Native per-session UA before first navigation for creation paths.
-- Existing container UA settings UI.
+## CHECKPOINT
 
-### Current blocker
-Cold-start/restored-tab UA. Android Components SessionStorage does not serialize the container UA with TabSessionState, and native restore occurs before Dart can provide container metadata.
-
-### Exact next browser action
-Find the smallest sound native pre-restore persistence/lookup mechanism for `contextId -> userAgent`, apply it before restored navigation, then run restore/A-B tests and targeted validation.
-
-Do not redo completed creation paths. Do not add a global GeckoRuntime UA. Do not revive `_freshSnapshotPending` arrival-order heuristics.
-
-## 3. PERSONAL AI AGENT — PRODUCT REQUIREMENT
-
-### Status
-Specification complete; implementation not started.
-
-The agent must be a real browser-operating agent, not only a chat surface:
-
-```text
-User goal
- -> Agent Core
- -> Permission Engine
- -> Browser Tool Registry
- -> WebLibre Browser API
- -> live GeckoView browser state
- -> observe result
- -> next action
-```
-
-### Owner-only profile
-Persistent profile for one owner containing instructions, preferences, workflows, trusted sites, memory policy, and permissions. Changing the model/provider must not erase this identity.
-
-### Full user-controlled permissions
-The owner can grant complete browser capabilities as selectable permissions according to the task.
-
-Required scopes include browser-state read, page/content read, navigation, interaction, tabs, downloads/files, authenticated sessions when granted, containers, proxy, UA, browser settings, external actions, and future WebLibre capabilities.
-
-Modes:
-
-`Read Only | Browser Control | Task Control | Trusted Automation | Full Access`
-
-Full Access is an explicit owner grant for all currently exposed capabilities within the selected scope. Grants support one-task, session, persistent, container-scoped, and where useful site/domain-scoped lifetimes. Revocation is immediate. The agent cannot silently escalate.
-
-### Memory/data
-Memory is separate from browser state and user controlled. The user can inspect, edit, export, clear, or disable it. Arbitrary page content must not silently become permanent memory. Only task-required information should be sent to a model provider.
-
-### Tool boundary
-The model receives no unrestricted WebLibre API access. Each tool declares permissions, input/output schemas, side effects, reversibility, and audit metadata.
-
-### Candidate technology
-Browser Use is the primary reference/candidate; Stagehand and Skyvern are secondary references. Do not embed one blindly. Define WebLibre's internal tool boundary first.
-
-## 4. AI ROADMAP
-
-```text
-AI-0 Specification                       [x]
-AI-1 Browser Tool API                   [ ]
-AI-2 Agent Core                         [ ]
-AI-3 Personal Profile + Memory         [ ]
-AI-4 Permission Engine                 [ ]
-AI-5 First autonomous workflows        [ ]
-AI-6 Advanced personal behavior        [ ]
-AI-7 Model/provider adapters            [ ]
-AI-8 End-to-end validation              [ ]
-```
-
-### AI-1
-Inventory existing WebLibre browser capabilities and build the smallest internal Browser Tool Registry. Add schemas, permission requirements, side-effect/reversibility metadata, and audit events.
-
-### AI-2
-Plan/reason/act/observe loop, context builder, model adapter boundary, retries/timeouts, and stop criteria.
-
-### AI-3
-Owner profile, preferences/instructions, short-term and long-term memory, retention/delete controls, and data minimization.
-
-### AI-4
-All permission modes, granular grants, task/session/persistent scopes, container/site scopes, Full Access, revocation, and audit history.
-
-### AI-5 onward
-First autonomous workflows, advanced personal behavior, model adapters, optimization, and end-to-end validation as defined in the canonical AI spec.
-
-## 5. PROXY
-
-Proxy remains per-container and never global. Final verification must prove:
-
-`A -> Proxy-A`, `B -> Proxy-B`, changing A does not change B, and restore preserves policy.
-
-## 6. RESTORE/EVENT FORENSICS
-
-`syncEvents()` currently provides no request/generation provenance. Tab-list arrival order is not proof of causation. `_freshSnapshotPending` remains rejected as unsound. Touch this only if the restore implementation actually requires reliable event correlation.
-
-## 7. FINAL PROJECT SEQUENCE
-
-```text
-UA restore
- -> UA A/B isolation
- -> Proxy restore/A-B verification
- -> targeted validation
- -> stable debug APK
- -> AI-1 Browser Tool API
- -> Agent Core
- -> Permission Engine
- -> Personal Profile + Memory
- -> autonomous workflows
- -> model adapters
- -> end-to-end validation
- -> release APKs
-```
-
-## 8. APK RELEASE POLICY
-
-The final APK deliverables must **not be bundled into one universal APK when ABI-split artifacts are available**.
-
-Release/build output must provide independently downloadable APKs per supported ABI, for example:
-
-- `arm64-v8a` — separate APK;
-- `armeabi-v7a` — separate APK;
-- `x86_64` — separate APK when supported/built.
-
-Use Flutter/Android ABI split packaging (for example `flutter build apk --split-per-abi`) for the release artifact set. Each ABI APK must be independently downloadable and clearly named. Do not force the user to download a combined APK containing every ABI unless a separate universal APK is explicitly requested.
-
-This is a permanent release requirement for WebLibre.
-
-## 9. GIT / CI CHECKPOINT
-
-- Active branch: `weblibre-ua-mainline-v3`.
-- PR #3 remains open and draft against `main`.
-- Current verified HEAD before this documentation checkpoint: `1eb7d5e5ef70e014842a601985ba791aafad7af5`.
-- Historical native CI run `33265003957` passed the native runtime prerequisites and Kotlin compilation.
-- This checkpoint changes documentation only; no browser behavior is changed.
-
-## 10. NEW-CHAT RULE
-
-A new agent must not ask the user to re-explain the project. It must read the workflow state first, then the AI spec for AI tasks, verify actual GitHub truth, and continue from the exact unchecked item.
-
-Required loop:
-
-`READ -> VERIFY -> RECONCILE -> PLAN -> EXECUTE -> TEST -> DIFF -> COMMIT -> SAVE STATE`
-
-## 11. CHECKPOINT RECORD
-
-**Timestamp:** 2026-08-29
 **Branch:** `weblibre-ua-mainline-v3`
-**HEAD at start of checkpoint:** `1eb7d5e5ef70e014842a601985ba791aafad7af5`
-**Files changed:**
+**HEAD at checkpoint start:** `84e3b8f90dadee2037d7cb69b41a6cfa60483079`
+**Files changed in the documentation checkpoint:**
 - `docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`
+- `docs/WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md`
 
-**Tests/checks:** documentation-only change. No source-code behavior changed.
+**Tests/results:** documentation-only. No source-code behavior changed. Verified `pubspec.yaml` already invokes `flutter build apk ... --split-per-abi` for stable/alpha/legacy release builds, so no unnecessary build-script modification was made.
 
-**Result:** separate ABI APKs are now a permanent final-release requirement; the browser and AI roadmap remain unchanged.
+**Exact next step:** return to the UA cold-start restore blocker. Inspect/modify only the minimal native persistence/restore path, then test restore + A/B UA isolation, followed by proxy regression validation.
 
-**Exact next action:** finish the browser UA cold-start restore blocker; then perform UA/Proxy A-B isolation and targeted validation. After the stable browser milestone, begin AI-1 Browser Tool API.
+**After browser milestone:** begin AI-1 Browser Tool API without waiting for a new chat or re-explaining project context.
+
+Required loop remains:
+`READ -> VERIFY -> RECONCILE -> PLAN -> EXECUTE -> TEST -> DIFF -> COMMIT -> SAVE STATE`
