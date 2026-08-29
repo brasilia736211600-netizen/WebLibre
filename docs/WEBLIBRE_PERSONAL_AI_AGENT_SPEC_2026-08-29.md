@@ -43,6 +43,50 @@ The architecture should support an owner-controlled local identity boundary, wit
 
 Do not silently upload all browser data to a model/provider. Data access must follow the permission and data-routing policy selected by the user.
 
+## Control surfaces — in-browser and remote
+
+The same Personal Agent Core must be controllable through multiple authenticated interfaces. The agent is not duplicated per interface.
+
+Required first-class surfaces:
+
+1. **Direct WebLibre control** — an in-browser agent UI for entering natural-language tasks, supplying links/context, viewing progress, granting/revoking permissions, inspecting memory, and approving sensitive actions.
+2. **Remote phone control** — an authenticated remote command gateway reachable from another phone, initially allowing Telegram, WhatsApp, or another suitable channel. The specific transport is replaceable; the Agent Core and permission model are not.
+
+Architecture:
+
+```text
+WebLibre Agent UI ───────────────┐
+                                │
+Remote phone / Telegram /        ├──> Authenticated Control Gateway
+WhatsApp / future channel ──────┘              │
+                                               ▼
+                                        Personal Agent Core
+                                               │
+                                        Permission Engine
+                                               │
+                                        Browser Tool Registry
+                                               │
+                                           WebLibre
+```
+
+Both surfaces must use the same owner identity, task context, memory policy, audit trail, and permission grants.
+
+Remote messages are natural-language task inputs. The user must be able to send ordinary instructions, explanations, links, constraints, and follow-up corrections without learning a rigid command grammar. The agent is responsible for interpreting the intent and selecting the required browser operations.
+
+Remote control must authenticate the owner/device/channel before exposing sensitive browser capabilities. Channel authentication is not itself a permission grant. Every remote action still passes through the normal Permission Engine.
+
+The remote gateway must support at least:
+
+- receiving text instructions;
+- receiving links and task context;
+- returning progress and results;
+- requesting additional permission when needed;
+- reporting blocked/denied actions clearly;
+- revoking or changing the active task's grants;
+- preserving the same task context when the user switches between remote and in-browser control.
+
+The transport layer must be replaceable so the system is not locked to Telegram, WhatsApp, or a single messaging provider.
+
 ## Full permissions — user-controlled and revocable
 
 The user explicitly requested that the agent be capable of **full browser permissions as selectable options**, granted only when the user chooses and according to the task.
@@ -110,6 +154,8 @@ Whether a confirmation is required
 User-configured confirmation behavior should be supported so the owner can choose which categories require approval and which are pre-authorized.
 
 A task should be able to request a temporary elevated grant without changing the user's permanent policy.
+
+Remote authentication and channel identity must never be treated as an automatic `Full Access` grant.
 
 ## Browser Tool API
 
@@ -192,7 +238,7 @@ Implement memory as a separate layer with explicit categories:
 - short-term task memory;
 - long-term personal memory.
 
-Memory must have retention/deletion controls and must not silently turn arbitrary page content into permanent user memory.
+Memory must have retention/deletion controls and must not silently turn arbitrary page content into permanent memory.
 
 The user should be able to inspect, edit, export, clear, or disable agent memory.
 
@@ -224,33 +270,34 @@ Current decision: **do not embed any candidate blindly**. First define WebLibre'
 ## Recommended architecture
 
 ```text
-                  ┌────────────────────────┐
-                  │   Personal Agent UI    │
-                  │ task / grants / status │
-                  └────────────┬───────────┘
-                               │
-                  ┌────────────▼───────────┐
-                  │     Agent Core         │
-                  │ plan / reason / act    │
-                  └───────┬─────────┬──────┘
-                          │         │
-                 ┌────────▼───┐ ┌─▼─────────────┐
-                 │ Tool Registry│ │ Memory Store │
-                 └───────┬────┘ └───────────────┘
-                         │
-                 ┌───────▼───────────────┐
-                 │ Permission Engine     │
-                 │ scope / grant / audit │
-                 └───────┬───────────────┘
-                         │
-                 ┌───────▼───────────────┐
-                 │ WebLibre Browser API  │
-                 └───────┬───────────────┘
-                         │
-          ┌──────────────▼───────────────────┐
-          │ GeckoView / tabs / containers    │
-          │ page state / proxy / UA / files  │
-          └───────────────────────────────────┘
+                  ┌───────────────────────────────┐
+                  │ Direct WebLibre Agent UI      │
+                  │ + Remote Control Gateway      │
+                  └───────────────┬───────────────┘
+                                  │
+                         ┌────────▼────────┐
+                         │ Personal Agent  │
+                         │      Core       │
+                         └───────┬─────────┘
+                                 │
+                  ┌──────────────┼──────────────┐
+                  │              │              │
+          ┌───────▼──────┐ ┌────▼───────┐ ┌────▼─────────┐
+          │ Tool Registry│ │Memory Store│ │Permission    │
+          │              │ │            │ │Engine        │
+          └───────┬──────┘ └────────────┘ └──────┬────────┘
+                  │                              │
+                  └──────────────┬───────────────┘
+                                 │
+                         ┌───────▼───────────┐
+                         │ WebLibre Browser  │
+                         │       API         │
+                         └───────┬───────────┘
+                                 │
+                    ┌────────────▼────────────┐
+                    │ GeckoView / tabs /      │
+                    │ containers / UA / proxy │
+                    └─────────────────────────┘
 ```
 
 ## Implementation phases
@@ -262,6 +309,9 @@ Current decision: **do not embed any candidate blindly**. First define WebLibre'
 - [x] Define browser-tool boundary.
 - [x] Define model-independent architecture.
 - [x] Define independent ABI APK release artifacts.
+- [x] Define direct in-browser control surface.
+- [x] Define authenticated remote control surface from another phone.
+- [x] Define natural-language task input and replaceable messaging transport.
 
 ### AI-1 — Browser Tool boundary
 - [ ] Inventory the existing WebLibre APIs that can support agent tools.
@@ -294,6 +344,7 @@ Current decision: **do not embed any candidate blindly**. First define WebLibre'
 - [ ] Container/site scoping.
 - [ ] Revocation.
 - [ ] Audit history.
+- [ ] Remote-channel authentication and authorization.
 
 ### AI-5 — First agent workflows
 - [ ] Research and summarize.
@@ -302,6 +353,8 @@ Current decision: **do not embed any candidate blindly**. First define WebLibre'
 - [ ] Work across multiple tabs.
 - [ ] Use different containers according to task instructions.
 - [ ] Download and organize browser-approved files.
+- [ ] Run a task started remotely and continue/finish it in WebLibre UI.
+- [ ] Start a task in WebLibre UI and continue/monitor it remotely.
 
 ### AI-6 — Advanced personal behavior
 - [ ] Reusable workflows.
@@ -324,6 +377,8 @@ Current decision: **do not embed any candidate blindly**. First define WebLibre'
 - [ ] A/B container isolation with the agent.
 - [ ] Unauthorized action rejection tests.
 - [ ] Revocation tests.
+- [ ] Remote authentication tests.
+- [ ] Remote/in-browser control continuity tests.
 - [ ] End-to-end task completion tests.
 - [ ] Verify each supported ABI APK is independently installable/downloadable.
 
@@ -361,6 +416,10 @@ The final product is not complete until:
 - [ ] agent can use the existing containers, UA, and proxy correctly;
 - [ ] agent cannot exceed current grants;
 - [ ] model provider can be replaced without redesigning the agent;
+- [ ] direct in-browser control works;
+- [ ] authenticated remote control from another phone works;
+- [ ] natural-language remote tasks work without rigid command syntax;
+- [ ] switching between remote and in-browser control preserves task context;
 - [ ] runtime isolation is demonstrated;
 - [ ] end-to-end workflows pass on the actual WebLibre browser;
 - [ ] final release artifacts are independently downloadable per supported ABI.
@@ -378,6 +437,7 @@ UA restore
  -> Browser Tool API
  -> Agent Core
  -> permissions + memory
+ -> authenticated remote control surfaces
  -> first autonomous workflows
  -> model adapters/optimization
  -> end-to-end validation
