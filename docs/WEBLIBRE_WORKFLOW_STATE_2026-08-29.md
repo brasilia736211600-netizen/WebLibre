@@ -1,8 +1,8 @@
 # WebLibre — Durable Workflow State
 
-**Last synchronized:** 2026-08-29
+**Last synchronized:** 2026-08-30
 **Branch:** `weblibre-ua-mainline-v3`
-**Current HEAD:** `7248fa581e8296df73e605d026c8ad4de4e48c4b`
+**Current HEAD:** `8a788abd449e0fb5dd423a9d24bece602fbbc399`
 
 ## READ THIS FIRST
 This file is the durable execution memory. Do not reconstruct the project from chat history.
@@ -44,24 +44,24 @@ Verified source facts:
 
 ## CURRENT GIT / PR / CI
 - Branch: `weblibre-ua-mainline-v3`
-- Current HEAD: `7248fa581e8296df73e605d026c8ad4de4e48c4b`
+- Current HEAD: `8a788abd449e0fb5dd423a9d24bece602fbbc399`.
 - PR #3: open, draft, currently mergeable.
 - Base: `main` at `c82e189b1b78dcc5ded582305c63bd1222eec19c` for PR #3.
 - `quality.yml` is intentionally a focused gate: Flutter 3.47.0 bootstrap, targeted container Dart test, then targeted Android unit tests.
-- Latest completed quality run `33277537960` checked an older PR merge ref and reached the native step; its native failure was only a workflow command problem (`gradle test --tests ...` rejected `--tests` for the selected lifecycle task). The Dart targeted suite passed 11/11.
-- HEAD was then corrected to use `testDebugUnitTest --tests ...`; a new run is expected from PR synchronization. Do not treat the old run as validation of current HEAD.
+- The latest native quality run reached the native test step after Dart passed, but its failure text was not exposed by the connector. The corrected native task is `testDebugUnitTest --tests ...`.
+- A diagnostic follow-up commit `8a788abd...` adds failure-only Gradle report collection as an artifact so the next native failure can be diagnosed without guessing. No product code was changed by this diagnostic commit.
 - Historical native runtime build/Kotlin compilation passed in run `33265003957`.
 
 ## TESTING CHECKPOINT
 - Dart targeted container metadata test: GREEN — 11 tests passed in the latest completed quality run.
-- Native restore parser test: source present; current-head native execution pending after corrected Gradle task selection.
+- Native restore parser test: source present; current-head native execution result pending.
 - Full cold-start restore runtime: NOT YET VERIFIED.
 - A/B UA isolation: NOT YET VERIFIED.
 - Proxy regression/A-B: NOT YET VERIFIED.
 
 ## EXACT NEXT EXECUTION
-1. Confirm a fresh quality run for HEAD `7248fa5...` and record native test result.
-2. If native fails, repair only the first causal compiler/test failure.
+1. Obtain the fresh quality run for HEAD `8a788abd...` and inspect the native result.
+2. If native fails, consume the uploaded diagnostic artifact and repair only the first causal compiler/test failure.
 3. Once native passes, use the existing full build prerequisite path only for the runtime milestone; do not repeatedly build APKs for narrow changes.
 4. Validate cold-start persisted UA restore and concurrent Container A/B UA isolation.
 5. Validate Proxy A/B regression and fail-closed behavior required by the existing routing design.
@@ -84,10 +84,10 @@ Do not redo completed creation/UI work. Do not add `RecoverableTab.userAgent` un
 `READ -> VERIFY -> RECONCILE -> PLAN -> EXECUTE -> TEST -> DIFF -> COMMIT -> SAVE STATE`
 
 ## CHECKPOINT
-**Date:** 2026-08-29
+**Date:** 2026-08-30
 **Branch:** `weblibre-ua-mainline-v3`
-**HEAD:** `7248fa581e8296df73e605d026c8ad4de4e48c4b`
-**Files changed in the latest implementation checkpoint:** `.github/workflows/quality.yml` only in the latest CI correction; the UA source implementation remains in the PR and was verified by source inspection.
-**Tests/results:** latest completed quality run — Dart targeted tests 11/11 passed; native step failed only because the selected Gradle task rejected `--tests`. Corrected workflow now uses `testDebugUnitTest --tests ...`; fresh run pending.
-**Blocker:** runtime/device cold-start validation is not yet available from the current CI path.
-**Exact next step:** inspect the fresh quality run for `7248fa5...`; if green, proceed to runtime restore/A-B and Proxy A/B validation, then the split-ABI milestone and AI-1.
+**HEAD:** `8a788abd449e0fb5dd423a9d24bece602fbbc399`
+**Files changed in the latest checkpoint:** `.github/workflows/quality.yml`, `docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`.
+**Tests/results:** Latest completed Dart targeted suite — 11/11 passed. Latest native quality run reached the native step but the connector did not expose the failure text. A diagnostic artifact collection step is now present for future failure diagnosis.
+**Blocker:** native current-head execution result and runtime/device cold-start restoration are not yet verified.
+**Exact next step:** inspect the fresh quality run for `8a788abd...`; if native fails, use the uploaded Gradle diagnostics and repair only the first causal error; if green, proceed to restore/A-B, Proxy A/B, split-ABI milestone, then AI-1.
