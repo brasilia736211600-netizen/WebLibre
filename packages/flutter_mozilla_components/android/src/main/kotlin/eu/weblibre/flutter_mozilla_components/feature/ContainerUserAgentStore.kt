@@ -6,10 +6,10 @@
 
 package eu.weblibre.flutter_mozilla_components.feature
 
+import android.content.Context
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteException
-import android.content.Context
 import mozilla.components.support.base.log.logger.Logger
 import org.json.JSONException
 import org.json.JSONObject
@@ -21,9 +21,7 @@ import org.json.JSONObject
  */
 internal object ContainerUserAgentStore {
     private const val DATABASE_NAME = "tab.db"
-    private const val SQL =
-        "SELECT metadata FROM container " +
-            "WHERE json_extract(metadata, '$.contextualIdentity') = ? LIMIT 1"
+    private const val SQL = "SELECT metadata FROM container"
 
     private val logger = Logger("container_user_agent")
 
@@ -41,20 +39,33 @@ internal object ContainerUserAgentStore {
                 null,
                 SQLiteDatabase.OPEN_READONLY,
             )
-            cursor = database.rawQuery(SQL, arrayOf(contextualIdentity))
-            if (!cursor.moveToFirst()) return null
+            cursor = database.rawQuery(SQL, null)
 
-            val metadata = cursor.getString(0) ?: return null
-            val userAgent = JSONObject(metadata).optString("userAgent", null)
-            userAgent?.trim()?.takeIf { it.isNotEmpty() }
+            while (cursor.moveToNext()) {
+                val metadata = cursor.getString(0) ?: continue
+                try {
+                    val json = JSONObject(metadata)
+                    if (json.optString("contextualIdentity", null) != contextualIdentity) {
+                        continue
+                    }
+
+                    return json.optString("userAgent", null)
+                        ?.trim()
+                        ?.takeIf { it.isNotEmpty() }
+                } catch (e: JSONException) {
+                    // Ignore one malformed container row and continue looking for
+                    // the requested container. A bad unrelated row must not hide
+                    // a valid UA belonging to another container.
+                    logger.warn("Unable to parse persisted container metadata", e)
+                }
+            }
+
+            null
         } catch (e: SQLiteException) {
             // Startup must remain safe if the Flutter/Drift connection currently
             // owns a transaction or the database is not ready yet. The engine's
             // normal UA remains the safe fallback for a failed lookup.
             logger.warn("Unable to read persisted container UA", e)
-            null
-        } catch (e: JSONException) {
-            logger.warn("Unable to parse persisted container metadata", e)
             null
         } finally {
             cursor?.close()
