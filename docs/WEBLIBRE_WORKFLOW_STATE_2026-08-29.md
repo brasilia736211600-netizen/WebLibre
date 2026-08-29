@@ -2,7 +2,7 @@
 
 **Last synchronized:** 2026-08-29
 **Branch:** `weblibre-ua-mainline-v3`
-**Current verified branch HEAD:** `8fc79ddac6fc2bc939c9449861de137db174a47f`
+**Current verified branch HEAD:** `3059e18598ba723431c411b8a219861c5699672d`
 
 ## Purpose — READ THIS FIRST
 
@@ -16,6 +16,7 @@ The canonical supporting documents are:
 - `docs/WEBLIBRE_PROJECT_HANDOFF_2026-08-28.md`
 - `docs/GENSPARK_WEBLIBRE_FORK_CONTINUATION_PROMPT.md`
 - `docs/GENSPARK_WEBLIBRE_OPERATING_PLAYBOOK.md`
+- `docs/WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md` **(new canonical product/architecture specification for the personal AI Browser Agent)**
 - this file: `docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`
 
 **Source-of-truth rule:** actual current Git state, current source code, current CI evidence, and the newest update to this file override stale claims in older handoff documents.
@@ -24,27 +25,44 @@ The canonical supporting documents are:
 
 ---
 
-## 1. Current project objective
+## 1. Final product objective
 
-Complete and harden per-container privacy identity in the existing WebLibre fork:
+WebLibre is being developed toward two integrated goals:
+
+### A. Privacy-oriented browser foundation
 
 1. independent proxy per container;
 2. independent User-Agent per container;
 3. persistence/restoration;
 4. strict A/B isolation;
 5. minimal changes to the existing architecture;
-6. final validation and APK only after cheaper targeted checks pass.
+6. final validation and APK.
 
-Do **not** rebuild WebLibre from scratch.
-Do **not** move container UA or proxy state to a global GeckoRuntime setting.
+### B. Personal AI Browser Agent
+
+The final browser must include a **dedicated personal AI agent** that can operate WebLibre itself through explicit browser tools and the user's selected permissions.
+
+This is **not** the Acode AI Agent project and **not** merely an OpenRouter integration.
+
+The agent must be able to:
+
+- understand a user goal;
+- inspect the live browser state;
+- operate tabs/pages/navigation/forms/files through a controlled tool API;
+- perform multi-step tasks and re-observe results;
+- use the existing container/Proxy/UA identity correctly;
+- maintain user-controlled memory and preferences;
+- operate under explicit, revocable permission grants;
+- support a `Full Access` capability mode when the owner chooses it;
+- remain model/provider independent.
+
+Canonical specification:
+
+`docs/WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md`
 
 ---
 
-## 2. Current verified status — important correction to older documents
-
-Some older handoff text still describes UA native/UI work as pending. That text is historical and is now stale.
-
-The work completed after that handoff was verified during the current continuation:
+## 2. Current verified status — browser/container work
 
 ### UA data foundation — COMPLETE
 
@@ -56,66 +74,54 @@ The work completed after that handoff was verified during the current continuati
 
 `packages/flutter_mozilla_components/pigeons/gecko.dart` currently carries `userAgent` through the existing tab-creation contract (`AddTabParams`). Do not add the same field again.
 
-### Native per-session UA — COMPLETE for the verified creation paths
+### Native per-session UA — COMPLETE for verified creation paths
 
 `GeckoEngineSession.settings.userAgentString` maps to GeckoView's session-level `userAgentOverride`.
 
-The verified native creation order is:
+Creation ordering is:
 
 ```text
 create EngineSession
   -> set session UA
-  -> create/use tab state with the prepared session
+  -> create/use tab state with prepared session
   -> AddTabAction
   -> first LoadUrlAction
 ```
 
-This avoids a global GeckoRuntime UA and avoids starting the first navigation with the wrong UA.
-
 ### Tab creation variants — COMPLETE at code level
 
-The current verified Dart/native path covers:
+Covered:
 
 - normal `addTab`;
-- `addMultipleTabs` with the target container UA authoritative;
-- `duplicateTab` passing the container UA to native.
+- `addMultipleTabs` with destination-container UA authoritative;
+- `duplicateTab` using the container UA.
 
-Do not reimplement these paths unless a targeted test or code review finds an actual regression.
+### Container settings UI — COMPLETE at code level
 
-### Per-container UA settings UI — COMPLETE at code level
+The existing container edit UI has a User-Agent field persisted through `ContainerMetadata`.
 
-The existing container edit screen has a User-Agent field persisted through `ContainerMetadata`.
+### Historical native CI — VERIFIED GREEN
 
-Do not create another settings screen or another metadata store.
-
-### Native/Kotlin CI — VERIFIED GREEN (historical)
-
-The temporary UA verification run successfully passed the native runtime prerequisites and Android Kotlin compilation (recorded in PR #3 as workflow run `33265003957`). The temporary verification workflow was removed afterward.
-
-This is historical evidence only; the current PR head has no active CI status yet.
+Workflow run `33265003957` successfully completed the native runtime prerequisites and Android Kotlin compilation. The temporary verification workflow was removed afterward.
 
 ---
 
 ## 3. Current Git / PR / CI reconciliation
 
-The originally referenced P0 branch is no longer the execution branch for this feature:
+- `weblibre-p0-container-restore` remains a separate historical/earlier branch at `87b450ed584a3f81bb37a4cc4261e7a553d164fa`.
+- Active feature branch: `weblibre-ua-mainline-v3`.
+- Current HEAD after durable AI-agent specification commit: `3059e18598ba723431c411b8a219861c5699672d`.
+- PR #3 is the active feature PR, open/draft, base `main`, head `weblibre-ua-mainline-v3`.
+- The latest known PR head is the current branch HEAD.
+- No new CI status has been reported for the latest documentation/specification commits yet.
 
-- `weblibre-p0-container-restore` is at `87b450ed584a3f81bb37a4cc4261e7a553d164fa`.
-- The active UA work is on `weblibre-ua-mainline-v3` at `8fc79ddac6fc2bc939c9449861de137db174a47f`.
-- PR #3 is the active feature PR, draft, base `main`, head `weblibre-ua-mainline-v3`.
-- Current combined status for `8fc79dd...`: no status checks reported.
-- Current PR-triggered workflow runs for `8fc79dd...`: none reported.
-- The branch has diverged substantially from the old P0 branch; do not silently switch back to it.
-
-The requested workflow-state file was absent on the default branch and the old P0 branch, but is present on the active UA branch. Therefore the active branch/file pair is the authoritative continuation point.
+Do not silently switch back to the P0 branch.
 
 ---
 
-## 4. Exact CURRENT engineering checkpoint
+## 4. Current engineering blocker — UA restore
 
-### Restore/recovery is the current blocker.
-
-The verified restore chain is:
+The verified restore path is:
 
 ```text
 restoreTabsByList()
@@ -131,265 +137,279 @@ restoreTabsByList()
   -> engineSession.restoreState(engineSessionState)
 ```
 
-### Materialization finding — VERIFIED 2026-08-29
+### Materialization finding — VERIFIED
 
-The concrete native materialization path was inspected in Android Components:
+The inspected Android Components implementation shows:
 
-- `CreateEngineSessionMiddleware` creates the session from `TabSessionState.private/contextId` and restores the engine session state before linking.
-- `GeckoEngineSession.restoreState()` calls `GeckoSession.restoreState(...)`.
-- `GeckoSession.restoreState()` restores saved browser session data; current GeckoView documentation describes restored data as history, scroll position, zoom, and form data, not session settings/user-agent override. citeturn112577search7
-- `GeckoEngineSession.settings.userAgentString` is a separate `GeckoSession.settings.userAgentOverride` value.
+- restored EngineSession creation uses `TabSessionState.private/contextId`;
+- `GeckoEngineSession.restoreState()` delegates to `GeckoSession.restoreState()`;
+- session-level UA is a separate setting and is not encoded in the existing `TabSessionState`/`SessionStorage` contract.
 
-The repository's Android Components session-storage serializer was also inspected:
+Therefore the current cold-start restore cannot recover per-container UA merely from the existing session snapshot.
 
-- `BrowserStateWriter` serializes `TabSessionState` fields and `engineSession` separately, but there is no UA field in the persisted tab state.
-- `BrowserStateReader` reconstructs `RecoverableTab.state` from those same fields; there is no UA field.
-- therefore UA is **not** persisted/restored by the existing Android Components session-storage contract.
+### Current decision
 
-### Important consequence
+Do not add a speculative Pigeon `RecoverableTab.userAgent` field by itself. It would not fix native cold-start restore.
 
-A Pigeon-only `RecoverableTab.userAgent` addition would fix only the Dart-driven `restoreTabsByList` path. It would **not** fix the native cold-start restore from `SessionStorage`, which occurs inside `GlobalComponents.setUp()` before Flutter can supply Dart container metadata.
+Next browser task:
 
-Therefore do **not** add a recovery field yet. The next implementation must address the cold-start/native restore path as well, with the smallest local mechanism that can provide the container UA before `CreateEngineSessionMiddleware` calls `restoreState()`.
+1. identify the smallest native pre-restore persistence/lookup mechanism for `contextId -> userAgent`;
+2. apply it to restored EngineSessions before `restoreState()` / first restored navigation;
+3. add focused restore regression coverage;
+4. prove A/B UA isolation;
+5. run targeted validation.
 
----
-
-## 5. Current design decision tree — updated
-
-### Preferred Case A — native restore can obtain persisted container UA before session creation
-
-Use the existing WebLibre native startup/persistence pattern to make a minimal native lookup available to the restore materialization path, then apply the UA to the just-created session before `restoreState()` / first restored load.
-
-Avoid global GeckoRuntime settings.
-Avoid changing Android Components upstream if the local integration can do it.
-
-### Case B — native restore cannot access persisted container UA without extending the recovery/storage contract
-
-Only after proving Case A impossible, extend the smallest local persistence/recovery contract necessary. Keep Dart and native generated Pigeon outputs synchronized through the official generation path if Pigeon changes.
-
-### Case C — a prepared EngineSession can be injected into the restore path
-
-Prefer reusing that capability rather than introducing a second UA abstraction.
+Do not reopen the separate `syncEvents` provenance investigation unless restore implementation actually requires it.
 
 ---
 
-## 6. Isolation requirement
+## 5. Proxy workstream
 
-The feature is not complete until runtime isolation is demonstrated:
+Proxy remains a separate per-container requirement.
 
-```text
-Container A -> UA-A
-Container B -> UA-B
-
-change A -> B remains UA-B
-```
-
-The same isolation principle applies to proxy state:
+Required final verification:
 
 ```text
 Container A -> Proxy-A
 Container B -> Proxy-B
-
-change A -> B remains Proxy-B
+changing A -> B remains Proxy-B
+restore preserves proxy policy
 ```
 
-A global GeckoRuntime setting is forbidden because it cannot satisfy the required container isolation invariant.
+Do not collapse proxy state into a global GeckoRuntime setting.
 
 ---
 
-## 7. Separate forensic track — DO NOT MIX INTO UA UNLESS REQUIRED
+## 6. Personal AI Browser Agent — NEW PRIMARY PRODUCT WORKSTREAM
 
-The `syncEvents()` / tab-list freshness problem is separate from the current UA restore task.
+### Status
 
-Known facts:
+**Specification: COMPLETE. Implementation: NOT STARTED.**
 
-- `syncEvents()` returns `Future<void>`;
-- tab-list events carry a sequence number;
-- current events do not contain request/generation provenance;
-- stale debounced events may already be queued;
-- RPC and `GeckoStateEvents` use separate channels;
-- awaiting the RPC does not prove that the next tab-list event belongs to that request.
+Canonical spec:
 
-Therefore `_freshSnapshotPending`-style arrival-order heuristics are unsound.
+`docs/WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md`
 
-Do not reopen this work merely because restore is being investigated. Only touch it if the actual restore implementation proves it requires a reliable sync correlation mechanism.
+### Product requirements
 
----
+The Personal AI Browser Agent must be a first-class part of WebLibre, not an external chatbot.
 
-## 8. Files already touched for the UA vertical slice
-
-Known feature-related areas include:
-
-- `apps/weblibre/lib/features/geckoview/features/tabs/data/models/container_data.dart`
-- `apps/weblibre/lib/features/geckoview/domain/repositories/tab.dart`
-- `apps/weblibre/lib/features/geckoview/domain/providers/tab_state.dart`
-- `apps/weblibre/lib/features/geckoview/features/tabs/data/database/daos/container.dart`
-- `packages/flutter_mozilla_components/pigeons/gecko.dart`
-- generated Pigeon outputs corresponding to the current source contract;
-- `packages/flutter_mozilla_components/lib/src/domain/services/gecko_tab.dart`
-- `packages/flutter_mozilla_components/android/.../api/GeckoTabsApiImpl.kt`
-- `packages/flutter_mozilla_components/android/.../components/Core.kt`
-- `packages/flutter_mozilla_components/android/.../middleware/HistoryDelegateBindingMiddleware.kt`
-- existing container settings UI;
-- targeted CI workflow(s), later cleaned up after verification;
-- this workflow-state document.
-
-Do not assume every historical file remains changed on current HEAD. Always inspect the actual current tree/diff before editing.
-
----
-
-## 9. Testing/build discipline
-
-Use the cheapest validating check that can prove the current change.
-
-Preferred sequence:
+Architecture:
 
 ```text
-focused source inspection
- -> targeted Dart/unit test or analyze
- -> targeted Kotlin/native compile/test
- -> Pigeon generation check only if source contract changed
- -> targeted integration/build
- -> full APK only at a stable milestone
+User
+  -> Personal Agent UI
+  -> Agent Core
+  -> Permission Engine
+  -> Tool Registry
+  -> WebLibre Browser API
+  -> GeckoView / tabs / containers / page state
 ```
 
-The user has limited mobile data, so prefer CI/in-repo evidence over repeated device/APK downloads.
+### Owner-only identity
 
----
+The agent is intended for one owner/user and has a persistent Personal Agent Profile containing user instructions, preferences, workflows, trusted sites, memory policy, and permission configuration.
 
-## 10. YAGNI rules for every future agent
+Changing the LLM/provider must not erase the agent identity or memory.
 
-Before editing, answer internally from source:
+### User-controlled full permissions
 
-1. What exact behavior is missing?
-2. Which existing function already owns that lifecycle?
-3. Can the current state already carry the required value?
-4. Can the existing API be reused?
-5. What is the smallest file/diff that fixes the demonstrated gap?
+The user explicitly requires that **full agent/browser permissions be selectable and grantable at will, according to the task**.
 
-Do **not**:
+The permission engine must support at least:
 
-- redo completed UA contract/propagation/native work;
-- add global settings;
-- refactor unrelated tab/container architecture;
-- create duplicate UI/settings paths;
-- create temporary CI workflows unless strictly necessary;
-- modify Android Components upstream when local integration can solve it;
-- add Pigeon fields before proving the field is required;
-- redesign `syncEvents` provenance;
-- run a full APK build before cheaper checks pass.
+- browser-state read;
+- page-content read;
+- navigation;
+- interaction/input;
+- tab lifecycle;
+- downloads/files;
+- authenticated browser sessions;
+- container switching;
+- proxy use/change;
+- User-Agent use/change;
+- browser settings;
+- external communication/actions;
+- other sensitive actions exposed by WebLibre.
 
----
-
-## 11. Mandatory agent execution loop
-
-Every coding task must follow:
+Permission modes:
 
 ```text
-READ THIS FILE
-  -> READ canonical handoff/playbook when needed
-  -> VERIFY current branch/HEAD
-  -> INSPECT exact source path
-  -> IDENTIFY the demonstrated gap
-  -> MAKE the smallest safe change
-  -> TEST the changed behavior
-  -> INSPECT diff against base
-  -> ENSURE no unrelated changes
-  -> COMMIT atomically
-  -> UPDATE THIS FILE
+Read Only
+Browser Control
+Task Control
+Trusted Automation
+Full Access
 ```
 
-The agent must not stop after saying what it intends to do. For an implementation task it should execute the next safe step unless blocked by a concrete dependency.
+`Full Access` grants all currently exposed agent capabilities within the selected scope when the owner chooses it.
 
-If CI is running, work in parallel only on independent files/tasks. Never let parallel work overwrite the same source or generated Pigeon output.
+Every grant must support explicit scope and revocation, including one-task, session, persistent, container-scoped, and optionally site/domain-scoped grants.
 
----
+The agent must never silently escalate its own permissions.
 
-## 12. Mandatory checkpoint record after EVERY meaningful step
+### Agent tool boundary
 
-After every meaningful implementation, test, CI result, cleanup, or architectural discovery, update this file.
+The model must never receive unrestricted direct access to internal WebLibre APIs. All browser actions go through an explicit, auditable tool registry with:
 
-Append or revise these fields:
+- permission requirement;
+- input/output schema;
+- side-effect declaration;
+- reversibility information;
+- confirmation category when configured.
+
+Initial tool families include navigation, page inspection, interaction, tabs, downloads/files, containers, proxy, and UA operations. The complete contract is in the canonical AI-agent spec.
+
+### Memory
+
+Memory is separate from browser state and must be user-controlled. It includes preferences, recurring workflows, trusted sites, task conventions, short-term task memory, and long-term memory.
+
+The user must be able to inspect, edit, export, delete, or disable agent memory.
+
+### Model strategy
+
+The Agent Core is model/provider independent. The project must not hardwire the architecture to OpenRouter, Acode AI Agent, or any single vendor.
+
+Current technology candidates are references only:
+
+1. Browser Use — primary candidate/reference for agentic browser-control architecture.
+2. Stagehand — reference for deterministic + AI browser actions.
+3. Skyvern — reference for autonomous multi-step/visual browser workflows.
+
+Do not embed any of these blindly. First define the WebLibre Browser Tool API and adapter boundary, then benchmark candidates against the actual WebLibre/Android constraints.
+
+### AI implementation roadmap
 
 ```text
-Timestamp/date
-Branch
-HEAD SHA
-Task completed
-Files changed
-Tests/checks
-Result
-Current blocker
-Exact next action
+AI-0  Specification                         [x]
+AI-1  WebLibre Browser Tool boundary       [ ]
+AI-2  Agent Core                           [ ]
+AI-3  Personal Profile + Memory            [ ]
+AI-4  Permission Engine                    [ ]
+AI-5  First autonomous browser workflows   [ ]
+AI-6  Advanced personal behavior           [ ]
+AI-7  Model/provider adapters               [ ]
+AI-8  End-to-end validation                [ ]
 ```
 
-Never leave the file claiming that a completed stage is pending.
+### Final AI-agent Definition of Done
 
-When correcting stale historical statements, explicitly mark them as stale rather than silently carrying them forward.
+- [ ] dedicated Personal Agent Profile;
+- [ ] stable internal Browser Tool API;
+- [ ] multi-step browser task loop;
+- [ ] persistent user-controlled memory;
+- [ ] explicit capability permissions;
+- [ ] user-selectable Full Access mode;
+- [ ] task/session/persistent permission grants;
+- [ ] immediate revocation;
+- [ ] container/site scoping where applicable;
+- [ ] auditability of agent actions/grants;
+- [ ] correct use of per-container UA and Proxy;
+- [ ] no capability beyond current grants;
+- [ ] model/provider replaceability;
+- [ ] end-to-end tasks working on the actual WebLibre browser.
 
 ---
 
-## 13. Quick resume command for a new AI agent
+## 7. Final project completion sequence
 
-A user can open a new chat and send only:
+The project should now be treated as two dependent milestones, not one blended implementation task:
+
+```text
+MILESTONE A — Browser foundation
+
+UA restore
+  -> UA A/B isolation
+  -> Proxy regression/restore
+  -> targeted tests/analyze/native validation
+  -> stable debug APK
+
+MILESTONE B — Personal AI Browser
+
+Browser Tool API
+  -> Agent Core
+  -> Permission Engine
+  -> Personal Profile + Memory
+  -> first autonomous workflows
+  -> model adapters/optimization
+  -> end-to-end validation
+  -> final release
+```
+
+The Agent must use the completed browser/container primitives instead of bypassing them.
+
+---
+
+## 8. YAGNI / non-negotiable rules
+
+Do not:
+
+- redo completed UA creation/UI work;
+- add a global GeckoRuntime UA or proxy;
+- add a Pigeon field without source proof that it is required;
+- resurrect `_freshSnapshotPending` arrival-order heuristics;
+- introduce a second container metadata store unnecessarily;
+- embed Browser Use/Stagehand/Skyvern as a monolith before defining the internal tool boundary;
+- couple the Agent Core permanently to one model/provider;
+- grant the agent unrestricted access without the explicit permission system;
+- start full APK builds before cheaper targeted checks pass.
+
+Always use:
+
+```text
+READ -> VERIFY -> RECONCILE -> PLAN -> EXECUTE -> TEST -> DIFF -> COMMIT -> SAVE STATE
+```
+
+After every meaningful step update:
+
+- branch + HEAD;
+- files changed;
+- tests/checks + exact result;
+- current blocker;
+- exact next action.
+
+---
+
+## 9. New-chat resume procedure
+
+A new coding agent should do this without asking the user to re-explain the project:
+
+1. Read `docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`.
+2. Read `docs/WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md` when working on the AI track.
+3. Verify actual branch/HEAD/PR/CI.
+4. Treat this workflow-state file as the current execution memory.
+5. Never redo an `[x]` item unless evidence shows a regression.
+6. Continue from the exact unchecked item recorded here.
+
+Suggested resume prompt:
 
 ```text
 @GitHub @Thinking
-استأنف WebLibre من ملف docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md.
-اقرأه أولًا، ثم تحقق من branch/HEAD/CI/diff الفعلي.
-لا تعِد أي عمل مكتمل.
+استأنف مشروع WebLibre من docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md.
+هذا الملف هو الذاكرة التنفيذية الأساسية.
+تحقق من branch وHEAD وPR وCI والحالة الفعلية قبل أي تعديل.
+لا تعِد أي عمل معلّم كمكتمل إلا بدليل regression.
 استخدم YAGNI وأصغر تغيير ممكن.
-تابع من Exact Current Engineering Checkpoint.
-بعد كل خطوة مهمة حدّث نفس الملف بالـ HEAD والملفات والاختبارات والنتيجة والخطوة التالية.
-نفّذ العمل، ولا تكتفِ بتقرير.
+تابع من Exact next action ونفّذها مباشرة.
+بعد كل خطوة مهمة حدّث الملف نفسه بالـbranch والـHEAD والملفات والاختبارات والنتيجة والخطوة التالية.
 ```
 
-The agent must treat that as an instruction to read the repository's durable memory rather than asking the user to re-explain the project.
-
 ---
 
-## 14. Current exact next action
+## 10. History / corrections
 
-**NEXT:** identify the smallest existing native persistence/snapshot mechanism that can expose `container contextId -> userAgent` during `GlobalComponents.setUp()` before `restoreBrowserState()` creates restored engine sessions.
+### 2026-08-29 — UA restore correction
 
-Inspect existing native startup snapshots and their Dart writers first. Do not add a new Pigeon contract until those routes are exhausted.
+The restore materialization path is now proven. Existing Android Components SessionStorage does not preserve per-container UA, and native cold-start restore occurs before Dart container metadata can be supplied.
 
-Once a concrete native pre-restore mapping exists:
+### 2026-08-29 — Personal AI Agent promoted to final-product requirement
 
-1. apply UA to restored sessions before `restoreState()`;
-2. add focused regression coverage for restore;
-3. prove A/B runtime isolation;
-4. run targeted validation;
-5. only then build the milestone APK.
+The personal AI Browser Agent is now an official WebLibre product workstream.
 
----
+It is not synonymous with Acode AI Agent or an LLM provider. The required architecture is a model-independent browser-operating agent with an explicit WebLibre Tool API, owner-controlled memory, and selectable/revocable permissions including a user-granted `Full Access` mode.
 
-## 15. Definition of done for the current UA feature
+The canonical detailed specification is:
 
-UA is complete only when all are true:
+`docs/WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md`
 
-- [x] container UA model/persistence;
-- [x] source Pigeon tab contract;
-- [x] normal new-tab path;
-- [x] multiple-tab path;
-- [x] duplicate-tab path;
-- [x] native session-level override before first navigation for those creation paths;
-- [x] existing container settings UI path;
-- [ ] cold-start/restored-tab path preserves and applies the container UA before first restored navigation;
-- [ ] runtime A/B isolation regression test;
-- [ ] targeted validation of all affected layers;
-- [ ] final stable-milestone APK validation.
-
-Proxy hardening and the separate event-correlation track remain distinct workstreams.
-
----
-
-## 16. Historical correction log
-
-### Correction 2026-08-29 — Git state and restore path
-
-The older state file incorrectly left the branch HEAD at `edca33b5...` and treated the materialization path as still unknown. Current Git truth is `weblibre-ua-mainline-v3` at `8fc79dd...`.
-
-Current source inspection now proves the restored-session materialization path and proves that Android Components `SessionStorage` does not serialize container UA in `TabSessionState`.
-
-This is a correction of the execution state, not a request to redo any completed UA creation work.
+This requirement must survive future chat/session changes and must not be forgotten or treated as optional polish.
