@@ -31,4 +31,4 @@ jobs:
         run: flutter test test/features/geckoview/features/tabs/data/models/container_data_test.dart
       - name: Run native plugin unit tests
         working-directory: packages/flutter_mozilla_components/android
-        run: gradle test
+        run: gradle --no-daemon test
