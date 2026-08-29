@@ -36,3 +36,18 @@ jobs:
       - name: Run targeted native container tests
         working-directory: packages/flutter_mozilla_components/android
         run: gradle --no-daemon --stacktrace testDebugUnitTest --tests 'eu.weblibre.flutter_mozilla_components.feature.ContainerUserAgentStoreTest' --tests 'eu.weblibre.flutter_mozilla_components.feature.ContainerProxyFeatureTest'
+      - name: Collect native test diagnostics
+        if: failure()
+        working-directory: packages/flutter_mozilla_components/android
+        run: |
+          set +e
+          mkdir -p ci-diagnostics
+          find build/test-results -type f -maxdepth 6 -print -exec sh -c 'echo "===== $1 ====="; cat "$1"' _ {} \; > ci-diagnostics/test-results.txt 2>&1
+          find build/reports/tests -type f -maxdepth 6 -print -exec sh -c 'echo "===== $1 ====="; cat "$1"' _ {} \; > ci-diagnostics/test-reports.txt 2>&1
+      - name: Upload native test diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-test-diagnostics
+          path: packages/flutter_mozilla_components/android/ci-diagnostics
+          if-no-files-found: warn
