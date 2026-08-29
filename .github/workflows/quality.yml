@@ -29,6 +29,6 @@ jobs:
       - name: Run targeted container tests
         working-directory: apps/weblibre
         run: flutter test test/features/geckoview/features/tabs/data/models/container_data_test.dart
-      - name: Build debug APK
-        working-directory: apps/weblibre
-        run: flutter build apk --debug --no-tree-shake-icons
+      - name: Run native plugin unit tests
+        working-directory: packages/flutter_mozilla_components/android
+        run: ./gradlew test
