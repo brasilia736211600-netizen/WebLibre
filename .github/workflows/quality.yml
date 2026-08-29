@@ -35,15 +35,28 @@ jobs:
           gradle-version: 9.4.1
       - name: Run targeted native container tests
         working-directory: packages/flutter_mozilla_components/android
-        run: gradle --no-daemon --stacktrace testDebugUnitTest --tests 'eu.weblibre.flutter_mozilla_components.feature.ContainerUserAgentStoreTest' --tests 'eu.weblibre.flutter_mozilla_components.feature.ContainerProxyFeatureTest'
+        run: |
+          set +e
+          gradle --no-daemon --stacktrace testDebugUnitTest \
+            --tests 'eu.weblibre.flutter_mozilla_components.feature.ContainerUserAgentStoreTest' \
+            --tests 'eu.weblibre.flutter_mozilla_components.feature.ContainerProxyFeatureTest' 2>&1 | tee native-gradle-output.txt
+          status=${PIPESTATUS[0]}
+          exit "$status"
       - name: Collect native test diagnostics
         if: failure()
         working-directory: packages/flutter_mozilla_components/android
         run: |
           set +e
           mkdir -p ci-diagnostics
-          find build/test-results -type f -maxdepth 6 -print -exec sh -c 'echo "===== $1 ====="; cat "$1"' _ {} \; > ci-diagnostics/test-results.txt 2>&1
-          find build/reports/tests -type f -maxdepth 6 -print -exec sh -c 'echo "===== $1 ====="; cat "$1"' _ {} \; > ci-diagnostics/test-reports.txt 2>&1
+          cp native-gradle-output.txt ci-diagnostics/native-gradle-output.txt 2>/dev/null || true
+          {
+            echo '===== test result files ====='
+            find . -path '*/build/test-results/*' -type f -print -exec sh -c 'echo "===== $1 ====="; cat "$1"' _ {} \;
+            echo '===== test report files ====='
+            find . -path '*/build/reports/tests/*' -type f -print -exec sh -c 'echo "===== $1 ====="; cat "$1"' _ {} \;
+            echo '===== Gradle failure markers ====='
+            grep -nE 'FAILURE:|Caused by:|Exception|Could not|FAILED|failed|What went wrong|Execution failed' native-gradle-output.txt || true
+          } > ci-diagnostics/test-diagnostics.txt 2>&1
       - name: Upload native test diagnostics
         if: failure()
         uses: actions/upload-artifact@v4
