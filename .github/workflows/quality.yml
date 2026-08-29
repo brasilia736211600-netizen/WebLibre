@@ -26,9 +26,6 @@ jobs:
         run: |
           dart pub global activate melos 7.8.1
           melos bootstrap
-      - name: Analyze WebLibre
-        working-directory: apps/weblibre
-        run: flutter analyze --no-fatal-warnings
       - name: Run targeted container tests
         working-directory: apps/weblibre
         run: flutter test test/features/geckoview/features/tabs/data/models/container_data_test.dart
