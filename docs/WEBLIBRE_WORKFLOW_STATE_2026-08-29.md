@@ -2,414 +2,238 @@
 
 **Last synchronized:** 2026-08-29
 **Branch:** `weblibre-ua-mainline-v3`
-**Current verified branch HEAD:** `3059e18598ba723431c411b8a219861c5699672d`
+**Current verified branch HEAD:** `e66b63b1fbebec444e219be79306a81e9d75c1a6`
 
-## Purpose — READ THIS FIRST
+## READ THIS FIRST
 
-This is the project's **durable execution memory**.
+This is the project's durable execution memory. Do not reconstruct the project from chat history.
 
-A new AI agent must read this file before doing implementation work. It must not reconstruct the project from chat history when the repository already contains the facts.
+### Current canonical control documents
+- `AGENTS.md` — current repository operating rules.
+- `docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md` — current execution state and exact next action.
+- `docs/WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md` — canonical personal AI Browser Agent specification.
+- `docs/WEBLIBRE_PROJECT_HANDOFF_2026-08-29.md` — current project handoff.
+- `docs/GENSPARK_WEBLIBRE_FORK_CONTINUATION_PROMPT_2026-08-29.md` — current continuation prompt.
+- `docs/GENSPARK_WEBLIBRE_OPERATING_PLAYBOOK_2026-08-29.md` — current operating playbook.
 
-The canonical supporting documents are:
+The 2026-08-28 handoff/prompt/playbook files are historical references unless the current state explicitly reuses a detail.
 
-- `AGENTS.md`
-- `docs/WEBLIBRE_PROJECT_HANDOFF_2026-08-28.md`
-- `docs/GENSPARK_WEBLIBRE_FORK_CONTINUATION_PROMPT.md`
-- `docs/GENSPARK_WEBLIBRE_OPERATING_PLAYBOOK.md`
-- `docs/WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md` **(new canonical product/architecture specification for the personal AI Browser Agent)**
-- this file: `docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`
+## 1. FINAL PRODUCT
 
-**Source-of-truth rule:** actual current Git state, current source code, current CI evidence, and the newest update to this file override stale claims in older handoff documents.
+WebLibre has two dependent product tracks.
 
-**Persistence rule:** after every meaningful implementation/checkpoint, update this file with the new branch/HEAD, files changed, tests/checks, result, and exact next step. Do not leave the durable state describing an obsolete stage.
+### Browser foundation
+- independent Proxy per container;
+- independent User-Agent per container;
+- persistence/restoration;
+- strict A/B isolation;
+- final validation and APK.
 
----
+### Personal AI Browser Agent
+The final browser must include a dedicated personal AI agent for the owner/user. It must operate the real WebLibre browser through explicit browser tools, maintain user-controlled memory/profile, and remain model/provider independent.
 
-## 1. Final product objective
+This agent is **not** the Acode AI Agent and is **not** synonymous with OpenRouter or another LLM provider.
 
-WebLibre is being developed toward two integrated goals:
+Canonical spec: `docs/WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md`.
 
-### A. Privacy-oriented browser foundation
+## 2. BROWSER WORK ALREADY COMPLETE
 
-1. independent proxy per container;
-2. independent User-Agent per container;
-3. persistence/restoration;
-4. strict A/B isolation;
-5. minimal changes to the existing architecture;
-6. final validation and APK.
+The active UA branch already contains:
 
-### B. Personal AI Browser Agent
+- `ContainerMetadata.userAgent` persistence/serialization/equality/normalization;
+- source Pigeon `AddTabParams.userAgent` contract;
+- normal tab creation with per-container UA;
+- multi-tab creation with authoritative container UA;
+- duplicate-tab creation with container UA;
+- native session-level UA before first navigation for those paths;
+- existing container settings UI with UA field.
 
-The final browser must include a **dedicated personal AI agent** that can operate WebLibre itself through explicit browser tools and the user's selected permissions.
+Do not redo these without evidence of regression.
 
-This is **not** the Acode AI Agent project and **not** merely an OpenRouter integration.
+## 3. CURRENT BROWSER BLOCKER — RESTORE
 
-The agent must be able to:
-
-- understand a user goal;
-- inspect the live browser state;
-- operate tabs/pages/navigation/forms/files through a controlled tool API;
-- perform multi-step tasks and re-observe results;
-- use the existing container/Proxy/UA identity correctly;
-- maintain user-controlled memory and preferences;
-- operate under explicit, revocable permission grants;
-- support a `Full Access` capability mode when the owner chooses it;
-- remain model/provider independent.
-
-Canonical specification:
-
-`docs/WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md`
-
----
-
-## 2. Current verified status — browser/container work
-
-### UA data foundation — COMPLETE
-
-- `ContainerMetadata` contains `String? userAgent`.
-- persistence/serialization/`copyWith`/equality/normalization are implemented;
-- model tests were added and passed in the earlier implementation cycle.
-
-### UA Pigeon contract — COMPLETE
-
-`packages/flutter_mozilla_components/pigeons/gecko.dart` currently carries `userAgent` through the existing tab-creation contract (`AddTabParams`). Do not add the same field again.
-
-### Native per-session UA — COMPLETE for verified creation paths
-
-`GeckoEngineSession.settings.userAgentString` maps to GeckoView's session-level `userAgentOverride`.
-
-Creation ordering is:
+Verified restore path:
 
 ```text
-create EngineSession
-  -> set session UA
-  -> create/use tab state with prepared session
-  -> AddTabAction
-  -> first LoadUrlAction
+SessionStorage
+ -> RecoverableTab
+ -> TabSessionState
+ -> CreateEngineSessionMiddleware
+ -> createSession(private, contextId)
+ -> restoreState(engineSessionState)
 ```
 
-### Tab creation variants — COMPLETE at code level
+Android Components SessionStorage does not serialize container UA in TabSessionState. Gecko session restore also does not restore a separate session-level UA override.
 
-Covered:
+Therefore the remaining browser task is to provide `contextId -> userAgent` to native restore before the first restored navigation.
 
-- normal `addTab`;
-- `addMultipleTabs` with destination-container UA authoritative;
-- `duplicateTab` using the container UA.
+### Exact next browser actions
+1. Find the smallest sound native pre-restore persistence/lookup mechanism.
+2. Apply the stored UA to the restored EngineSession before `restoreState()`/first navigation.
+3. Add focused restore regression coverage.
+4. Prove UA A/B isolation.
+5. Verify Proxy restore/A/B isolation.
+6. Run targeted validation.
+7. Build stable debug APK.
 
-### Container settings UI — COMPLETE at code level
+Do not resurrect `_freshSnapshotPending` or other arrival-order heuristics.
 
-The existing container edit UI has a User-Agent field persisted through `ContainerMetadata`.
+## 4. PERSONAL AI AGENT — OFFICIAL PRODUCT WORKSTREAM
 
-### Historical native CI — VERIFIED GREEN
+### Specification status
+**COMPLETE.** The full requirement is in `WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md`.
 
-Workflow run `33265003957` successfully completed the native runtime prerequisites and Android Kotlin compilation. The temporary verification workflow was removed afterward.
-
----
-
-## 3. Current Git / PR / CI reconciliation
-
-- `weblibre-p0-container-restore` remains a separate historical/earlier branch at `87b450ed584a3f81bb37a4cc4261e7a553d164fa`.
-- Active feature branch: `weblibre-ua-mainline-v3`.
-- Current HEAD after durable AI-agent specification commit: `3059e18598ba723431c411b8a219861c5699672d`.
-- PR #3 is the active feature PR, open/draft, base `main`, head `weblibre-ua-mainline-v3`.
-- The latest known PR head is the current branch HEAD.
-- No new CI status has been reported for the latest documentation/specification commits yet.
-
-Do not silently switch back to the P0 branch.
-
----
-
-## 4. Current engineering blocker — UA restore
-
-The verified restore path is:
+### Core architecture
 
 ```text
-restoreTabsByList()
-  -> GeckoTabsApi.restoreTabsByList(...)
-  -> Pigeon RecoverableTab
-  -> Android Components RecoverableTab
-  -> TabsUseCases.RestoreUseCase
-  -> TabListAction.RestoreAction
-  -> RecoverableTab.toTabSessionState()
-  -> TabSessionState
-  -> EngineAction.CreateEngineSessionAction
-  -> engine.createSession(private, contextId)
-  -> engineSession.restoreState(engineSessionState)
+Personal Agent UI
+ -> Agent Core
+ -> Permission Engine
+ -> Browser Tool Registry
+ -> WebLibre Browser API
+ -> GeckoView / tabs / containers / page state
 ```
 
-### Materialization finding — VERIFIED
-
-The inspected Android Components implementation shows:
-
-- restored EngineSession creation uses `TabSessionState.private/contextId`;
-- `GeckoEngineSession.restoreState()` delegates to `GeckoSession.restoreState()`;
-- session-level UA is a separate setting and is not encoded in the existing `TabSessionState`/`SessionStorage` contract.
-
-Therefore the current cold-start restore cannot recover per-container UA merely from the existing session snapshot.
-
-### Current decision
-
-Do not add a speculative Pigeon `RecoverableTab.userAgent` field by itself. It would not fix native cold-start restore.
-
-Next browser task:
-
-1. identify the smallest native pre-restore persistence/lookup mechanism for `contextId -> userAgent`;
-2. apply it to restored EngineSessions before `restoreState()` / first restored navigation;
-3. add focused restore regression coverage;
-4. prove A/B UA isolation;
-5. run targeted validation.
-
-Do not reopen the separate `syncEvents` provenance investigation unless restore implementation actually requires it.
-
----
-
-## 5. Proxy workstream
-
-Proxy remains a separate per-container requirement.
-
-Required final verification:
-
-```text
-Container A -> Proxy-A
-Container B -> Proxy-B
-changing A -> B remains Proxy-B
-restore preserves proxy policy
-```
-
-Do not collapse proxy state into a global GeckoRuntime setting.
-
----
-
-## 6. Personal AI Browser Agent — NEW PRIMARY PRODUCT WORKSTREAM
-
-### Status
-
-**Specification: COMPLETE. Implementation: NOT STARTED.**
-
-Canonical spec:
-
-`docs/WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md`
-
-### Product requirements
-
-The Personal AI Browser Agent must be a first-class part of WebLibre, not an external chatbot.
-
-Architecture:
-
-```text
-User
-  -> Personal Agent UI
-  -> Agent Core
-  -> Permission Engine
-  -> Tool Registry
-  -> WebLibre Browser API
-  -> GeckoView / tabs / containers / page state
-```
-
-### Owner-only identity
-
-The agent is intended for one owner/user and has a persistent Personal Agent Profile containing user instructions, preferences, workflows, trusted sites, memory policy, and permission configuration.
-
-Changing the LLM/provider must not erase the agent identity or memory.
+### Owner-only profile
+The agent has a persistent personal profile containing explicit user instructions, preferences, workflows, trusted sites, memory policy, and permission configuration. Model/provider changes must not erase this identity or memory.
 
 ### User-controlled full permissions
+The owner explicitly requested complete agent/browser capabilities as selectable permissions that can be granted according to the task.
 
-The user explicitly requires that **full agent/browser permissions be selectable and grantable at will, according to the task**.
+Required capability families include:
 
-The permission engine must support at least:
-
-- browser-state read;
-- page-content read;
-- navigation;
-- interaction/input;
+- read browser state;
+- read page/content/screenshots;
+- navigation/search;
+- click/type/scroll interaction;
 - tab lifecycle;
 - downloads/files;
-- authenticated browser sessions;
-- container switching;
-- proxy use/change;
-- User-Agent use/change;
+- authenticated browser sessions when granted;
+- container selection;
+- proxy control;
+- User-Agent control;
 - browser settings;
 - external communication/actions;
-- other sensitive actions exposed by WebLibre.
+- other capabilities exposed by WebLibre.
 
 Permission modes:
 
-```text
-Read Only
-Browser Control
-Task Control
-Trusted Automation
-Full Access
-```
+`Read Only | Browser Control | Task Control | Trusted Automation | Full Access`
 
-`Full Access` grants all currently exposed agent capabilities within the selected scope when the owner chooses it.
-
-Every grant must support explicit scope and revocation, including one-task, session, persistent, container-scoped, and optionally site/domain-scoped grants.
+`Full Access` is an explicit owner-selected grant for all currently exposed capabilities within the selected scope. Grants must support one-task, session, persistent, container-scoped, and optionally site/domain-scoped lifetimes, immediate revocation, and audit history.
 
 The agent must never silently escalate its own permissions.
 
-### Agent tool boundary
-
-The model must never receive unrestricted direct access to internal WebLibre APIs. All browser actions go through an explicit, auditable tool registry with:
-
-- permission requirement;
-- input/output schema;
-- side-effect declaration;
-- reversibility information;
-- confirmation category when configured.
-
-Initial tool families include navigation, page inspection, interaction, tabs, downloads/files, containers, proxy, and UA operations. The complete contract is in the canonical AI-agent spec.
-
 ### Memory
+Agent memory is separate from browser state. The owner can inspect, edit, export, clear, or disable it. Arbitrary page content must not silently become permanent memory.
 
-Memory is separate from browser state and must be user-controlled. It includes preferences, recurring workflows, trusted sites, task conventions, short-term task memory, and long-term memory.
+### Model independence
+Do not hardwire Agent Core to one LLM/provider. Current reference candidates are Browser Use, Stagehand, and Skyvern; they are evaluation references, not committed dependencies.
 
-The user must be able to inspect, edit, export, delete, or disable agent memory.
-
-### Model strategy
-
-The Agent Core is model/provider independent. The project must not hardwire the architecture to OpenRouter, Acode AI Agent, or any single vendor.
-
-Current technology candidates are references only:
-
-1. Browser Use — primary candidate/reference for agentic browser-control architecture.
-2. Stagehand — reference for deterministic + AI browser actions.
-3. Skyvern — reference for autonomous multi-step/visual browser workflows.
-
-Do not embed any of these blindly. First define the WebLibre Browser Tool API and adapter boundary, then benchmark candidates against the actual WebLibre/Android constraints.
-
-### AI implementation roadmap
+## 5. AI ROADMAP
 
 ```text
-AI-0  Specification                         [x]
-AI-1  WebLibre Browser Tool boundary       [ ]
-AI-2  Agent Core                           [ ]
-AI-3  Personal Profile + Memory            [ ]
-AI-4  Permission Engine                    [ ]
-AI-5  First autonomous browser workflows   [ ]
-AI-6  Advanced personal behavior           [ ]
-AI-7  Model/provider adapters               [ ]
-AI-8  End-to-end validation                [ ]
+AI-0 Specification                         [x]
+AI-1 Browser Tool API                     [ ]  <- first AI implementation task
+AI-2 Agent Core                           [ ]
+AI-3 Personal Profile + Memory            [ ]
+AI-4 Permission Engine                    [ ]
+AI-5 First autonomous workflows           [ ]
+AI-6 Advanced personal behavior           [ ]
+AI-7 Model/provider adapters               [ ]
+AI-8 End-to-end validation                [ ]
 ```
 
-### Final AI-agent Definition of Done
+### AI-1 requirements
+Inventory existing WebLibre browser APIs and implement the smallest internal Browser Tool Registry. Every tool must have an input/output schema, permission scope, side-effect declaration, reversibility metadata, and audit event.
 
-- [ ] dedicated Personal Agent Profile;
-- [ ] stable internal Browser Tool API;
-- [ ] multi-step browser task loop;
-- [ ] persistent user-controlled memory;
-- [ ] explicit capability permissions;
-- [ ] user-selectable Full Access mode;
-- [ ] task/session/persistent permission grants;
-- [ ] immediate revocation;
-- [ ] container/site scoping where applicable;
-- [ ] auditability of agent actions/grants;
-- [ ] correct use of per-container UA and Proxy;
-- [ ] no capability beyond current grants;
-- [ ] model/provider replaceability;
-- [ ] end-to-end tasks working on the actual WebLibre browser.
+Initial tool families: page/state reading, navigation/search, interaction, tabs, downloads/files, authenticated sessions, containers, proxy, UA, and browser settings.
 
----
+### AI-2 requirements
+Implement the plan/reason/act/observe loop, context builder, model adapter boundary, retries/timeouts, and stop conditions.
 
-## 7. Final project completion sequence
+### AI-3 requirements
+Implement owner profile, user instructions/preferences, short-term task memory, long-term reviewable memory, retention/deletion controls, and data minimization.
 
-The project should now be treated as two dependent milestones, not one blended implementation task:
+### AI-4 requirements
+Implement all permission modes including Full Access, granular grants, scopes, revocation, and auditability.
+
+### AI-5 requirements
+First real workflows: research/extraction, multi-page navigation, forms, multi-tab tasks, container-aware tasks, and approved file handling.
+
+## 6. FINAL PROJECT SEQUENCE
 
 ```text
-MILESTONE A — Browser foundation
-
+BROWSER MILESTONE
 UA restore
-  -> UA A/B isolation
-  -> Proxy regression/restore
-  -> targeted tests/analyze/native validation
-  -> stable debug APK
+ -> UA A/B isolation
+ -> Proxy restore/A-B verification
+ -> targeted validation
+ -> stable debug APK
 
-MILESTONE B — Personal AI Browser
-
+AI MILESTONE
 Browser Tool API
-  -> Agent Core
-  -> Permission Engine
-  -> Personal Profile + Memory
-  -> first autonomous workflows
-  -> model adapters/optimization
-  -> end-to-end validation
-  -> final release
+ -> Agent Core
+ -> Permission Engine
+ -> Personal Profile + Memory
+ -> autonomous workflows
+ -> model adapters/optimization
+ -> end-to-end validation
+ -> release APK
 ```
 
-The Agent must use the completed browser/container primitives instead of bypassing them.
+The AI agent must operate on top of the stable browser/container primitives, not bypass them.
 
----
+## 7. GIT / PR / CI
 
-## 8. YAGNI / non-negotiable rules
+- Active branch: `weblibre-ua-mainline-v3`.
+- Current HEAD is the latest documentation checkpoint shown at the top of this file.
+- PR #3 is the active open/draft feature PR targeting `main`.
+- Historical CI run `33265003957` passed native runtime prerequisites and Kotlin compilation.
+- No claim of final CI success should be made until the post-change checks run on the current HEAD.
 
-Do not:
-
-- redo completed UA creation/UI work;
-- add a global GeckoRuntime UA or proxy;
-- add a Pigeon field without source proof that it is required;
-- resurrect `_freshSnapshotPending` arrival-order heuristics;
-- introduce a second container metadata store unnecessarily;
-- embed Browser Use/Stagehand/Skyvern as a monolith before defining the internal tool boundary;
-- couple the Agent Core permanently to one model/provider;
-- grant the agent unrestricted access without the explicit permission system;
-- start full APK builds before cheaper targeted checks pass.
+## 8. MANDATORY CONTINUATION LOOP
 
 Always use:
 
-```text
-READ -> VERIFY -> RECONCILE -> PLAN -> EXECUTE -> TEST -> DIFF -> COMMIT -> SAVE STATE
-```
+`READ -> VERIFY -> RECONCILE -> PLAN -> EXECUTE -> TEST -> DIFF -> COMMIT -> SAVE STATE`
 
-After every meaningful step update:
+After every meaningful step update this file with:
 
-- branch + HEAD;
+- branch;
+- HEAD;
 - files changed;
-- tests/checks + exact result;
-- current blocker;
+- tests/checks and exact result;
+- blocker;
 - exact next action.
 
----
+## 9. NEW-CHAT RESUME
 
-## 9. New-chat resume procedure
+A new agent should not ask the user to explain the project again.
 
-A new coding agent should do this without asking the user to re-explain the project:
+Read:
 
-1. Read `docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`.
-2. Read `docs/WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md` when working on the AI track.
-3. Verify actual branch/HEAD/PR/CI.
-4. Treat this workflow-state file as the current execution memory.
-5. Never redo an `[x]` item unless evidence shows a regression.
-6. Continue from the exact unchecked item recorded here.
+1. `docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`;
+2. `AGENTS.md`;
+3. `docs/WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md` for AI work;
+4. `docs/WEBLIBRE_PROJECT_HANDOFF_2026-08-29.md` when project-level history is needed.
 
-Suggested resume prompt:
+Then verify GitHub truth and continue from the exact next action.
 
-```text
-@GitHub @Thinking
-استأنف مشروع WebLibre من docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md.
-هذا الملف هو الذاكرة التنفيذية الأساسية.
-تحقق من branch وHEAD وPR وCI والحالة الفعلية قبل أي تعديل.
-لا تعِد أي عمل معلّم كمكتمل إلا بدليل regression.
-استخدم YAGNI وأصغر تغيير ممكن.
-تابع من Exact next action ونفّذها مباشرة.
-بعد كل خطوة مهمة حدّث الملف نفسه بالـbranch والـHEAD والملفات والاختبارات والنتيجة والخطوة التالية.
-```
+## 10. CURRENT CHECKPOINT
 
----
+**Timestamp:** 2026-08-29
+**Branch:** `weblibre-ua-mainline-v3`
+**Files changed in this documentation checkpoint:**
+- `AGENTS.md`
+- `docs/WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md`
+- `docs/WEBLIBRE_PROJECT_HANDOFF_2026-08-29.md`
+- `docs/GENSPARK_WEBLIBRE_FORK_CONTINUATION_PROMPT_2026-08-29.md`
+- `docs/GENSPARK_WEBLIBRE_OPERATING_PLAYBOOK_2026-08-29.md`
+- `docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`
 
-## 10. History / corrections
+**Tests/checks:** documentation/specification changes only; no source code was changed in this checkpoint. Historical native CI remains the last verified code check.
 
-### 2026-08-29 — UA restore correction
+**Result:** Personal AI Browser Agent is now part of the permanent product definition, including owner-controlled Full Access and granular/revocable permissions.
 
-The restore materialization path is now proven. Existing Android Components SessionStorage does not preserve per-container UA, and native cold-start restore occurs before Dart container metadata can be supplied.
-
-### 2026-08-29 — Personal AI Agent promoted to final-product requirement
-
-The personal AI Browser Agent is now an official WebLibre product workstream.
-
-It is not synonymous with Acode AI Agent or an LLM provider. The required architecture is a model-independent browser-operating agent with an explicit WebLibre Tool API, owner-controlled memory, and selectable/revocable permissions including a user-granted `Full Access` mode.
-
-The canonical detailed specification is:
-
-`docs/WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md`
-
-This requirement must survive future chat/session changes and must not be forgotten or treated as optional polish.
+**Exact next action:** finish the browser UA cold-start restore path; then run A/B isolation and targeted validation. After the stable browser milestone, begin `AI-1 Browser Tool API`.
