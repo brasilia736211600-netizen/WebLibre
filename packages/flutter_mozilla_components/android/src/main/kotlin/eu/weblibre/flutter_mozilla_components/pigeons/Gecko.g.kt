@@ -1262,6 +1262,7 @@ data class AddTabParams (
   val parentId: String? = null,
   val flags: LoadUrlFlagsValue,
   val contextId: String? = null,
+  val userAgent: String? = null,
   val source: SourceValue,
   val private: Boolean,
   val historyMetadata: HistoryMetadataKey? = null,
@@ -1275,11 +1276,12 @@ data class AddTabParams (
       val parentId = pigeonVar_list[2] as String?
       val flags = pigeonVar_list[3] as LoadUrlFlagsValue
       val contextId = pigeonVar_list[4] as String?
-      val source = pigeonVar_list[5] as SourceValue
-      val private = pigeonVar_list[6] as Boolean
-      val historyMetadata = pigeonVar_list[7] as HistoryMetadataKey?
-      val additionalHeaders = pigeonVar_list[8] as Map<String, String>?
-      return AddTabParams(url, startLoading, parentId, flags, contextId, source, private, historyMetadata, additionalHeaders)
+      val userAgent = pigeonVar_list[5] as String?
+      val source = pigeonVar_list[6] as SourceValue
+      val private = pigeonVar_list[7] as Boolean
+      val historyMetadata = pigeonVar_list[8] as HistoryMetadataKey?
+      val additionalHeaders = pigeonVar_list[9] as Map<String, String>?
+      return AddTabParams(url, startLoading, parentId, flags, contextId, userAgent, source, private, historyMetadata, additionalHeaders)
     }
   }
   fun toList(): List<Any?> {
@@ -1289,6 +1291,7 @@ data class AddTabParams (
       parentId,
       flags,
       contextId,
+      userAgent,
       source,
       private,
       historyMetadata,
@@ -1303,7 +1306,7 @@ data class AddTabParams (
       return true
     }
     val other = other as AddTabParams
-    return GeckoPigeonUtils.deepEquals(this.url, other.url) && GeckoPigeonUtils.deepEquals(this.startLoading, other.startLoading) && GeckoPigeonUtils.deepEquals(this.parentId, other.parentId) && GeckoPigeonUtils.deepEquals(this.flags, other.flags) && GeckoPigeonUtils.deepEquals(this.contextId, other.contextId) && GeckoPigeonUtils.deepEquals(this.source, other.source) && GeckoPigeonUtils.deepEquals(this.private, other.private) && GeckoPigeonUtils.deepEquals(this.historyMetadata, other.historyMetadata) && GeckoPigeonUtils.deepEquals(this.additionalHeaders, other.additionalHeaders)
+    return GeckoPigeonUtils.deepEquals(this.url, other.url) && GeckoPigeonUtils.deepEquals(this.startLoading, other.startLoading) && GeckoPigeonUtils.deepEquals(this.parentId, other.parentId) && GeckoPigeonUtils.deepEquals(this.flags, other.flags) && GeckoPigeonUtils.deepEquals(this.contextId, other.contextId) && GeckoPigeonUtils.deepEquals(this.userAgent, other.userAgent) && GeckoPigeonUtils.deepEquals(this.source, other.source) && GeckoPigeonUtils.deepEquals(this.private, other.private) && GeckoPigeonUtils.deepEquals(this.historyMetadata, other.historyMetadata) && GeckoPigeonUtils.deepEquals(this.additionalHeaders, other.additionalHeaders)
   }
 
   override fun hashCode(): Int {
@@ -1313,6 +1316,7 @@ data class AddTabParams (
     result = 31 * result + GeckoPigeonUtils.deepHash(this.parentId)
     result = 31 * result + GeckoPigeonUtils.deepHash(this.flags)
     result = 31 * result + GeckoPigeonUtils.deepHash(this.contextId)
+    result = 31 * result + GeckoPigeonUtils.deepHash(this.userAgent)
     result = 31 * result + GeckoPigeonUtils.deepHash(this.source)
     result = 31 * result + GeckoPigeonUtils.deepHash(this.private)
     result = 31 * result + GeckoPigeonUtils.deepHash(this.historyMetadata)
@@ -1320,7 +1324,7 @@ data class AddTabParams (
     return result
   }
   override fun toString(): String {
-    return "AddTabParams(url=$url, startLoading=$startLoading, parentId=$parentId, flags=$flags, contextId=$contextId, source=$source, private=$private, historyMetadata=$historyMetadata, additionalHeaders=$additionalHeaders)"
+    return "AddTabParams(url=$url, startLoading=$startLoading, parentId=$parentId, flags=$flags, contextId=$contextId, userAgent=$userAgent, source=$source, private=$private, historyMetadata=$historyMetadata, additionalHeaders=$additionalHeaders)"
   }
 }
 
@@ -9214,7 +9218,7 @@ interface GeckoTabsApi {
   fun syncEvents(onSelectedTabChange: Boolean, onTabListChange: Boolean, onRestoreComplete: Boolean, onTabContentStateChange: Boolean, onIconChange: Boolean, onSecurityInfoStateChange: Boolean, onReaderableStateChange: Boolean, onHistoryStateChange: Boolean, onFindResults: Boolean, onThumbnailChange: Boolean, onBrowserExtensionsChange: Boolean, onPageExtensionsChange: Boolean, onBrowserExtensionIcons: Boolean, onPageExtensionIcons: Boolean, onTranslationStateChange: Boolean)
   fun selectTab(tabId: String)
   fun removeTab(tabId: String)
-  fun addTab(url: String, selectTab: Boolean, startLoading: Boolean, parentId: String?, flags: LoadUrlFlagsValue, contextId: String?, source: SourceValue, private: Boolean, historyMetadata: HistoryMetadataKey?, additionalHeaders: Map<String, String>?, excludeFromHistory: Boolean): String
+  fun addTab(url: String, selectTab: Boolean, startLoading: Boolean, parentId: String?, flags: LoadUrlFlagsValue, contextId: String?, userAgent: String?, source: SourceValue, private: Boolean, historyMetadata: HistoryMetadataKey?, additionalHeaders: Map<String, String>?, excludeFromHistory: Boolean): String
   fun addMultipleTabs(tabs: List<AddTabParams>, selectTabId: String?, excludeFromHistory: Boolean): List<String>
   fun removeAllTabs(recoverable: Boolean)
   fun removeTabs(ids: List<String>)
@@ -9229,7 +9233,7 @@ interface GeckoTabsApi {
   fun selectOrAddTabByHistory(url: String, historyMetadata: HistoryMetadataKey): String
   /** Selects an already existing tab displaying [url] or otherwise creates a new tab. */
   fun selectOrAddTabByUrl(url: String, private: Boolean, source: SourceValue, flags: LoadUrlFlagsValue, ignoreFragment: Boolean): String
-  fun duplicateTab(selectTabId: String?, selectNewTab: Boolean, newContextId: String?, excludeFromHistory: Boolean): String
+  fun duplicateTab(selectTabId: String?, selectNewTab: Boolean, newContextId: String?, userAgent: String?, excludeFromHistory: Boolean): String
   fun moveTabs(tabIds: List<String>, targetTabId: String, placeAfter: Boolean)
   fun migratePrivateTabUseCase(tabId: String, alternativeUrl: String?): String
 
@@ -9321,13 +9325,14 @@ interface GeckoTabsApi {
             val parentIdArg = args[3] as String?
             val flagsArg = args[4] as LoadUrlFlagsValue
             val contextIdArg = args[5] as String?
-            val sourceArg = args[6] as SourceValue
-            val privateArg = args[7] as Boolean
-            val historyMetadataArg = args[8] as HistoryMetadataKey?
-            val additionalHeadersArg = args[9] as Map<String, String>?
-            val excludeFromHistoryArg = args[10] as Boolean
+            val userAgentArg = args[6] as String?
+            val sourceArg = args[7] as SourceValue
+            val privateArg = args[8] as Boolean
+            val historyMetadataArg = args[9] as HistoryMetadataKey?
+            val additionalHeadersArg = args[10] as Map<String, String>?
+            val excludeFromHistoryArg = args[11] as Boolean
             val wrapped: List<Any?> = try {
-              listOf(api.addTab(urlArg, selectTabArg, startLoadingArg, parentIdArg, flagsArg, contextIdArg, sourceArg, privateArg, historyMetadataArg, additionalHeadersArg, excludeFromHistoryArg))
+              listOf(api.addTab(urlArg, selectTabArg, startLoadingArg, parentIdArg, flagsArg, contextIdArg, userAgentArg, sourceArg, privateArg, historyMetadataArg, additionalHeadersArg, excludeFromHistoryArg))
             } catch (exception: Throwable) {
               GeckoPigeonUtils.wrapError(exception)
             }
@@ -9507,9 +9512,10 @@ interface GeckoTabsApi {
             val selectTabIdArg = args[0] as String?
             val selectNewTabArg = args[1] as Boolean
             val newContextIdArg = args[2] as String?
-            val excludeFromHistoryArg = args[3] as Boolean
+            val userAgentArg = args[3] as String?
+            val excludeFromHistoryArg = args[4] as Boolean
             val wrapped: List<Any?> = try {
-              listOf(api.duplicateTab(selectTabIdArg, selectNewTabArg, newContextIdArg, excludeFromHistoryArg))
+              listOf(api.duplicateTab(selectTabIdArg, selectNewTabArg, newContextIdArg, userAgentArg, excludeFromHistoryArg))
             } catch (exception: Throwable) {
               GeckoPigeonUtils.wrapError(exception)
             }

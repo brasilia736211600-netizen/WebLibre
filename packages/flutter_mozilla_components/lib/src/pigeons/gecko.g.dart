@@ -936,6 +936,7 @@ class AddTabParams {
     this.parentId,
     required this.flags,
     this.contextId,
+    this.userAgent,
     required this.source,
     required this.private,
     this.historyMetadata,
@@ -952,6 +953,8 @@ class AddTabParams {
 
   String? contextId;
 
+  String? userAgent;
+
   SourceValue source;
 
   bool private;
@@ -967,6 +970,7 @@ class AddTabParams {
       parentId,
       flags,
       contextId,
+      userAgent,
       source,
       private,
       historyMetadata,
@@ -985,10 +989,11 @@ class AddTabParams {
       parentId: result[2] as String?,
       flags: result[3]! as LoadUrlFlagsValue,
       contextId: result[4] as String?,
-      source: result[5]! as SourceValue,
-      private: result[6]! as bool,
-      historyMetadata: result[7] as HistoryMetadataKey?,
-      additionalHeaders: (result[8] as Map<Object?, Object?>?)?.cast<String, String>(),
+      userAgent: result[5] as String?,
+      source: result[6]! as SourceValue,
+      private: result[7]! as bool,
+      historyMetadata: result[8] as HistoryMetadataKey?,
+      additionalHeaders: (result[9] as Map<Object?, Object?>?)?.cast<String, String>(),
     );
   }
 
@@ -1001,7 +1006,7 @@ class AddTabParams {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(url, other.url) && _deepEquals(startLoading, other.startLoading) && _deepEquals(parentId, other.parentId) && _deepEquals(flags, other.flags) && _deepEquals(contextId, other.contextId) && _deepEquals(source, other.source) && _deepEquals(private, other.private) && _deepEquals(historyMetadata, other.historyMetadata) && _deepEquals(additionalHeaders, other.additionalHeaders);
+    return _deepEquals(url, other.url) && _deepEquals(startLoading, other.startLoading) && _deepEquals(parentId, other.parentId) && _deepEquals(flags, other.flags) && _deepEquals(contextId, other.contextId) && _deepEquals(userAgent, other.userAgent) && _deepEquals(source, other.source) && _deepEquals(private, other.private) && _deepEquals(historyMetadata, other.historyMetadata) && _deepEquals(additionalHeaders, other.additionalHeaders);
   }
 
   @override
@@ -1010,7 +1015,7 @@ class AddTabParams {
 
   @override
   String toString() {
-    return 'AddTabParams(url: $url, startLoading: $startLoading, parentId: $parentId, flags: $flags, contextId: $contextId, source: $source, private: $private, historyMetadata: $historyMetadata, additionalHeaders: $additionalHeaders)';
+    return 'AddTabParams(url: $url, startLoading: $startLoading, parentId: $parentId, flags: $flags, contextId: $contextId, userAgent: $userAgent, source: $source, private: $private, historyMetadata: $historyMetadata, additionalHeaders: $additionalHeaders)';
   }
 }
 
@@ -9399,14 +9404,14 @@ class GeckoTabsApi {
     ;
   }
 
-  Future<String> addTab({required String url, required bool selectTab, required bool startLoading, required String? parentId, required LoadUrlFlagsValue flags, required String? contextId, required SourceValue source, required bool private, required HistoryMetadataKey? historyMetadata, required Map<String, String>? additionalHeaders, required bool excludeFromHistory, }) async {
+  Future<String> addTab({required String url, required bool selectTab, required bool startLoading, required String? parentId, required LoadUrlFlagsValue flags, required String? contextId, required String? userAgent, required SourceValue source, required bool private, required HistoryMetadataKey? historyMetadata, required Map<String, String>? additionalHeaders, required bool excludeFromHistory, }) async {
     final pigeonVar_channelName = 'dev.flutter.pigeon.flutter_mozilla_components.GeckoTabsApi.addTab$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[url, selectTab, startLoading, parentId, flags, contextId, source, private, historyMetadata, additionalHeaders, excludeFromHistory]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[url, selectTab, startLoading, parentId, flags, contextId, userAgent, source, private, historyMetadata, additionalHeaders, excludeFromHistory]);
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
@@ -9586,14 +9591,14 @@ class GeckoTabsApi {
     return pigeonVar_replyValue! as String;
   }
 
-  Future<String> duplicateTab({required String? selectTabId, required bool selectNewTab, required String? newContextId, required bool excludeFromHistory, }) async {
+  Future<String> duplicateTab({required String? selectTabId, required bool selectNewTab, required String? newContextId, required String? userAgent, required bool excludeFromHistory, }) async {
     final pigeonVar_channelName = 'dev.flutter.pigeon.flutter_mozilla_components.GeckoTabsApi.duplicateTab$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[selectTabId, selectNewTab, newContextId, excludeFromHistory]);
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[selectTabId, selectNewTab, newContextId, userAgent, excludeFromHistory]);
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
