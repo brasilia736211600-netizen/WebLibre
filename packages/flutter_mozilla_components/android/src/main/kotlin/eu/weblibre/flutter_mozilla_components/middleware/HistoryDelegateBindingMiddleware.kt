@@ -6,6 +6,7 @@
 
 package eu.weblibre.flutter_mozilla_components.middleware
 
+import eu.weblibre.flutter_mozilla_components.GlobalComponents
 import eu.weblibre.flutter_mozilla_components.feature.ContainerUserAgentStore
 import eu.weblibre.flutter_mozilla_components.history.HistoryExclusions
 import eu.weblibre.flutter_mozilla_components.history.TabScopedHistoryDelegate
@@ -109,14 +110,19 @@ class HistoryDelegateBindingMiddleware(
         }
 
         // Restored sessions are created by Android Components from TabSessionState
-        // before this middleware sees the LinkEngineSessionAction. The per-profile
-        // container row is already persisted in the same tab.db used by Dart, so
-        // the session can regain its container UA here without a second database,
-        // Pigeon recovery field, or upstream Android Components fork.
-        ContainerUserAgentStore.get(
-            context = store.state.run { null },
-            contextualIdentity = contextId,
-        )
+        // before this middleware sees the LinkEngineSessionAction. The container
+        // row is persisted in the same profile-scoped tab.db used by Dart, so we
+        // can restore the session UA without a second database, recovery Pigeon
+        // field, or upstream Android Components fork.
+        val profileContext = GlobalComponents.components?.profileApplicationContext ?: return
+        val userAgent = ContainerUserAgentStore.get(profileContext, contextId)
+        if (userAgent != null) {
+            try {
+                engineSession.settings.userAgentString = userAgent
+            } catch (e: UnsupportedOperationException) {
+                logger.error("Failed to bind persisted container UA for $tabId", e)
+            }
+        }
     }
 
     /**
