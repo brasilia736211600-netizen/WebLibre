@@ -2,7 +2,7 @@
 
 **Last synchronized:** 2026-08-29
 **Branch:** `weblibre-ua-mainline-v3`
-**Current HEAD:** `bfe19a397ab08494244856fec27cd19f42ad062a`
+**Current HEAD:** `f96693775344f17c703cb88d46788f9471fc23eb`
 
 ## READ THIS FIRST
 This file is the durable execution memory. Do not reconstruct the project from chat history.
@@ -28,29 +28,32 @@ Canonical AI spec: `docs/WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md`.
 
 ### Restore slice — IMPLEMENTED, RUNTIME-UNVERIFIED
 Android Components SessionStorage does not serialize container UA in `TabSessionState`. Current solution:
-- `ContainerUserAgentStore.kt` reads the existing WebLibre Drift `tab.db`, whose `container.metadata` JSON is the persisted source for container metadata.
+- `ContainerUserAgentStore.kt` reads the existing WebLibre per-profile Drift `tab.db`, whose `container.metadata` JSON is the persisted source for container metadata.
 - `HistoryDelegateBindingMiddleware` looks up by `contextualIdentity` at `LinkEngineSessionAction` and applies `userAgentString` to the session.
 - `ContainerUserAgentStoreTest.kt` covers matching UA, cross-container isolation, blank/default, and malformed metadata.
-- Verified source: Drift provider opens the same profile `tab.db`; `container.metadata` is mapped through `ContainerMetadataConverter` and contains `contextualIdentity` + `userAgent`.
+- Verified source: `ProfileContext.getDatabasePath()` maps `tab.db` to the active profile database directory; Drift's `ContainerData` persists metadata JSON containing `contextualIdentity` + `userAgent`.
 No new Pigeon recovery field, second DB, global GeckoRuntime UA, or Android Components fork.
 
 ## CURRENT GIT / PR / CI
 - Branch: `weblibre-ua-mainline-v3`
-- Current HEAD: `bfe19a397ab08494244856fec27cd19f42ad062a`
-- PR #3: open, draft.
-- `.github/workflows/quality.yml` is a focused PR gate: Flutter 3.47.0 bootstrap, targeted container test, then one Debug APK build. It intentionally does not run full-project analyzer because the branch contains unrelated legacy warnings/missing assets.
-- Prior targeted quality run `33274667912` on `9076f9c...` passed.
-- New quality run `33274868548` is **in progress** on `bfe19a397...`; it includes the first actual debug APK build for native/plugin compilation.
-- Historical native CI run `33265003957` passed native runtime prerequisites and Kotlin compilation.
+- Current HEAD: `f96693775344f17c703cb88d46788f9471fc23eb`
+- PR #3: open, draft, mergeable.
+- `.github/workflows/quality.yml` is a focused PR gate: Flutter 3.47.0 bootstrap, targeted container test, then native plugin unit tests in `packages/flutter_mozilla_components/android` using the runner's `gradle --no-daemon test`. It intentionally does not run full-project analyzer or full APK build.
+- Prior targeted container validation run passed: 11 tests.
+- Prior native test run failed only because the workflow invoked nonexistent `./gradlew`; this was a workflow error, not a product/compiler result.
+- Current quality run `33277147630` is/was for the previous workflow commit; current HEAD `f966937...` has a fresh quality run `33277147630` lineage pending/active after the corrected Gradle invocation. Do not treat the old failure as a failure of current native code.
+- Historical native runtime build and Kotlin compilation passed in `33265003957`.
 
 ## TESTING CHECKPOINT
-Dart targeted validation is green. Native restore runtime remains unverified until debug APK build completes and/or device execution is available.
+- Dart targeted container serialization/metadata test: GREEN (11 tests passed).
+- Kotlin/native restore parser test: present but full native test execution on the corrected workflow is the next automated proof.
+- Cold-start restore runtime and A/B isolation remain unverified until a real APK/device path is exercised.
 
 ## EXACT NEXT EXECUTION
-1. Read result of quality run `33274868548`.
-2. If Debug APK build fails: fix only the first causal native/Gradle/Kotlin failure.
-3. If it passes: validate cold-start UA restore and A/B container isolation; use any existing automated route available before manual device test.
-4. Validate Proxy restore/A-B isolation.
+1. Inspect the quality run triggered by HEAD `f966937...`; confirm the native Gradle unit tests actually execute and record result.
+2. If native tests fail, fix only the first causal compiler/test error.
+3. If they pass, build/validate a debug APK through the existing release prerequisite path (gomobile runtime + assets) only when needed for native runtime proof.
+4. Validate cold-start UA restore and A/B isolation; then Proxy restore/A-B regression.
 5. Final targeted Dart/native validation.
 6. Build stable release through existing `build-browser` with `--split-per-abi`; publish each supported ABI APK separately, not a merged universal APK.
 7. Start AI-1 Browser Tool API.
@@ -71,8 +74,7 @@ Final release must provide each supported ABI APK as an independently downloadab
 ## CHECKPOINT
 **Date:** 2026-08-29
 **Branch:** `weblibre-ua-mainline-v3`
-**HEAD:** `bfe19a397ab08494244856fec27cd19f42ad062a`
-**Files changed:** `.github/workflows/quality.yml`, `docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`.
-**Tests/results:** targeted container test passed on `33274667912`; `33274868548` is currently validating that test plus Debug APK build.
-**Current blocker:** runtime/device verification of restored UA/A-B isolation.
-**Exact next step:** inspect `33274868548`; then fix only the first build failure or proceed immediately to restore/A-B and Proxy A/B.
+**HEAD:** `f96693775344f17c703cb88d46788f9471fc23eb`
+**Files changed since prior checkpoint:** `.github/workflows/quality.yml` only in the most recent commit; workflow state is being synchronized by this checkpoint.
+**Tests/results:** previous Dart targeted test = 11 passed; previous native job reached native step but failed only because `./gradlew` was not present. Corrected workflow now uses `gradle --no-daemon test`; fresh PR quality run is expected for this HEAD.
+**Exact next step:** inspect fresh run for `f966937...`, then proceed to native runtime/restore A-B verification if green.
