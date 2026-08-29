@@ -2,7 +2,7 @@
 
 **Last synchronized:** 2026-08-29
 **Branch:** `weblibre-ua-mainline-v3`
-**Current verified branch HEAD:** `9076f9c560ba35ec23ee1cc9798831a65f7e8b6e`
+**Current HEAD:** `bfe19a397ab08494244856fec27cd19f42ad062a`
 
 ## READ THIS FIRST
 This file is the durable execution memory. Do not reconstruct the project from chat history.
@@ -20,38 +20,39 @@ Remote inputs are ordinary natural language plus links/context/constraints; rigi
 Canonical AI spec: `docs/WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md`.
 
 ## BROWSER STATUS
-
 ### Complete
-- ContainerMetadata.userAgent persistence/serialization/normalization.
-- AddTabParams.userAgent source contract and generated bindings.
+- `ContainerMetadata.userAgent` persistence/serialization/normalization.
+- `AddTabParams.userAgent` source contract and generated bindings.
 - Normal, multi, and duplicate tab UA creation paths.
 - Existing per-container UA UI.
 
 ### Restore slice — IMPLEMENTED, RUNTIME-UNVERIFIED
-Android Components SessionStorage does not persist container UA in TabSessionState. Current solution:
-- `ContainerUserAgentStore.kt` reads persisted container metadata from the existing profile data source by `contextualIdentity`.
-- `HistoryDelegateBindingMiddleware` applies the persisted UA to `EngineSession` at link time before downstream navigation.
+Android Components SessionStorage does not serialize container UA in `TabSessionState`. Current solution:
+- `ContainerUserAgentStore.kt` reads the existing WebLibre Drift `tab.db`, whose `container.metadata` JSON is the persisted source for container metadata.
+- `HistoryDelegateBindingMiddleware` looks up by `contextualIdentity` at `LinkEngineSessionAction` and applies `userAgentString` to the session.
 - `ContainerUserAgentStoreTest.kt` covers matching UA, cross-container isolation, blank/default, and malformed metadata.
+- Verified source: Drift provider opens the same profile `tab.db`; `container.metadata` is mapped through `ContainerMetadataConverter` and contains `contextualIdentity` + `userAgent`.
 No new Pigeon recovery field, second DB, global GeckoRuntime UA, or Android Components fork.
 
 ## CURRENT GIT / PR / CI
 - Branch: `weblibre-ua-mainline-v3`
-- HEAD: `9076f9c560ba35ec23ee1cc9798831a65f7e8b6e`
-- PR #3: open, draft, base `main`, mergeable.
-- `.github/workflows/quality.yml` is now a focused PR gate: Flutter 3.47.0 bootstrap + targeted container-data test only. Full-project analyzer was removed because the branch inherited unrelated warnings/assets issues; do not broaden this gate without need.
-- Quality workflow run `33274667912` on HEAD `9076f9c...` completed **successfully**; the targeted container test passed.
-- Historical native CI run `33265003957` passed native runtime prerequisites and Android Kotlin compilation.
+- Current HEAD: `bfe19a397ab08494244856fec27cd19f42ad062a`
+- PR #3: open, draft.
+- `.github/workflows/quality.yml` is a focused PR gate: Flutter 3.47.0 bootstrap, targeted container test, then one Debug APK build. It intentionally does not run full-project analyzer because the branch contains unrelated legacy warnings/missing assets.
+- Prior targeted quality run `33274667912` on `9076f9c...` passed.
+- New quality run `33274868548` is **in progress** on `bfe19a397...`; it includes the first actual debug APK build for native/plugin compilation.
+- Historical native CI run `33265003957` passed native runtime prerequisites and Kotlin compilation.
 
 ## TESTING CHECKPOINT
-Dart targeted validation is green in GitHub Actions. Native runtime restore and device-level cold-start behavior remain unverified from this interface.
+Dart targeted validation is green. Native restore runtime remains unverified until debug APK build completes and/or device execution is available.
 
 ## EXACT NEXT EXECUTION
-1. Verify restore-source assumptions in exact native/app persistence code.
-2. Run targeted native/Kotlin compile/test for `ContainerUserAgentStore` and middleware if available through Actions.
-3. Validate cold-start restored UA and A/B container isolation.
+1. Read result of quality run `33274868548`.
+2. If Debug APK build fails: fix only the first causal native/Gradle/Kotlin failure.
+3. If it passes: validate cold-start UA restore and A/B container isolation; use any existing automated route available before manual device test.
 4. Validate Proxy restore/A-B isolation.
-5. Run final targeted Dart/native validation.
-6. Build stable milestone with existing `--split-per-abi` scripts and publish each ABI APK independently.
+5. Final targeted Dart/native validation.
+6. Build stable release through existing `build-browser` with `--split-per-abi`; publish each supported ABI APK separately, not a merged universal APK.
 7. Start AI-1 Browser Tool API.
 
 Do not redo completed UA creation/UI work. Do not resurrect `_freshSnapshotPending`. Do not add `RecoverableTab.userAgent` without evidence. Do not add a second DB unless the existing persistence source proves insufficient.
@@ -62,7 +63,7 @@ Do not redo completed UA creation/UI work. Do not resurrect `_freshSnapshotPendi
 Permanent requirements: natural-language task understanding, links/context, direct + remote control, owner identity/profile, inspectable/editable/exportable/deletable memory, `Read Only | Browser Control | Task Control | Trusted Automation | Full Access`, task/session/persistent and container/site scopes, revocation, no silent privilege escalation, model/provider independence, and auditability.
 
 ## RELEASE APK POLICY
-Final release must provide each supported ABI APK as an independently downloadable artifact. Preserve existing `--split-per-abi` behavior. Publish `arm64-v8a`, `armeabi-v7a`, and other supported ABIs separately; universal APK is optional.
+Final release must provide each supported ABI APK as an independently downloadable artifact. Preserve existing `--split-per-abi` behavior. Current release scripts target `android-arm,android-arm64`; publish resulting APKs separately. Do not promise x86/x86_64 unless a build proves support.
 
 ## MANDATORY LOOP
 `READ -> VERIFY -> RECONCILE -> PLAN -> EXECUTE -> TEST -> DIFF -> COMMIT -> SAVE STATE`
@@ -70,8 +71,8 @@ Final release must provide each supported ABI APK as an independently downloadab
 ## CHECKPOINT
 **Date:** 2026-08-29
 **Branch:** `weblibre-ua-mainline-v3`
-**HEAD:** `9076f9c560ba35ec23ee1cc9798831a65f7e8b6e`
-**Files changed in this checkpoint:** `.github/workflows/quality.yml`, `docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`.
-**Tests/results:** GitHub Actions `33274667912` succeeded; targeted container test passed. Native runtime restore remains unverified.
-**Current blocker:** native/Kotlin runtime verification of restore and A/B isolation.
-**Exact next step:** inspect/validate native restore source and run the narrowest native verification available; then UA A/B, proxy A/B, milestone split APK, then AI-1.
+**HEAD:** `bfe19a397ab08494244856fec27cd19f42ad062a`
+**Files changed:** `.github/workflows/quality.yml`, `docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`.
+**Tests/results:** targeted container test passed on `33274667912`; `33274868548` is currently validating that test plus Debug APK build.
+**Current blocker:** runtime/device verification of restored UA/A-B isolation.
+**Exact next step:** inspect `33274868548`; then fix only the first build failure or proceed immediately to restore/A-B and Proxy A/B.
