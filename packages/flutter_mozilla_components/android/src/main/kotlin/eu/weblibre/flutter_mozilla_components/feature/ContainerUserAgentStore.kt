@@ -25,7 +25,6 @@ internal object ContainerUserAgentStore {
 
     private val logger = Logger("container_user_agent")
 
-    @VisibleForTesting
     internal fun parseUserAgent(
         metadata: String,
         contextualIdentity: String,
