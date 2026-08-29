@@ -1,230 +1,186 @@
 # WebLibre Agent Operating Manual
 
 ## PURPOSE
-This repository is an active engineering project. Any AI coding agent entering the repository must use the existing implementation and history, understand the current state, and continue from it. Do not rebuild WebLibre from scratch.
+This is an active engineering project. Continue the existing WebLibre implementation; do not rebuild it. The current execution memory is `docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`.
 
 ## MANDATORY FIRST ACTIONS
-1. Read this file completely.
-2. Read `docs/WEBLIBRE_PROJECT_HANDOFF_2026-08-28.md` completely.
-3. Read `docs/GENSPARK_WEBLIBRE_FORK_CONTINUATION_PROMPT.md` if the agent is Genspark or is being used as a continuation agent.
-4. Inspect the actual current branch/HEAD and compare it with the branch's base/mainline.
-5. Inspect the current Git diff before making any change.
-6. Locate existing tests and CI relevant to the change.
+1. Read `docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md` completely.
+2. Read `docs/WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md` when working on the AI-agent workstream.
+3. Read the older handoff/playbook documents only when historical detail is needed; the 2026-08-29 workflow state supersedes stale claims.
+4. Verify actual branch, HEAD, PR, CI, and current diff before editing.
+5. Inspect exact source files and tests relevant to the task.
 
 ## REPOSITORY SAFETY
-The reference repository is:
-`https://github.com/brasilia736211600-netizen/WebLibre`
+Reference repository: `https://github.com/brasilia736211600-netizen/WebLibre`
 
-If an agent is operating an experimental fork, ALL writes must remain in that fork. The reference repository must not receive experimental changes.
-
-Never use `main` as a scratch branch.
-Never force-push or rewrite unrelated history.
-Before changing an existing file, inspect its current contents and current blob SHA.
-Never replace a large generated file from a partial snippet.
-If an operation produces unrelated deletions, stop and repair them before continuing.
+Work only in the intended feature branch/fork. Never use `main` as a scratch branch. Never force-push or rewrite unrelated history. Before modifying a file, inspect its current contents/blob SHA. Never overwrite generated files from partial snippets. If unrelated deletions appear, stop and repair them.
 
 ## USER'S ENGINEERING PRIORITIES
-The user wants the project advanced as quickly as practical without wasting bandwidth or CI credits. Prefer parallelizable/independent tasks when possible, but do not create races over the same file or branch reference.
+The user wants fast progress without wasting bandwidth or CI credits. Use YAGNI, minimal diffs, targeted validation, and atomic commits. Do not spend long cycles only describing future work.
 
-Use this working loop:
+Mandatory loop:
 
-`inspect -> implement -> targeted test -> inspect diff -> commit -> continue`
+`READ -> VERIFY -> RECONCILE -> PLAN -> EXECUTE -> TEST -> DIFF -> COMMIT -> SAVE STATE`
 
-Do not spend long cycles only describing future work.
+After every meaningful checkpoint, update the durable workflow state with branch + HEAD + files changed + tests/results + blocker + exact next step.
 
-## PRODUCT GOALS
-The agreed container-related privacy features are:
+## CURRENT PRODUCT
+WebLibre has two dependent product tracks:
 
-1. Independent Proxy per container.
-2. Independent User-Agent per container.
-3. Per-container settings for both.
-4. Durable persistence/restoration.
-5. Strict isolation between containers.
+### Browser/privacy foundation
+- Independent Proxy per container.
+- Independent User-Agent per container.
+- Per-container settings.
+- Persistence/restoration.
+- Strict A/B isolation.
 
-The implementation must preserve the existing WebLibre architecture wherever possible.
+### Personal AI Browser Agent
+The final product must include a personal AI agent dedicated to the owner/user. This is not the Acode AI Agent and not an OpenRouter feature.
 
-## USER-AGENT: CURRENT STATE
-### Already implemented
-`ContainerMetadata.userAgent` exists in the container metadata model.
+Canonical specification:
+`docs/WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md`
 
-The data layer covers:
-- JSON serialization/deserialization.
-- `copyWith`.
-- equality/hash participation.
-- normalization of empty/whitespace-only values to `null`.
-- targeted persistence tests.
+The agent must operate WebLibre through explicit browser tools, understand multi-step goals, observe live browser state, use containers/UA/proxy correctly, maintain user-controlled memory, and remain model/provider independent.
 
-Generated Dart serialization is synchronized in the feature work.
+## PERSONAL AI AGENT — NON-NEGOTIABLE REQUIREMENTS
+### Owner-controlled identity
+The agent has a persistent personal profile containing explicit user instructions, preferences, workflows, trusted sites, memory policy, and permission configuration. Changing the model/provider must not erase this profile.
 
-### NOT COMPLETE
-Do not report User-Agent as complete yet.
+### Full permissions are selectable
+The user explicitly wants complete agent/browser permissions available as options and grantable at will according to the task.
 
-Still required:
-- pass UA through the real tab/session creation path;
-- apply UA to the native Gecko/Engine session;
-- apply it before first navigation;
-- support single-tab creation;
-- support multiple-tab creation;
-- support duplicate-tab creation;
-- support restore/recovery;
-- test two containers concurrently using different UAs;
-- add per-container settings UI;
-- support clear/reset-to-default;
-- verify only the selected container changes.
+Permission scopes must include, as applicable:
+- browser state read;
+- page/content read;
+- navigation;
+- click/type/scroll interaction;
+- tab lifecycle;
+- downloads/files;
+- authenticated sessions;
+- container selection;
+- proxy control;
+- User-Agent control;
+- browser settings;
+- external communication/actions;
+- other exposed sensitive capabilities.
 
-## UA RUNTIME ARCHITECTURE
-The target is session/container scoped UA, NOT a global GeckoRuntime override.
+Permission modes:
 
-Desired lifecycle:
+`Read Only | Browser Control | Task Control | Trusted Automation | Full Access`
 
-`ContainerMetadata.userAgent`
-` -> tab/session creation`
-` -> create EngineSession`
-` -> apply session userAgentString / override`
-` -> create tab state with prepared session`
-` -> AddTabAction`
-` -> LoadUrlAction`
+`Full Access` grants all currently exposed agent capabilities within the selected scope when the owner explicitly chooses it. Grants must support one-task, session, persistent, container-scoped, and optionally site/domain-scoped lifetimes, plus immediate revocation and audit history.
 
-The UA must be installed before the first navigation.
+The agent must never silently escalate its own permissions.
 
-A delayed post-navigation setter is not an acceptable primary design because the first request could already have gone out with the default UA.
+### Tool boundary
+The LLM never receives unrestricted internal WebLibre APIs. All actions pass through a model-independent Browser Tool Registry with explicit schemas, required permissions, side-effect/reversibility metadata, and audit events.
 
-## NATIVE HOOK ALREADY IDENTIFIED
-The local package:
+### Memory/data control
+Agent memory is separate from browser state and must be inspectable, editable, exportable, deletable, and disableable. Page content must not silently become permanent memory. Only data required for a particular inference should be sent to a model provider.
 
-`packages/flutter_mozilla_components/`
+## UA CURRENT STATE
+Already complete on the active UA branch:
+- `ContainerMetadata.userAgent` data foundation;
+- source Pigeon `AddTabParams.userAgent` contract;
+- normal tab creation;
+- multi-tab creation;
+- duplicate-tab creation;
+- session-level UA before first navigation;
+- existing container UI field.
 
-contains the project's Kotlin integration with Android Components.
+Current blocker: cold-start/restored-tab UA. Existing Android Components SessionStorage does not serialize container UA, and restore materialization occurs before Dart can supply container metadata. Do not redo completed creation paths. Do not add speculative arrival-order fixes to `syncEvents`.
 
-The relevant version investigated is Android Components `152.0.4`.
+## PROXY REQUIREMENT
+Proxy remains per-container, never a global GeckoRuntime setting. Verify new sessions, restored sessions, concurrent A/B isolation, and fail-closed behavior where required by the existing routing snapshot design.
 
-The critical local file is:
+## RESTORE/EVENT FORENSICS
+`syncEvents()` currently returns `Future<void>` without request/generation provenance. Tab-list events contain sequence information but not request attribution; stale debounced events may exist. `_freshSnapshotPending`-style arrival-order heuristics are UNSOUND. Only introduce explicit request/generation provenance if actual restore work proves it is required.
 
-`packages/flutter_mozilla_components/android/src/main/kotlin/eu/weblibre/flutter_mozilla_components/api/GeckoTabsApiImpl.kt`
+## AI IMPLEMENTATION ROADMAP
+The personal AI track is intentionally downstream of the stable browser foundation:
 
-Its current important sequence is approximately:
+### AI-0 Specification — COMPLETE
+- [x] Owner-only agent concept.
+- [x] Selectable/revocable permission model including Full Access.
+- [x] Tool boundary.
+- [x] Memory/data-control requirements.
+- [x] Model/provider independence.
 
-`create tab/session -> AddTabAction -> LoadUrlAction`
+### AI-1 Browser Tool API — NEXT AFTER BROWSER MILESTONE
+- [ ] Inventory existing WebLibre capabilities.
+- [ ] Implement minimal internal Browser Tool Registry.
+- [ ] Define stable input/output schemas.
+- [ ] Attach permissions to every tool.
+- [ ] Add audit events.
 
-Android Components permits a prepared `engineSession` to be supplied when creating the tab. The preferred implementation is therefore to create/prep the EngineSession, set its UA, then create the tab and only after that dispatch the first load.
+### AI-2 Agent Core
+- [ ] Task intake and multi-step loop.
+- [ ] Observation/context builder.
+- [ ] Planner/reasoner adapter.
+- [ ] Retry/timeouts/stop conditions.
 
-Do not fork Android Components unless absolutely necessary.
+### AI-3 Personal Profile + Memory
+- [ ] Personal agent profile.
+- [ ] Preferences/instructions.
+- [ ] Short-term task memory.
+- [ ] Long-term user-controlled memory.
+- [ ] Data minimization.
 
-## PIGEON / API RULE
-The source contract is in:
+### AI-4 Permission Engine
+- [ ] Read Only.
+- [ ] Browser Control.
+- [ ] Task Control.
+- [ ] Trusted Automation.
+- [ ] Full Access.
+- [ ] Task/session/persistent grants.
+- [ ] Container/site scopes.
+- [ ] Revocation.
+- [ ] Audit history.
 
-`packages/flutter_mozilla_components/pigeons/gecko.dart`
+### AI-5 First autonomous workflows
+- [ ] Research/extraction.
+- [ ] Multi-page navigation.
+- [ ] Form completion under granted permissions.
+- [ ] Multi-tab workflows.
+- [ ] Container-aware workflows.
+- [ ] Browser-approved file handling.
 
-`AddTabParams` is currently the natural contract for carrying tab-creation-specific state.
+### AI-6 Advanced behavior
+- [ ] Reusable workflows.
+- [ ] User-specific conventions.
+- [ ] Persistent browser context where permitted.
+- [ ] Self-checking against user rules.
+- [ ] Common-failure recovery.
 
-If UA is added there:
-- modify SOURCE Pigeon only;
-- run the project's official Pigeon generation task;
-- keep generated Dart/Kotlin synchronized;
-- do not hand-edit generated output unless generation is truly impossible and the reason is documented.
+### AI-7 Model adapters
+- [ ] Provider-neutral interface.
+- [ ] Remote model adapters.
+- [ ] Local model adapters where feasible.
+- [ ] Task-based model selection/privacy/cost policy.
+- [ ] Context/token budgeting.
 
-## CRITICAL RESTORE / EVENT FORENSICS
-A separate forensic investigation analyzed container/session restore and tab-list synchronization.
+### AI-8 End-to-end validation
+- [ ] Permission enforcement/revocation tests.
+- [ ] Memory isolation tests.
+- [ ] Browser-state consistency tests.
+- [ ] Agent + container UA/proxy isolation.
+- [ ] Unauthorized action rejection.
+- [ ] End-to-end task completion.
 
-Current API facts:
-- `syncEvents()` returns `Future<void>`.
-- No request/generation token is returned.
-- Tab-list events carry a sequence number but no request provenance.
-- stale debounced tab-list events can already be queued.
-- RPC and GeckoStateEvents use separate channels.
+## CANDIDATE TECHNOLOGY DIRECTION
+Browser Use is the primary reference/candidate for agentic browser-control architecture; Stagehand and Skyvern are secondary references. Do not embed a candidate blindly. Define the internal WebLibre Browser Tool API first, then benchmark adapters against the actual GeckoView/Android constraints.
 
-Therefore a requester cannot mathematically prove that the next tab-list event was caused by its own `syncEvents()` call.
+## VALIDATION / BUILD DISCIPLINE
+Preferred order:
 
-The `_freshSnapshotPending` approach was explicitly rejected as UNSOUND.
-
-If reliable correlation is later required, use explicit request/generation/sequence provenance, then regenerate Pigeon and add concurrency tests.
-
-## PROXY: CURRENT REQUIREMENT
-Proxy must be independent per container, not global.
-
-Verify:
-- Container A can use Proxy A.
-- Container B can use Proxy B.
-- changing A never changes B.
-- new sessions get the right proxy.
-- restored sessions get the right proxy.
-- no global GeckoRuntime proxy state is introduced accidentally.
-- routing remains fail-closed where the existing proxy snapshot design requires it.
-
-## BUILD / CI EFFICIENCY
-A previous Flutter debug workflow spent about 756 seconds reaching Gradle/Rust before failing because the expected APK artifact could not be found:
-
-`Gradle build failed to produce an .apk file. It's likely that this file was generated under /home/runner/work/WebLibre/WebLibre/apps/weblibre/build, but the tool couldn't find it.`
-
-Therefore use the cheapest useful validation first:
-
-1. Dart targeted tests.
+1. Focused tests.
 2. `flutter analyze`.
-3. targeted Kotlin/native checks.
-4. Pigeon generation consistency.
-5. targeted integration/build.
-6. full APK build only at a stable milestone.
+3. Targeted Kotlin/native checks.
+4. Pigeon generation consistency when the source contract changes.
+5. Targeted integration/build.
+6. Full APK only at a stable milestone.
 
-Do not repeatedly consume CI/network budget on full APK builds for small changes.
-
-## BRANCH / HANDOFF
-The active UA feature work was organized under:
-
-`weblibre-ua-mainline-v2`
-
-A Draft PR was opened as `#2` for the initial data-contract slice.
-
-The durable continuation documents were added to that feature branch:
-
-- `docs/WEBLIBRE_PROJECT_HANDOFF_2026-08-28.md`
-- `docs/GENSPARK_WEBLIBRE_FORK_CONTINUATION_PROMPT.md`
-
-These documents are part of the project handoff and should remain synchronized with reality.
-
-## ROADMAP
-### Phase A — foundation
-- [x] container metadata supports custom UA;
-- [x] UA persistence;
-- [x] UA data tests;
-- [x] established per-container proxy direction.
-
-### Phase B — UA runtime
-- [ ] propagate container UA to tab creation;
-- [ ] apply UA to EngineSession before first navigation;
-- [ ] new tab;
-- [ ] multiple tabs;
-- [ ] duplicate tab;
-- [ ] restore/recovery;
-- [ ] runtime A/B isolation test.
-
-### Phase C — container settings
-- [ ] UA field in container settings;
-- [ ] per-container proxy controls/verification;
-- [ ] clear/reset defaults;
-- [ ] validation and normalization;
-- [ ] selected-container-only mutations.
-
-### Phase D — proxy hardening
-- [ ] pre-navigation verification;
-- [ ] restore verification;
-- [ ] concurrent proxy isolation;
-- [ ] regression tests.
-
-### Phase E — restore/event correctness
-- [ ] decide if explicit sync request provenance is needed;
-- [ ] add generation/request boundary if required;
-- [ ] regenerate Pigeon;
-- [ ] add concurrency regression tests.
-
-### Phase F — release
-- [ ] analyze clean;
-- [ ] Dart tests clean;
-- [ ] native/Kotlin checks clean;
-- [ ] Pigeon generation reproducible;
-- [ ] CI green;
-- [ ] correct APK artifact detection/upload;
-- [ ] stable debug APK;
-- [ ] release build.
+Do not repeatedly consume CI/network budget on full APK builds for narrow changes.
 
 ## NON-NEGOTIABLE INVARIANTS
 1. UA is per container/session, never global.
@@ -232,34 +188,21 @@ These documents are part of the project handoff and should remain synchronized w
 3. Container A cannot mutate Container B.
 4. UA is applied before first navigation.
 5. Restore preserves UA/proxy policy.
-6. Event arrival order is not proof of request/response correlation.
+6. Event arrival order is not request/response provenance.
 7. Prefer local WebLibre integration over upstream dependency forks.
-8. Generated code stays synchronized with its source.
+8. Generated code remains synchronized with its source.
 9. Targeted validation precedes expensive builds.
-10. A feature is not complete until both persistence and runtime behavior are verified.
+10. Agent capabilities never exceed the currently granted permissions.
+11. User can explicitly grant/revoke Full Access.
+12. Agent memory and identity are user-controlled.
 
-## CONCRETE REPORTING FORMAT FOR AGENTS
-When reporting progress, give evidence rather than vague status:
+## REPORTING
+Every meaningful report/checkpoint must include:
+- branch;
+- HEAD;
+- files changed;
+- tests/checks and exact result;
+- blocker;
+- exact next action.
 
-- Current branch:
-- Current HEAD/commit:
-- Files changed:
-- What was actually implemented:
-- Tests/checks executed:
-- Exact result:
-- Known blocker:
-- Next concrete action:
-
-Never claim success based only on a design or a model field. Runtime behavior must be demonstrated.
-
-## IMMEDIATE NEXT MISSION
-1. Read the handoff documents.
-2. Inspect actual current HEAD and diff.
-3. Complete the UA runtime vertical slice through EngineSession.
-4. Verify addTab/addMultipleTabs/duplicateTab.
-5. Implement restore correctly.
-6. Add runtime A/B isolation tests.
-7. Add container settings UI.
-8. Harden proxy isolation.
-9. Resolve restore/event provenance if needed.
-10. Run full APK validation only after the targeted suite is green.
+Never claim runtime completion from a data model alone.
