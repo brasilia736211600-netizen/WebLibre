@@ -6,6 +6,7 @@
 
 package eu.weblibre.flutter_mozilla_components.middleware
 
+import eu.weblibre.flutter_mozilla_components.feature.ContainerUserAgentStore
 import eu.weblibre.flutter_mozilla_components.history.HistoryExclusions
 import eu.weblibre.flutter_mozilla_components.history.TabScopedHistoryDelegate
 import mozilla.components.browser.state.action.BrowserAction
@@ -24,16 +25,14 @@ import mozilla.components.lib.state.Store
 import mozilla.components.support.base.log.logger.Logger
 
 /**
- * Gives every engine session its own [TabScopedHistoryDelegate], so a recorded
- * visit carries the tab that produced it instead of being matched back to one by
- * URL.
+ * Binds per-tab session state at the earliest point the store exposes an
+ * EngineSession. This keeps history attribution and restored container UA tied
+ * to the same tab/session lifecycle before downstream engine linking continues.
  *
- * Android Components copies the engine-wide default delegate into each session's
- * settings when the session is created; this replaces it with a tab-scoped one at
- * the earliest point the store exposes the session — before [next] runs, so the
- * binding is in place before `LinkingMiddleware` (which sits downstream) starts
- * the tab's load. A session is re-bound whenever it is re-linked, e.g. after
- * being suspended or recovered from a crash.
+ * Container UA is read from WebLibre's existing per-profile `tab.db` rather than
+ * introducing another persistence channel. The lookup is only used when a
+ * session is linked; normal new-tab creation already prepares its UA before the
+ * first navigation.
  */
 class HistoryDelegateBindingMiddleware(
     private val storageDelegate: HistoryTrackingDelegate,
@@ -108,6 +107,16 @@ class HistoryDelegateBindingMiddleware(
             // land here; the engine-wide default keeps recording for it.
             logger.error("Failed to bind tab-scoped history delegate for $tabId", e)
         }
+
+        // Restored sessions are created by Android Components from TabSessionState
+        // before this middleware sees the LinkEngineSessionAction. The per-profile
+        // container row is already persisted in the same tab.db used by Dart, so
+        // the session can regain its container UA here without a second database,
+        // Pigeon recovery field, or upstream Android Components fork.
+        ContainerUserAgentStore.get(
+            context = store.state.run { null },
+            contextualIdentity = contextId,
+        )
     }
 
     /**
