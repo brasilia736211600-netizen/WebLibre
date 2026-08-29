@@ -119,8 +119,8 @@ jobs:
           assert s.count(old) == 1
           s = s.replace(old, new)
 
-          old = """      newContextId: effectiveContextId,\n      selectTab: selectTab,\n"""
-          new = """      newContextId: effectiveContextId,\n      userAgent: containerData?.metadata.userAgent,\n      selectTab: selectTab,\n"""
+          old = """          newContextId: effectiveContextId,\n          selectTab: selectTab,\n"""
+          new = """          newContextId: effectiveContextId,\n          userAgent: containerData?.metadata.userAgent,\n          selectTab: selectTab,\n"""
           assert s.count(old) == 1
           s = s.replace(old, new, 1)
           p.write_text(s)
@@ -132,10 +132,6 @@ jobs:
           new = """        flags: LoadUrlFlagsValue,\n        contextId: String?,\n        userAgent: String?,\n        source: SourceValue,\n"""
           assert s.count(old) == 1
           s = s.replace(old, new, 1)
-
-          old = """            // contextId = contextId,\n"""
-          if old in s:
-              raise AssertionError('unexpected commented contextId marker')
 
           old = """            val loadFlags = EngineSession.LoadUrlFlags.select(flags.value.toInt())\n\n            // Inlined from TabsUseCases.AddNewTabUseCase"""
           new = """            val loadFlags = EngineSession.LoadUrlFlags.select(flags.value.toInt())\n            val engineSession = components.core.engine.createSession(\n                private = private,\n                contextId = contextId,\n            ).also { session ->\n                session.settings.userAgentString = userAgent\n            }\n\n            // Inlined from TabsUseCases.AddNewTabUseCase"""
