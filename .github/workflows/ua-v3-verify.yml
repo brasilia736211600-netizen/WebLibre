@@ -1,0 +1,70 @@
+name: WebLibre UA v3 verify
+
+on:
+  push:
+    branches:
+      - weblibre-ua-mainline-v3
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: weblibre-ua-mainline-v3
+          fetch-depth: 0
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.0
+          cache: true
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 1.25.x
+
+      - name: Install NDK
+        run: |
+          set -euo pipefail
+          NDK_VERSION="$(sed -n 's/^weblibre\.ndkVersion[[:space:]]*=[[:space:]]*//p' apps/weblibre/android/gradle.properties)"
+          test -n "$NDK_VERSION"
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;$NDK_VERSION"
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/$NDK_VERSION" >> "$GITHUB_ENV"
+          echo "ANDROID_NDK_ROOT=$ANDROID_HOME/ndk/$NDK_VERSION" >> "$GITHUB_ENV"
+          echo "NDK_HOME=$ANDROID_HOME/ndk/$NDK_VERSION" >> "$GITHUB_ENV"
+
+      - name: Bootstrap Flutter workspace
+        run: |
+          dart pub global activate melos 7.8.1
+          melos bootstrap
+
+      - name: Build pinned native runtime
+        env:
+          SING_BOX_SOURCE: ${{ runner.temp }}/sing-box
+          IPTPROXY_SOURCE: ${{ runner.temp }}/IPtProxy
+        run: |
+          set -euo pipefail
+          source native/go_mobile_runtime/pins.env
+          git clone --depth 1 --branch "$SING_BOX_TAG" https://github.com/SagerNet/sing-box.git "$RUNNER_TEMP/sing-box"
+          git -C "$RUNNER_TEMP/sing-box" fetch --depth 1 origin "$SING_BOX_COMMIT"
+          git -C "$RUNNER_TEMP/sing-box" checkout "$SING_BOX_COMMIT"
+          test "$(git -C "$RUNNER_TEMP/sing-box" rev-parse HEAD)" = "$SING_BOX_COMMIT"
+          git clone --depth 1 --branch "$IPTPROXY_TAG" https://github.com/tladesignz/IPtProxy.git "$RUNNER_TEMP/IPtProxy"
+          git -C "$RUNNER_TEMP/IPtProxy" fetch --depth 1 origin "$IPTPROXY_COMMIT"
+          git -C "$RUNNER_TEMP/IPtProxy" checkout "$IPTPROXY_COMMIT"
+          test "$(git -C "$RUNNER_TEMP/IPtProxy" rev-parse HEAD)" = "$IPTPROXY_COMMIT"
+          git -C "$RUNNER_TEMP/IPtProxy" submodule update --init dnstt
+          melos run build-go-runtime --no-select
+
+      - name: Compile Android Kotlin
+        run: gradle -p apps/weblibre/android :app:compileStableDebugKotlin --no-daemon --stacktrace
