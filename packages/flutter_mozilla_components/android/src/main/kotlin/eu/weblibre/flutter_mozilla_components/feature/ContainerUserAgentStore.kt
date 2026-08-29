@@ -25,6 +25,23 @@ internal object ContainerUserAgentStore {
 
     private val logger = Logger("container_user_agent")
 
+    @VisibleForTesting
+    internal fun parseUserAgent(
+        metadata: String,
+        contextualIdentity: String,
+    ): String? = try {
+        val json = JSONObject(metadata)
+        if (json.optString("contextualIdentity", null) != contextualIdentity) {
+            return null
+        }
+
+        json.optString("userAgent", null)
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+    } catch (e: JSONException) {
+        null
+    }
+
     fun get(context: Context, contextualIdentity: String?): String? {
         if (contextualIdentity.isNullOrBlank()) return null
 
@@ -43,21 +60,8 @@ internal object ContainerUserAgentStore {
 
             while (cursor.moveToNext()) {
                 val metadata = cursor.getString(0) ?: continue
-                try {
-                    val json = JSONObject(metadata)
-                    if (json.optString("contextualIdentity", null) != contextualIdentity) {
-                        continue
-                    }
-
-                    return json.optString("userAgent", null)
-                        ?.trim()
-                        ?.takeIf { it.isNotEmpty() }
-                } catch (e: JSONException) {
-                    // Ignore one malformed container row and continue looking for
-                    // the requested container. A bad unrelated row must not hide
-                    // a valid UA belonging to another container.
-                    logger.warn("Unable to parse persisted container metadata", e)
-                }
+                val userAgent = parseUserAgent(metadata, contextualIdentity)
+                if (userAgent != null) return userAgent
             }
 
             null
