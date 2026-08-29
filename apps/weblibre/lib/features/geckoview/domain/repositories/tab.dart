@@ -279,9 +279,10 @@ class TabRepository extends _$TabRepository {
     };
 
     final effectiveTabs = tabs.toList(growable: true);
-    if (assignedContainer?.metadata.userAgent != null) {
+    if (assignedContainer != null) {
       for (final tab in effectiveTabs) {
-        tab.userAgent ??= assignedContainer!.metadata.userAgent;
+        // The destination container is authoritative for session identity.
+        tab.userAgent = assignedContainer.metadata.userAgent;
       }
     }
 
@@ -396,6 +397,7 @@ class TabRepository extends _$TabRepository {
           selectTabId: selectTabId,
           newContextId: effectiveContextId,
           selectNewTab: selectTab,
+          userAgent: containerData?.metadata.userAgent,
           excludeFromHistory:
               containerData?.metadata.excludeFromHistory ?? false,
         );
