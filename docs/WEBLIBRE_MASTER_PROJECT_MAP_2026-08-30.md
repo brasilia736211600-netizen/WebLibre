@@ -5,6 +5,7 @@
 **Repository source of truth:** GitHub code, branch refs, commits, PRs, and CI.
 **Canonical execution state:** `docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`
 **Canonical AI specification:** `docs/WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md`
+**Canonical resume protocol:** `docs/WEBLIBRE_RESUME_COMMAND_2026-08-30.md`
 
 ## CURRENT POSITION
 
@@ -30,7 +31,7 @@ REAL ANDROID RUNTIME PROOF       AI-1 BROWSER TOOL
         |                             |
         |                        +--> inventory       [DONE]
         |                        +--> typed registry  [DONE]
-        |                        +--> focused tests   [ADDED; CI RUN #53]
+        |                        +--> focused tests   [WRITTEN; CI PENDING]
         |                        +--> API mapping     [SOURCE-VERIFIED]
         |                        +--> execution       [ADDED; CI PENDING]
         |                             |
@@ -119,7 +120,7 @@ Focused execution tests added:
 
 The execution boundary performs registry lookup, declared-permission checking, typed dispatch, deterministic success/error envelopes, and a non-persistent audit event. It does not execute LLM logic or expose Gecko/Pigeon/database internals.
 
-Current CI validation is pending on Quality run #53 (`33334247834`), whose `head_sha` matches the current branch HEAD `21f8ae8ab2b9a0385a7c0880280226d5034a5405`.
+Current-head CI validation is pending; only a run whose `head_sha` equals the actual branch HEAD may be used as proof.
 
 ## RELEASE FOUNDATION
 
@@ -169,21 +170,36 @@ AI-1 inventory + contract + registry ──────────┤
                                      AI-8 end-to-end validation
 ```
 
-## RESUME RULE
+## RESUME / ANTI-AMNESIA RULES
 
-A new agent must read this map and `WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`, then verify actual GitHub branch/HEAD/PR/CI before editing. A CI result is evidence only when its `head_sha` matches the checkpoint being evaluated.
+A new agent must read:
+1. `WEBLIBRE_MASTER_PROJECT_MAP_2026-08-30.md`
+2. `WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`
+3. `WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md` when architecture/product scope is relevant
+4. `WEBLIBRE_RESUME_COMMAND_2026-08-30.md`
+
+Then verify actual GitHub branch/HEAD/PR/CI before editing.
+
+Evidence levels are strict:
+- `SOURCE-VERIFIED`: repository code path inspected.
+- `CI-VERIFIED`: relevant run completed successfully and `head_sha` exactly matches the checkpoint under evaluation.
+- `ANDROID-RUNTIME-VERIFIED`: behavior exercised on a real Android runtime.
+- `DOCUMENTED`: recorded state only.
+
+Never promote a lower evidence level to a higher one. Never trust a remembered HEAD, an old PR description, or a stale CI result. If chat and repository disagree, GitHub wins.
 
 Follow:
 `READ -> VERIFY -> RECONCILE -> PLAN -> EXECUTE -> TEST -> DIFF -> COMMIT -> SAVE STATE`
 
-Update this map and workflow state at every material milestone.
+Update this map and workflow state at every material milestone. Save exact HEAD, test evidence, CI run/head_sha, remaining blocker, and first next step.
 
 ## CURRENT CHECKPOINT
 
 **Date:** 2026-08-30
 **Branch:** `weblibre-ua-mainline-v3`
-**Current code checkpoint:** `21f8ae8ab2b9a0385a7c0880280226d5034a5405` (minimal AI-1 execution boundary + focused tests).
+**Current HEAD:** `a5c2c1e1da5b9af8057f3de6bba113f388c6e183`.
 **Latest verified Quality:** #39 `33329515686` — GREEN against the older product checkpoint.
-**Current Quality:** #53 `33334247834` — QUEUED against current HEAD `21f8ae8ab2b9a0385a7c0880280226d5034a5405`.
+**Current-head AI-1 CI:** pending; do not infer success from stale runs.
 **Android runtime proof:** pending; consolidate into one device pass.
-**AI-1:** contract/registry + source-verified six-tool mappings + minimal execution boundary implemented; current CI validation pending.
+**AI-1:** contract/registry + source-verified six-tool mappings + minimal execution boundary + focused tests implemented; CI validation pending.
+**Resume protocol:** `docs/WEBLIBRE_RESUME_COMMAND_2026-08-30.md`.
