@@ -48,7 +48,7 @@ void main() {
   test('dispatches typed open_url input through the backend', () async {
     final result = await executor.execute(
       name: 'open_url',
-      input: const OpenUrlTabInput(
+      input: OpenUrlTabInput(
         tabId: 'tab-1',
         url: Uri.parse('https://example.com'),
       ),
