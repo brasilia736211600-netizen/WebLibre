@@ -21,7 +21,7 @@ PER-CONTAINER USER-AGENT
         +--> restore-source integration         [DONE IN SOURCE]
         |
         v
-QUALITY GATE                                  [GREEN at last product checkpoint]
+QUALITY GATE                                  [GREEN at last verified product checkpoint]
         |
         +-----------------------------+
         |                             |
@@ -30,8 +30,9 @@ REAL ANDROID RUNTIME PROOF       AI-1 BROWSER TOOL
         |                             |
         |                        +--> inventory       [DONE]
         |                        +--> typed registry  [DONE]
-        |                        +--> focused tests   [ADDED; CI PENDING]
-        |                        +--> execution       [NEXT]
+        |                        +--> focused tests   [ADDED; CI RUN #53]
+        |                        +--> API mapping     [SOURCE-VERIFIED]
+        |                        +--> execution       [ADDED; CI PENDING]
         |                             |
         +-------------+---------------+
                       v
@@ -102,9 +103,23 @@ Implemented minimal model-independent registry:
 First slice:
 `get_tabs`, `get_current_tab`, `create_tab`, `switch_tab`, `close_tab`, `open_url`.
 
-The registry has typed input/output contracts, permissions, and side-effect metadata. It does not execute browser actions or expose Gecko/Pigeon/database internals.
+Source-verified stable mappings:
+- `get_tabs` -> `tabListProvider` + `tabStatesProvider`.
+- `get_current_tab` -> `selectedTabProvider` + `tabStatesProvider`.
+- `create_tab` -> existing `TabRepository.addTab` with `TabMode.regular`.
+- `switch_tab` -> existing `TabRepository.selectTab`.
+- `close_tab` -> existing `TabRepository.closeTab`.
+- `open_url` -> existing `GeckoSessionService(tabId: ...).loadUrl`.
 
-Next: map each tool to existing stable APIs and add only the minimal execution adapter/result-error boundary.
+Minimal execution boundary added:
+`apps/weblibre/lib/core/ai/tools/browser_tool_executor.dart`
+
+Focused execution tests added:
+`apps/weblibre/test/core/ai/tools/browser_tool_executor_test.dart`
+
+The execution boundary performs registry lookup, declared-permission checking, typed dispatch, deterministic success/error envelopes, and a non-persistent audit event. It does not execute LLM logic or expose Gecko/Pigeon/database internals.
+
+Current CI validation is pending on Quality run #53 (`33334247834`), whose `head_sha` matches the current branch HEAD `21f8ae8ab2b9a0385a7c0880280226d5034a5405`.
 
 ## RELEASE FOUNDATION
 
@@ -167,7 +182,8 @@ Update this map and workflow state at every material milestone.
 
 **Date:** 2026-08-30
 **Branch:** `weblibre-ua-mainline-v3`
-**Current code checkpoint:** `6db551f2f7ed80b124d7dca73453cbd08df7e5e9` (AI-1 contract/registry + focused test).
+**Current code checkpoint:** `21f8ae8ab2b9a0385a7c0880280226d5034a5405` (minimal AI-1 execution boundary + focused tests).
 **Latest verified Quality:** #39 `33329515686` — GREEN against the older product checkpoint.
+**Current Quality:** #53 `33334247834` — QUEUED against current HEAD `21f8ae8ab2b9a0385a7c0880280226d5034a5405`.
 **Android runtime proof:** pending; consolidate into one device pass.
-**AI-1:** registry implemented; CI validation and execution adapter mapping are next.
+**AI-1:** contract/registry + source-verified six-tool mappings + minimal execution boundary implemented; current CI validation pending.
