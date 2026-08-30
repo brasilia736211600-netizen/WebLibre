@@ -2,7 +2,7 @@
 
 **Last synchronized:** 2026-08-30
 **Branch:** `weblibre-ua-mainline-v3`
-**Last verified branch HEAD before this state-save:** `868299bf757c2db1e19630f1a4c9189f2b59a1ae`
+**Current branch HEAD after this state-save:** `TO_BE_FILLED_AFTER_COMMIT`
 
 ## CURRENT EXECUTION TRUTH
 GitHub is the source of truth for code, branch refs, commits, PRs, and CI. Never reconstruct state from chat.
@@ -21,27 +21,29 @@ Implemented and source-verified:
 ### Restore
 UA cold-start/restored-tab integration is implemented in source but remains runtime-unverified. Restore retains `contextId`; existing `tab.db` and persisted `container.metadata` remain the sources of truth.
 
-### Test surface
+## EVIDENCE
 - Dart focused container metadata tests: 11/11 green.
 - Native focused tests: `ContainerUserAgentStoreTest` and `ContainerProxyFeatureTest`.
 - Quality #39 `33329515686` completed successfully against product checkpoint `66e1dcf82f14333d4d7cd88c202a6e85aae13a4b`.
-- AI-1 registry tests are added.
-- AI-1 execution-boundary tests are added.
-- Quality #59 `33334940889` is queued against branch HEAD `868299bf757c2db1e19630f1a4c9189f2b59a1ae` and therefore is the current CI validation attempt for the restart-safe documentation checkpoint; queued/in-progress is not proof of success.
+- Quality #60 `33334955774` completed successfully against `477140419642d1170b241dd39f143900b9b98909`.
+- Quality #60 is NOT AI-1 CI proof because its workflow revision predates the AI-1 test step.
+- AI-1 registry tests and execution-boundary tests are present in source.
+- AI-1 CI coverage was added to `.github/workflows/quality.yml` in commit `b6c866d2e372c2af1ff45b52003a6b469f4f8229`.
+- No new Quality run was created for `b6c866d2...` by the workflow-file-only change; under the current trigger/path behavior, a later eligible PR change or manual `workflow_dispatch` is required to execute the new AI-1 test step.
 - No automated Android process-death/cold-start test; unit/CI tests cannot prove real Android process lifecycle behavior.
 
 ## GIT / PR / CI
 - Branch: `weblibre-ua-mainline-v3`.
-- Last verified branch HEAD before this state-save: `868299bf757c2db1e19630f1a4c9189f2b59a1ae`.
-- Product-code checkpoint: `21f8ae8ab2b9a0385a7c0880280226d5034a5405`.
+- Product-code checkpoint remains the minimal AI-1 execution boundary and its focused tests.
 - PR #3: open, draft, not merged; base `main`.
-- The PR description can contain an old head value; branch ref is authoritative.
-- Quality #39 `33329515686`: SUCCESS against the older product checkpoint.
-- Quality #59 `33334940889`: QUEUED with `head_sha=868299bf757c2db1e19630f1a4c9189f2b59a1ae`.
-- Quality workflow uses per-PR/branch `concurrency` with `cancel-in-progress: true`, and excludes `.github/workflows/quality.yml` from normal PR path triggers.
+- Quality #60 `33334955774`: SUCCESS against `477140419642d1170b241dd39f143900b9b98909`, but without the AI-1 test step.
+- `quality.yml` now explicitly runs:
+  - `test/core/ai/tools/browser_tool_registry_test.dart`
+  - `test/core/ai/tools/browser_tool_executor_test.dart`
+- Quality uses per-PR/branch concurrency with `cancel-in-progress: true`.
 
 ## RUN INTERPRETATION RULE
-A Quality run validates the `head_sha` captured at trigger time, not the branch HEAD seen later. Always inspect `head_sha` before using a result as current evidence.
+A Quality run validates the workflow revision and `head_sha` captured at trigger time, not the branch HEAD seen later. Always inspect both the workflow revision and `head_sha` before using a result as evidence.
 
 ## PARALLEL EXECUTION RULE
 When an independent CI/build/test/run is waiting or in progress, do not remain idle. Use the interval for independent non-conflicting source/call-chain inspection, PR/review/issue inspection, release/build analysis, documentation consistency, or preparation of the next minimal change.
@@ -58,17 +60,15 @@ Rules:
 9. Android device testing is a validation checkpoint, not a prerequisite for independent repository preparation. Complete buildable/tooling/design work in parallel, then perform the consolidated Android validation pass when the integrated build is ready.
 
 ## LAST COMPLETED STEP
-Persisted the restart-safe continuity protocol, added a canonical copy/paste resume command, and synchronized the master map/workflow state with the durable evidence rules.
-
-Before this documentation synchronization, the last product-code step was the minimal AI-1 execution boundary with focused tests.
+Verified Quality #60 successfully against its exact `head_sha`, discovered that the Quality workflow did not execute the AI-1 focused tests, added those tests to the workflow, and saved the reconciliation in durable project documentation.
 
 ## CURRENT UNFINISHED STEP
-A. Browser runtime proof remains unverified on a real Android runtime:
+A. AI-1 CI verification: the workflow now covers the registry and executor tests, but no run containing that step has completed successfully yet.
+
+B. Browser runtime proof remains unverified on a real Android runtime:
 - cold-start/restored-tab UA persistence;
 - Container A/B UA isolation;
 - Proxy A/B/fail-closed behavior.
-
-B. AI-1 execution boundary and focused tests are implemented in source but are not yet CI-verified on a successful current checkpoint.
 
 ## AI-1 CHECKPOINT
 Inventory:
@@ -86,9 +86,18 @@ First slice:
 
 `open_url` has an explicit typed `{tabId, url}` input.
 
+Execution boundary:
+- registry lookup;
+- declared-permission checking;
+- typed dispatch;
+- deterministic success/error envelopes;
+- non-persistent audit event;
+- no LLM logic;
+- no direct Gecko/Pigeon/database exposure.
+
 ## EXACT NEXT EXECUTION
-1. Re-read the actual branch HEAD after this documentation commit and inspect the newest Quality run; accept CI proof only when `head_sha` exactly equals the actual branch HEAD and the run is successful.
-2. If current-head Quality reports a concrete blocker, fix only the first causal blocker.
+1. Obtain a Quality run that executes the newly added AI-1 test step; use only a successful run whose `head_sha` exactly matches the evaluated checkpoint.
+2. If that run reports a concrete blocker, fix only the first causal blocker.
 3. Do not expand the AI-1 tool surface while validation is pending.
 4. Continue independent preparation of the single consolidated Android runtime validation path/checklist without requiring repeated APK downloads.
 5. Perform one consolidated Android validation pass covering UA restore, Container A/B isolation, and proxy behavior when the integrated build is ready.
@@ -132,10 +141,11 @@ Do not treat source mapping or CI success as proof of real Android cold-start, U
 
 ## CHECKPOINT
 **Date:** 2026-08-30
-**Current verified pre-state-save HEAD:** `868299bf757c2db1e19630f1a4c9189f2b59a1ae`.
-**Last product-code checkpoint:** `21f8ae8ab2b9a0385a7c0880280226d5034a5405`.
-**Latest verified Quality:** #39 `33329515686` GREEN against the older product checkpoint.
-**Current CI attempt:** Quality #59 `33334940889`, queued against `868299bf757c2db1e19630f1a4c9189f2b59a1ae`.
-**Current browser blocker:** real Android runtime validation.
-**Current AI-1 status:** six-tool contract/registry + source-verified execution mappings + minimal execution boundary + focused tests implemented; current-head CI validation pending.
+**Branch:** `weblibre-ua-mainline-v3`
+**Pre-state-save HEAD:** `8bdae5ab8ed9339537cee8fd2cb71566e8455cdc`.
+**Quality #60:** `33334955774` GREEN against `477140419642d1170b241dd39f143900b9b98909`, but not AI-1 proof because its workflow revision predates AI-1 test coverage.
+**AI-1 CI coverage commit:** `b6c866d2e372c2af1ff45b52003a6b469f4f8229`.
+**Current blocker:** no completed Quality run has yet executed the newly added AI-1 tests.
+**Browser blocker:** real Android runtime validation.
+**Current AI-1 status:** six-tool contract/registry + source-verified mappings + minimal execution boundary + focused tests implemented; CI coverage added; successful CI execution of those tests pending.
 **Resume protocol:** `docs/WEBLIBRE_RESUME_COMMAND_2026-08-30.md`.
