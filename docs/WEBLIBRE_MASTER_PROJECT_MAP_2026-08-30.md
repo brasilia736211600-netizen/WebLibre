@@ -80,7 +80,7 @@ Implemented and source-verified:
 Focused evidence:
 - Dart container metadata suite: 11/11 green.
 - Quality #39 `33329515686`: GREEN on product checkpoint `66e1dcf82f14333d4d7cd88c202a6e85aae13a4b`.
-- Quality #60 `33334955774`: GREEN against `477140419642d1170b241dd39f143900b9b98909`; this run did not yet contain the newly added AI-1 test step, so it is not AI-1 CI proof.
+- Quality #60 `33334955774`: GREEN against `477140419642d1170b241dd39f143900b9b98909`; it did not contain the AI-1 test step and therefore is not AI-1 CI proof.
 
 ## ANDROID RUNTIME PROOF — PENDING
 
@@ -121,7 +121,7 @@ Focused execution tests:
 
 The execution boundary performs registry lookup, declared-permission checking, typed dispatch, deterministic success/error envelopes, and a non-persistent audit event. It does not execute LLM logic or expose Gecko/Pigeon/database internals.
 
-CI coverage was added to `.github/workflows/quality.yml` for both AI-1 focused test files. The workflow-only commit does not automatically create a new PR Quality run under the current trigger/path behavior; therefore AI-1 remains CI-unverified until a Quality run actually executes those tests.
+The Quality workflow now explicitly executes both AI-1 focused test files. The coverage was added after Quality #60, so #60 remains valid only for the steps it actually ran. A new Quality run containing the AI-1 test step is required before promoting AI-1 to `CI-VERIFIED`.
 
 ## RELEASE FOUNDATION
 
@@ -204,9 +204,10 @@ Update this map and workflow state at every material milestone. Save exact HEAD,
 
 **Date:** 2026-08-30
 **Branch:** `weblibre-ua-mainline-v3`
-**Current HEAD before this documentation update:** `b6c866d2e372c2af1ff45b52003a6b469f4f8229`.
+**State-save HEAD before this final map-only commit:** `e9306ae4242fb376590a7831582a09f699fded2e`.
 **Quality #60:** `33334955774` GREEN against `477140419642d1170b241dd39f143900b9b98909`; not AI-1 CI proof because AI-1 test coverage was added afterward.
-**AI-1 CI coverage:** added in `b6c866d2e372c2af1ff45b52003a6b469f4f8229`; a new Quality run executing that step is required.
-**Android runtime proof:** pending; consolidate into one device pass.
-**AI-1:** contract/registry + source-verified six-tool mappings + minimal execution boundary + focused tests implemented; CI coverage now present, execution proof pending.
+**AI-1 CI coverage commit:** `b6c866d2e372c2af1ff45b52003a6b469f4f8229`.
+**Current blocker:** no completed Quality run has yet executed the newly added AI-1 tests.
+**Browser blocker:** real Android runtime validation.
+**Current AI-1 status:** six-tool contract/registry + source-verified mappings + minimal execution boundary + focused tests implemented; CI coverage added; successful CI execution of those tests pending.
 **Resume protocol:** `docs/WEBLIBRE_RESUME_COMMAND_2026-08-30.md`.
