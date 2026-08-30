@@ -10,11 +10,10 @@ on:
       - 'pubspec.yaml'
       - 'pubspec.lock'
       - 'melos.yaml'
-      - '.github/workflows/quality.yml'
   workflow_dispatch:
 
-# Only the newest Quality run for a PR/branch is useful. Cancel superseded runs
-# so repeated PR synchronization does not consume runners on stale commits.
+# Keep only the newest Quality run for a PR/branch. Older runs test stale
+# commits and waste a full gomobile/native build.
 concurrency:
   group: quality-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
