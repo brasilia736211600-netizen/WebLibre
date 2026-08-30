@@ -226,6 +226,14 @@ final class BrowserToolExecutor {
           if (input is! OpenUrlTabInput) return _invalid(name);
           return _operationResult(name, await _backend.openUrl(input));
       }
+
+      return BrowserToolExecutionResult.failure(
+        toolName: name,
+        error: const BrowserToolExecutionError(
+          code: BrowserToolExecutionErrorCode.unknownTool,
+          message: 'Registered tool has no executor implementation.',
+        ),
+      );
     } catch (error) {
       return BrowserToolExecutionResult.failure(
         toolName: name,
