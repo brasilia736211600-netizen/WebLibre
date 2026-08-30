@@ -2,7 +2,7 @@
 
 **Last synchronized:** 2026-08-30
 **Branch:** `weblibre-ua-mainline-v3`
-**Current branch HEAD at this state-save:** `ac2f4a815e4e65a2762d25f2de3229215ee6b1d5`
+**Current branch HEAD at this state-save:** `8f96a43924e3e4cb79b2601244971c6c5855a279`
 
 ## CURRENT EXECUTION TRUTH
 GitHub is the source of truth for code, branch refs, commits, PRs, and CI. Never reconstruct state from chat.
@@ -31,16 +31,29 @@ UA cold-start/restored-tab integration is implemented in source but remains runt
 - Quality #66 `33335863267` for the fix commit was cancelled by per-PR concurrency before AI-1 tests ran.
 - Quality #70 `33335945926` completed successfully against `f05f643eda7ffb6503a4d6429b24e0d77ce7ad0d`. Its Dart job successfully ran the AI-1 browser tool tests, targeted container tests, native gomobile build, and targeted native container tests. AI-1 execution boundary is therefore CI-VERIFIED at that checkpoint.
 - No automated Android process-death/cold-start test; unit/CI tests cannot prove real Android process lifecycle or real-device proxy behavior.
-- Repository inspection found only the existing `build.yml` release workflow and normal Flutter/native test tree; no dedicated `integration_test` Android runtime harness exists. The release workflow builds APK/AAB on version tags; it does not perform real-device validation.
-- Consolidated device validation checklist added at `docs/WEBLIBRE_ANDROID_RUNTIME_VALIDATION_CHECKLIST_2026-08-30.md`.
+- Repository inspection found only the existing release workflow and normal Flutter/native test tree; no dedicated `integration_test` Android runtime harness exists.
+- Consolidated device validation checklist: `docs/WEBLIBRE_ANDROID_RUNTIME_VALIDATION_CHECKLIST_2026-08-30.md`.
 
 ## GIT / PR / CI
 - Branch: `weblibre-ua-mainline-v3`.
-- Current branch HEAD at this state-save: `ac2f4a815e4e65a2762d25f2de3229215ee6b1d5`.
+- Current branch HEAD at this state-save: `8f96a43924e3e4cb79b2601244971c6c5855a279`.
 - PR #3: open, draft, not merged; base `main`.
-- Quality #70 `33335945926`: SUCCESS against the exact code checkpoint `f05f643...`; AI-1 browser tool tests and targeted container/native checks passed.
-- Commits after that checkpoint are documentation-only: state synchronization followed by the Android runtime checklist and this state synchronization. No product-code changes were introduced after the CI-verified AI-1 checkpoint.
+- Quality #70 `33335945926`: SUCCESS against exact code checkpoint `f05f643...`; AI-1 browser tool tests and targeted container/native checks passed.
+- Commits after that checkpoint include documentation and the CI-only manual Android artifact build path; no product runtime architecture changes were introduced.
 - Quality uses per-PR/branch concurrency with `cancel-in-progress: true`.
+
+## MANUAL ANDROID ARTIFACT BUILD
+The existing `.github/workflows/build.yml` previously triggered only on `v*` tags, which would couple validation-artifact creation to release tagging. A minimal CI-operational path was added:
+- `workflow_dispatch` input `build_type`: `stable`, `alpha`, or `alphaLegacy`.
+- Manual builds compile the selected APK using the existing build commands.
+- Manual builds upload APKs as workflow artifacts.
+- Manual builds explicitly skip GitHub Release creation and Google Play publication.
+- Existing tag-triggered release behavior remains unchanged.
+
+Commit introducing this path: `01bf9c0e037145963bb81bca88973f712d8bfa69`.
+Documentation synchronization followed in `8f96a43924e3e4cb79b2601244971c6c5855a279`.
+
+This is CI plumbing only; it does not constitute Android runtime proof and does not change product architecture.
 
 ## RUN INTERPRETATION RULE
 A Quality run validates the workflow revision and `head_sha` captured at trigger time, not a later branch HEAD. PR workflows may test a merge ref rather than the head commit. Always inspect the checked-out ref/merge SHA and PR head SHA before using a result as evidence.
@@ -49,7 +62,7 @@ A Quality run validates the workflow revision and `head_sha` captured at trigger
 When an independent CI/build/test/run is waiting or in progress, do not remain idle. Use the interval for independent non-conflicting source inspection, release analysis, or documentation. Never duplicate an active build, write the same file concurrently, bypass dependency order, or violate YAGNI.
 
 ## LAST COMPLETED STEP
-AI-1 execution boundary reached CI-VERIFIED status via Quality #70. Repository inspection then confirmed that there is no dedicated Android integration/runtime harness. The existing release workflow can produce the integrated APK/AAB, while real-device behavior remains a manual consolidated checkpoint. A precise six-scenario device checklist is now stored in `WEBLIBRE_ANDROID_RUNTIME_VALIDATION_CHECKLIST_2026-08-30.md`.
+AI-1 execution boundary reached CI-VERIFIED status via Quality #70. Repository inspection confirmed no dedicated Android runtime harness. The release workflow was minimally extended with a manual validation-build trigger that produces APK artifacts without publishing a release or Play build.
 
 ## CURRENT UNFINISHED STEP
 Real Android runtime proof remains pending:
@@ -85,10 +98,10 @@ Execution boundary:
 
 ## EXACT NEXT EXECUTION
 1. Do not expand AI-1; its current six-tool execution boundary is CI-VERIFIED.
-2. Do not create an Android integration harness unless a concrete need emerges; the existing repository lacks one, and the current validation requirement is manual real-device behavior.
-3. Produce/use one integrated APK from the existing build/release path when ready and execute the six-scenario consolidated Android checklist.
-4. If a runtime scenario fails, preserve the first causal evidence and inspect the existing call chain before changing code; do not add architecture speculatively.
-5. Only after the browser foundation is ANDROID-RUNTIME-VERIFIED, complete release validation and then continue to AI-2 Agent Core.
+2. Do not create an Android integration harness unless a concrete need emerges; the existing repository lacks one, and current validation is manual real-device behavior.
+3. Trigger one manual `stable` validation build from `.github/workflows/build.yml` on `weblibre-ua-mainline-v3`, obtain the APK artifact, and execute the consolidated Android runtime checklist.
+4. If a runtime scenario fails, preserve first causal evidence and inspect the existing call chain before changing code; do not add architecture speculatively.
+5. Only after browser foundation is ANDROID-RUNTIME-VERIFIED, complete release validation and then continue to AI-2 Agent Core.
 
 ## RESUME / ANTI-AMNESIA PROTOCOL
 Canonical resume document:
@@ -126,10 +139,10 @@ Do not treat source mapping or CI success as proof of real Android cold-start, U
 ## CHECKPOINT
 **Date:** 2026-08-30
 **Branch:** `weblibre-ua-mainline-v3`
-**Current state-save HEAD:** `ac2f4a815e4e65a2762d25f2de3229215ee6b1d5`.
-**Quality #70:** `33335945926` SUCCESS against `f05f643...`; AI-1 browser tool tests and targeted container/native checks passed.
-**AI-1 status:** six-tool contract/registry + source-verified mappings + minimal execution boundary + focused tests + CI coverage + successful CI verification.
+**Current state-save HEAD:** `8f96a43924e3e4cb79b2601244971c6c5855a279`.
+**AI-1 status:** six-tool contract/registry + source-verified mappings + minimal execution boundary + focused tests + CI coverage + successful CI verification via Quality #70 `33335945926` against `f05f643...`.
 **Runtime status:** no dedicated Android integration harness exists; consolidated real-device validation checklist is documented and ready.
+**Build status:** manual `workflow_dispatch` validation build is available; it produces APK artifacts without release/Play publication.
 **Browser blocker:** real Android runtime validation.
-**First next step:** obtain/use one integrated APK and execute the consolidated Android runtime checklist; do not repeat per-subtest APK cycles.
+**First next step:** trigger one manual stable validation build from the existing workflow, obtain its APK artifact, and execute the consolidated Android runtime checklist; do not repeat per-subtest APK cycles.
 **Resume protocol:** `docs/WEBLIBRE_RESUME_COMMAND_2026-08-30.md`.
