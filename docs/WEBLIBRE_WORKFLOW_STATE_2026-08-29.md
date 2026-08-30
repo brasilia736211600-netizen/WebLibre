@@ -2,7 +2,7 @@
 
 **Last synchronized:** 2026-08-30
 **Branch:** `weblibre-ua-mainline-v3`
-**Current execution HEAD:** `7af9350a8c867097700d4e13e6393a92c1480139`
+**Current execution HEAD:** `2e7fca5f1a480ed34461582e3acfa19be7260c0b`
 
 ## CURRENT EXECUTION TRUTH
 GitHub is the source of truth for code, branch refs, commits, PRs, and CI. Never reconstruct state from chat.
@@ -27,18 +27,17 @@ UA cold-start/restored-tab integration is implemented in source but remains runt
 - Quality #39 `33329515686` completed successfully against product checkpoint `66e1dcf82f14333d4d7cd88c202a6e85aae13a4b`.
 - AI-1 registry tests are added.
 - AI-1 execution-boundary tests are added.
-- Quality #54 `33334264690` is running against state-save checkpoint `6a73bcd1d1a478d38dd0fb17bd428b8b4b500de7`; it is stale relative to the current branch HEAD `7af9350a8c867097700d4e13e6393a92c1480139` and therefore is not current proof.
+- Earlier Quality runs that do not match the current HEAD are stale and are not current proof.
 - No automated Android process-death/cold-start test; unit/CI tests cannot prove real Android process lifecycle behavior.
 
 ## GIT / PR / CI
 - Branch: `weblibre-ua-mainline-v3`.
-- Current branch HEAD: `7af9350a8c867097700d4e13e6393a92c1480139`.
-- AI-1 implementation checkpoint: `21f8ae8ab2b9a0385a7c0880280226d5034a5405`.
+- Current branch HEAD at this state-save: `2e7fca5f1a480ed34461582e3acfa19be7260c0b`.
+- AI-1 implementation checkpoint before documentation-only state synchronization: `21f8ae8ab2b9a0385a7c0880280226d5034a5405`.
 - PR #3: open, draft, not merged; base `main`.
-- Actual PR head is branch-ref controlled and must be re-read; the PR description's older `901bf...` value is stale.
+- The PR description can contain an old head value; branch ref is authoritative.
 - Quality #39 `33329515686`: SUCCESS against the older product checkpoint.
-- Quality #54 `33334264690`: IN_PROGRESS for `6a73bcd1d1a478d38dd0fb17bd428b8b4b500de7`; do not use as current evidence because its `head_sha` does not equal branch HEAD.
-- A new current-head Quality run must be observed before claiming CI validation for `7af9350a8c867097700d4e13e6393a92c1480139`.
+- The latest observed Quality execution before this state synchronization was not current-head proof; always re-observe a run whose `head_sha` matches the actual branch HEAD.
 - Quality workflow uses per-PR/branch `concurrency` with `cancel-in-progress: true`, and excludes `.github/workflows/quality.yml` from normal PR path triggers.
 
 ## RUN INTERPRETATION RULE
@@ -59,15 +58,7 @@ Rules:
 9. Android device testing is a validation checkpoint, not a prerequisite for independent repository preparation. Complete buildable/tooling/design work in parallel, then perform the consolidated Android validation pass when the integrated build is ready.
 
 ## LAST COMPLETED STEP
-Verified the six-tool first-slice APIs against the current source and implemented the minimal AI-1 execution boundary:
-- `get_tabs` -> `tabListProvider` + `tabStatesProvider`.
-- `get_current_tab` -> `selectedTabProvider` + `tabStatesProvider`.
-- `create_tab` -> `TabRepository.addTab`.
-- `switch_tab` -> `TabRepository.selectTab`.
-- `close_tab` -> `TabRepository.closeTab`.
-- `open_url` -> `GeckoSessionService(tabId: ...).loadUrl`.
-
-The boundary performs registry lookup, declared-permission checking, typed dispatch, deterministic result/error envelopes, and a non-persistent audit event. It does not introduce an Agent runtime, model integration, new browser persistence, Pigeon changes, or Gecko internals exposed to the model.
+Persisted the restart-safe project continuity protocol and updated the master map/state to record the canonical resume instructions. Before this documentation synchronization, the last product-code step was the minimal AI-1 execution boundary with focused tests.
 
 ## CURRENT UNFINISHED STEP
 A. Browser runtime proof remains unverified on a real Android runtime:
@@ -75,7 +66,7 @@ A. Browser runtime proof remains unverified on a real Android runtime:
 - Container A/B UA isolation;
 - Proxy A/B/fail-closed behavior.
 
-B. AI-1 execution boundary and focused tests are implemented in source but are not yet CI-proven. The currently observed Quality run is stale relative to branch HEAD and must not be treated as validation of the current checkpoint.
+B. AI-1 execution boundary and focused tests are implemented in source but are not yet current-head CI-proven.
 
 ## AI-1 CHECKPOINT
 Inventory:
@@ -91,16 +82,38 @@ Implementation:
 First slice:
 `get_tabs`, `get_current_tab`, `create_tab`, `switch_tab`, `close_tab`, `open_url`.
 
-`open_url` now has an explicit typed `{tabId, url}` input rather than relying on an underspecified tab-id-only contract.
+`open_url` has an explicit typed `{tabId, url}` input.
 
 ## EXACT NEXT EXECUTION
-1. Observe the next Quality run and accept its result only when its `head_sha` equals `7af9350a8c867097700d4e13e6393a92c1480139`.
-2. If that run reports a concrete AI-1 compile/test blocker, fix only that first causal blocker.
-3. Do not expand the AI-1 tool surface yet.
-4. Prepare the consolidated Android runtime validation path/checklist in parallel; do not require repeated APK downloads for each subtest.
+1. Re-read the actual branch HEAD and observe the newest Quality run; accept CI proof only when `head_sha` exactly equals the current branch HEAD.
+2. If current-head Quality reports a concrete blocker, fix only the first causal blocker.
+3. Do not expand the AI-1 tool surface while this validation is pending.
+4. Continue independent preparation of the single consolidated Android runtime validation path/checklist without requiring repeated APK downloads.
 5. Perform one consolidated Android validation pass covering UA restore, Container A/B isolation, and proxy behavior when the integrated build is ready.
 6. Validate the existing split-ABI release path.
 7. Continue to AI-2 only after AI-1 is tested and the browser foundation is runtime-validated.
+
+## RESUME / ANTI-AMNESIA PROTOCOL
+Canonical resume document:
+`docs/WEBLIBRE_RESUME_COMMAND_2026-08-30.md`
+
+Every new chat/agent must:
+- read the canonical map, state, AI specification when relevant, and resume protocol;
+- verify actual branch/HEAD/PR/CI in GitHub;
+- reconcile documentation against repository truth before editing;
+- identify exactly one first next step;
+- preserve evidence levels and dependency order;
+- save exact SHA, tests, CI run/head_sha, blockers, and next step after every material milestone.
+
+Evidence levels:
+- `SOURCE-VERIFIED`
+- `CI-VERIFIED`
+- `ANDROID-RUNTIME-VERIFIED`
+- `DOCUMENTED`
+
+Never promote a lower evidence level to a higher one. `[x]` is a documentation marker, not runtime proof. Chat memory is never authoritative over GitHub.
+
+Copy/paste resume command is stored in the canonical resume document and intentionally re-verifies the repository instead of trusting the saved SHA.
 
 ## YAGNI / SAFETY BOUNDARY
 Do not redo completed creation/UI work. Do not add `RecoverableTab.userAgent`, a new Pigeon API, a second DB, event-arrival freshness heuristics, global GeckoRuntime UA, an Android Components fork, or unrelated refactors unless focused runtime/test evidence proves the current path insufficient.
@@ -117,9 +130,10 @@ Do not treat source mapping or CI success as proof of real Android cold-start, U
 
 ## CHECKPOINT
 **Date:** 2026-08-30
-**Current state-save HEAD:** `7af9350a8c867097700d4e13e6393a92c1480139`.
-**AI-1 implementation checkpoint:** `21f8ae8ab2b9a0385a7c0880280226d5034a5405`.
+**Current state-save HEAD:** `2e7fca5f1a480ed34461582e3acfa19be7260c0b`.
+**Last product-code checkpoint:** `21f8ae8ab2b9a0385a7c0880280226d5034a5405`.
 **Latest verified Quality:** #39 `33329515686` GREEN against the older product checkpoint.
-**Current observed Quality:** #54 `33334264690` IN_PROGRESS against `6a73bcd1d1a478d38dd0fb17bd428b8b4b500de7` and therefore stale for current HEAD.
+**Current-head CI:** pending; must match actual branch HEAD before becoming evidence.
 **Current browser blocker:** real Android runtime validation.
 **Current AI-1 status:** six-tool contract/registry + source-verified execution mappings + minimal execution boundary + focused tests implemented; current-head CI validation pending.
+**Resume protocol:** `docs/WEBLIBRE_RESUME_COMMAND_2026-08-30.md`.
