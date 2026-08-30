@@ -48,6 +48,14 @@ final class OpenUrlInput {
 }
 
 @immutable
+final class OpenUrlTabInput {
+  const OpenUrlTabInput({required this.tabId, required this.url});
+
+  final String tabId;
+  final Uri url;
+}
+
+@immutable
 final class BrowserTabSummary {
   const BrowserTabSummary({
     required this.tabId,
@@ -143,14 +151,13 @@ final class CloseTabTool extends BrowserToolSpec<TabIdInput, OperationResult> {
         );
 }
 
-final class OpenUrlTool extends BrowserToolSpec<TabIdInput, OperationResult> {
+final class OpenUrlTool
+    extends BrowserToolSpec<OpenUrlTabInput, OperationResult> {
   const OpenUrlTool()
       : super(
           name: 'open_url',
           description: 'Navigate an existing browser tab to a URL.',
-          permissions: const {
-            BrowserToolPermission.navigate,
-          },
+          permissions: const {BrowserToolPermission.navigate},
           sideEffect: BrowserToolSideEffect.mutateBrowser,
         );
 }
