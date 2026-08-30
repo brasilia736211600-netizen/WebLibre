@@ -34,17 +34,17 @@ jobs:
         with:
           gradle-version: 9.4.1
       - name: Run targeted native container tests
-        working-directory: packages/flutter_mozilla_components/android
+        working-directory: apps/weblibre/android
         run: |
           set +e
-          gradle --no-daemon --stacktrace testDebugUnitTest \
+          gradle --no-daemon --stacktrace :flutter_mozilla_components:testDebugUnitTest \
             --tests 'eu.weblibre.flutter_mozilla_components.feature.ContainerUserAgentStoreTest' \
             --tests 'eu.weblibre.flutter_mozilla_components.feature.ContainerProxyFeatureTest' 2>&1 | tee native-gradle-output.txt
           status=${PIPESTATUS[0]}
           exit "$status"
       - name: Collect native test diagnostics
         if: failure()
-        working-directory: packages/flutter_mozilla_components/android
+        working-directory: apps/weblibre/android
         run: |
           set +e
           mkdir -p ci-diagnostics
@@ -62,5 +62,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: native-test-diagnostics
-          path: packages/flutter_mozilla_components/android/ci-diagnostics
+          path: apps/weblibre/android/ci-diagnostics
           if-no-files-found: warn
