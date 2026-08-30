@@ -2,7 +2,7 @@
 
 **Last synchronized:** 2026-08-30
 **Branch:** `weblibre-ua-mainline-v3`
-**Current execution HEAD:** `6db551f2f7ed80b124d7dca73453cbd08df7e5e9`
+**Current execution HEAD:** `6a73bcd1d1a478d38dd0fb17bd428b8b4b500de7`
 
 ## CURRENT EXECUTION TRUTH
 GitHub is the source of truth for code, branch refs, commits, PRs, and CI. Never reconstruct state from chat.
@@ -14,7 +14,7 @@ Implemented and source-verified:
 - Normal/multi/duplicate UA propagation.
 - Existing per-container UA UI.
 - `ContainerUserAgentStore.kt` resolves persisted container UA from the existing profile-scoped `tab.db` by `contextualIdentity`.
-- `HistoryDelegateBindingMiddleware.kt` applies persisted UA at `LinkEngineSessionAction` and handles already-attached sessions through `AddTabAction`.
+- `HistoryDelegateBindingMiddleware.kt` applies persisted per-container UA at `LinkEngineSessionAction` and handles already-attached sessions through `AddTabAction`.
 - Native creation paths apply UA to the prepared `EngineSession` before first navigation.
 - No global GeckoRuntime UA, second DB, new recovery Pigeon field, or Android Components fork.
 
@@ -25,16 +25,19 @@ UA cold-start/restored-tab integration is implemented in source but remains runt
 - Dart focused container metadata tests: 11/11 green.
 - Native focused tests: `ContainerUserAgentStoreTest` and `ContainerProxyFeatureTest`.
 - Quality #39 `33329515686` completed successfully against product checkpoint `66e1dcf82f14333d4d7cd88c202a6e85aae13a4b`.
-- New AI-1 registry tests are added and awaiting CI validation.
-- No automated Android process-death/cold-start test; unit tests cannot prove real Android process lifecycle behavior.
+- AI-1 registry tests are added.
+- AI-1 execution-boundary tests are added.
+- Quality run #53 is the current validation run for the AI-1 changes; its `head_sha` must be checked before using its result as evidence.
+- No automated Android process-death/cold-start test; unit/CI tests cannot prove real Android process lifecycle behavior.
 
 ## GIT / PR / CI
 - Branch: `weblibre-ua-mainline-v3`.
-- Current HEAD: `6db551f2f7ed80b124d7dca73453cbd08df7e5e9`.
-- Last verified product checkpoint: `66e1dcf82f14333d4d7cd88c202a6e85aae13a4b`.
+- Current branch HEAD after this state-save commit: `6a73bcd1d1a478d38dd0fb17bd428b8b4b500de7`.
+- AI-1 implementation checkpoint immediately before this state-save: `21f8ae8ab2b9a0385a7c0880280226d5034a5405`.
 - PR #3: open, draft, not merged; base `main`.
+- Actual PR head is branch-ref controlled and must be re-read; the PR description's older `901bf...` value is stale.
 - Quality #39 `33329515686`: SUCCESS against the older product checkpoint.
-- New AI-1 code must be validated by the existing Quality workflow before being treated as green.
+- Quality #53 `33334247834`: QUEUED for `21f8ae8ab2b9a0385a7c0880280226d5034a5405` when the execution-boundary changes were submitted.
 - Quality workflow uses per-PR/branch `concurrency` with `cancel-in-progress: true`, and excludes `.github/workflows/quality.yml` from normal PR path triggers.
 
 ## RUN INTERPRETATION RULE
@@ -55,7 +58,15 @@ Rules:
 9. Android device testing is a validation checkpoint, not a prerequisite for independent repository preparation. Complete buildable/tooling/design work in parallel, then perform the consolidated Android validation pass when the integrated build is ready.
 
 ## LAST COMPLETED STEP
-Implemented the minimal AI-1 Browser Tool contract/registry vertical slice from the existing source inventory. The registry is model-independent, exposes six initial capabilities, carries typed input/output contracts plus permission and side-effect metadata, and has focused registry tests. No Agent runtime or model integration was introduced.
+Verified the six-tool first-slice APIs against the current source and implemented the minimal AI-1 execution boundary:
+- `get_tabs` -> `tabListProvider` + `tabStatesProvider`.
+- `get_current_tab` -> `selectedTabProvider` + `tabStatesProvider`.
+- `create_tab` -> `TabRepository.addTab`.
+- `switch_tab` -> `TabRepository.selectTab`.
+- `close_tab` -> `TabRepository.closeTab`.
+- `open_url` -> `GeckoSessionService(tabId: ...).loadUrl`.
+
+The boundary performs registry lookup, declared-permission checking, typed dispatch, deterministic result/error envelopes, and a non-persistent audit event. It does not introduce an Agent runtime, model integration, new browser persistence, Pigeon changes, or Gecko internals exposed to the model.
 
 ## CURRENT UNFINISHED STEP
 A. Browser runtime proof remains unverified on a real Android runtime:
@@ -63,7 +74,7 @@ A. Browser runtime proof remains unverified on a real Android runtime:
 - Container A/B UA isolation;
 - Proxy A/B/fail-closed behavior.
 
-B. AI-1 registry is implemented; its focused tests need CI validation and its six execution adapters still need exact mapping to stable existing browser APIs.
+B. AI-1 execution boundary and focused tests are implemented in source but are not yet CI-proven. Quality #53 is the active validation checkpoint and must match the tested HEAD before being treated as green.
 
 ## AI-1 CHECKPOINT
 Inventory:
@@ -72,19 +83,21 @@ Inventory:
 Implementation:
 - `apps/weblibre/lib/core/ai/tools/browser_tool_contract.dart`
 - `apps/weblibre/lib/core/ai/tools/browser_tool_registry.dart`
+- `apps/weblibre/lib/core/ai/tools/browser_tool_executor.dart`
 - `apps/weblibre/test/core/ai/tools/browser_tool_registry_test.dart`
+- `apps/weblibre/test/core/ai/tools/browser_tool_executor_test.dart`
 
 First slice:
 `get_tabs`, `get_current_tab`, `create_tab`, `switch_tab`, `close_tab`, `open_url`.
 
-The registry intentionally does not execute browser actions. It does not expose Gecko/Pigeon/database internals and introduces no new persistence.
+`open_url` now has an explicit typed `{tabId, url}` input rather than relying on an underspecified tab-id-only contract.
 
 ## EXACT NEXT EXECUTION
-1. Validate the AI-1 registry tests through the existing Quality workflow; do not duplicate active builds.
-2. Verify exact existing execution APIs for the six tools and map them behind the boundary.
-3. If mappings are stable, implement only the minimal execution adapter and deterministic result/error boundary.
-4. In parallel, prepare one consolidated Android runtime validation checklist/build path; do not require repeated APK downloads for each subtest.
-5. After the integrated browser/AI foundation is ready, perform one consolidated Android validation pass covering UA restore, A/B isolation, and proxy behavior.
+1. Wait for and inspect Quality #53; use it only if its `head_sha` matches the code checkpoint it actually tests.
+2. If Quality reports a concrete AI-1 compile/test blocker, fix only that first causal blocker.
+3. Do not expand the AI-1 tool surface yet.
+4. Prepare the consolidated Android runtime validation path/checklist in parallel; do not require repeated APK downloads for each subtest.
+5. Perform one consolidated Android validation pass covering UA restore, Container A/B isolation, and proxy behavior when the integrated build is ready.
 6. Validate the existing split-ABI release path.
 7. Continue to AI-2 only after AI-1 is tested and the browser foundation is runtime-validated.
 
@@ -92,6 +105,8 @@ The registry intentionally does not execute browser actions. It does not expose 
 Do not redo completed creation/UI work. Do not add `RecoverableTab.userAgent`, a new Pigeon API, a second DB, event-arrival freshness heuristics, global GeckoRuntime UA, an Android Components fork, or unrelated refactors unless focused runtime/test evidence proves the current path insufficient.
 
 Do not build the full Agent, memory, provider integration, Telegram/WhatsApp transport, or autonomous workflows during AI-1.
+
+Do not treat source mapping or CI success as proof of real Android cold-start, UA isolation, or proxy fail-closed behavior.
 
 ## MASTER PROJECT MAP
 `docs/WEBLIBRE_MASTER_PROJECT_MAP_2026-08-30.md` is the durable high-level roadmap. Update it on every material milestone.
@@ -101,8 +116,9 @@ Do not build the full Agent, memory, provider integration, Telegram/WhatsApp tra
 
 ## CHECKPOINT
 **Date:** 2026-08-30
-**Current HEAD:** `6db551f2f7ed80b124d7dca73453cbd08df7e5e9`.
-**Current product-code change:** minimal AI-1 typed contract/registry + focused test.
+**Current state-save HEAD:** `6a73bcd1d1a478d38dd0fb17bd428b8b4b500de7`.
+**AI-1 implementation checkpoint:** `21f8ae8ab2b9a0385a7c0880280226d5034a5405`.
 **Latest verified Quality:** #39 `33329515686` GREEN against the older product checkpoint.
+**Current validation:** Quality #53 `33334247834`, queued for `21f8ae8ab2b9a0385a7c0880280226d5034a5405`.
 **Current browser blocker:** real Android runtime validation.
-**Current AI-1 status:** contract/registry implemented; CI validation and execution adapter mapping pending.
+**Current AI-1 status:** six-tool contract/registry + source-verified execution mappings + minimal execution boundary + focused tests implemented; CI validation pending.
