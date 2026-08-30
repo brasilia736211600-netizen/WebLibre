@@ -202,6 +202,18 @@ jobs:
             apps/weblibre/build/app/outputs/apk/${{ steps.build-type.outputs.variant }}/release/**/*.apk
           if-no-files-found: error
 
+      - name: Create GitHub validation release (manual APK build)
+        if: github.event_name == 'workflow_dispatch'
+        uses: ncipollo/release-action@v1.17.0
+        with:
+          tag: validation-${{ steps.build-type.outputs.variant }}-${{ github.run_number }}-${{ github.sha }}
+          name: WebLibre ${{ steps.build-type.outputs.variant }} validation ${{ github.run_number }}
+          artifacts: "apps/weblibre/build/app/outputs/apk/${{ steps.build-type.outputs.variant }}/release/*.apk"
+          prerelease: true
+          allowUpdates: false
+          replacesArtifacts: false
+          generateReleaseNotes: true
+
       - name: Create github artifact release (Prerelease)
         if: steps.build-type.outputs.is_prerelease == 'true' && github.event_name != 'workflow_dispatch'
         uses: ncipollo/release-action@v1.17.0
