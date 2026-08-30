@@ -39,6 +39,12 @@ jobs:
         run: |
           dart pub global activate melos 7.8.1
           melos bootstrap
+      - name: Run AI-1 browser tool tests
+        working-directory: apps/weblibre
+        run: |
+          flutter test \
+            test/core/ai/tools/browser_tool_registry_test.dart \
+            test/core/ai/tools/browser_tool_executor_test.dart
       - name: Run targeted container tests
         working-directory: apps/weblibre
         run: flutter test test/features/geckoview/features/tabs/data/models/container_data_test.dart
