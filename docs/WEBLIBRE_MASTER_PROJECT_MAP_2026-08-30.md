@@ -161,8 +161,8 @@ Update this map and the short workflow state at every material milestone.
 
 **Date:** 2026-08-30
 **Branch:** `weblibre-ua-mainline-v3`
-**Current branch HEAD after documentation reconciliation:** `0db57d0a6164a5ce9c1cd5d1063a3cfb75454075`
-**Product checkpoint HEAD:** `66e1dcf82f14333d4d7cd88c202a6e85aae13a4b`
+**Current branch HEAD before this state commit:** `901bf4156b4b5b21bc8352c268b4e715ca73faa0`
+**Latest product checkpoint with green Quality:** `66e1dcf82f14333d4d7cd88c202a6e85aae13a4b`
 **PR:** #3, open, draft, base `main`.
 **Latest verified Quality:** #39 `33329515686` — GREEN against product checkpoint `66e1dcf82f14333d4d7cd88c202a6e85aae13a4b`.
 **Product-code change in this checkpoint:** none.
