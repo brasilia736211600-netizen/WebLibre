@@ -6,6 +6,7 @@
 **Canonical execution state:** `docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`
 **Canonical AI specification:** `docs/WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md`
 **Canonical resume protocol:** `docs/WEBLIBRE_RESUME_COMMAND_2026-08-30.md`
+**Canonical Android runtime checklist:** `docs/WEBLIBRE_ANDROID_RUNTIME_VALIDATION_CHECKLIST_2026-08-30.md`
 
 ## CURRENT POSITION
 
@@ -88,11 +89,16 @@ Focused evidence:
 
 ## ANDROID RUNTIME PROOF — PENDING
 
+Repository inspection confirmed there is no dedicated `integration_test` Android runtime harness. The existing release workflow builds the native runtime and stable APK/AAB on version tags, while Quality covers Flutter/native tests; neither proves real-device process-death or network behavior.
+
 One consolidated device pass must prove:
 1. cold-start/restored-tab UA persistence;
 2. Container A/B UA isolation across open, duplicate, and restored tabs;
 3. Proxy A/B isolation and fail-closed behavior;
 4. no cross-container mutation.
+
+The exact six-scenario procedure is recorded in:
+`docs/WEBLIBRE_ANDROID_RUNTIME_VALIDATION_CHECKLIST_2026-08-30.md`
 
 Do not require a new APK for each subtest.
 
@@ -125,13 +131,13 @@ Focused execution tests:
 
 The execution boundary performs registry lookup, declared-permission checking, typed dispatch, deterministic success/error envelopes, and a non-persistent audit event. It does not execute LLM logic or expose Gecko/Pigeon/database internals.
 
-Quality #65 (`33335697412`) executed the new AI-1 test step. The registry tests passed. The executor test file failed to compile because `BrowserToolExecutor.execute()` had a possible fall-through path. The first causal compile blocker was fixed in `91e9412a19b5882cee472ac5653456226ccdb20d` by adding a deterministic fallback result after the switch. No architecture change was introduced.
+Quality #65 (`33335697412`) exposed a concrete executor compile blocker. It was fixed in `91e9412a...`; the deterministic unknown-tool path was then hardened in `91e5e8d...`.
 
-A focused unknown-tool test was then added in `91e5e8d64f2d2d164251ae99af8a704392594a28` to exercise the deterministic unknown-tool error path. No new architecture or tool surface was added.
+Quality #66 (`33335863267`) was cancelled before AI-1 tests ran because per-PR concurrency superseded it.
 
-Quality #66 `33335863267` for `91e9412a...` was cancelled before the AI-1 tests ran because the per-PR concurrency policy superseded it.
+Quality #70 (`33335945926`) completed successfully against `f05f643eda7ffb6503a4d6429b24e0d77ce7ad0d`. Its Dart job ran the AI-1 browser tool tests, targeted container tests, native gomobile build, and targeted native container tests successfully. AI-1 execution boundary is therefore **CI-VERIFIED** at that checkpoint.
 
-Quality #70 `33335945926` completed successfully against `f05f643eda7ffb6503a4d6429b24e0d77ce7ad0d`. Its Dart job successfully executed the AI-1 browser tool tests, targeted container tests, native gomobile build, and targeted native container tests. Therefore the AI-1 execution boundary is now **CI-VERIFIED** at that checkpoint.
+No product-code changes were introduced by the subsequent runtime-checklist/state/map documentation commits.
 
 ## RELEASE FOUNDATION
 
@@ -141,15 +147,11 @@ Existing release workflow builds the native gomobile runtime, then stable APKs/a
 
 The historical native prerequisite blocker is closed. Quality has per-PR/branch concurrency with `cancel-in-progress: true`, and normal PR triggers cover product paths while `workflow_dispatch` is available.
 
-Important evidence rule: Quality #60 proves only the tests present in that run. Because the AI-1 test step was added afterward, #60 cannot be retroactively used as AI-1 proof.
+Important evidence rule: a Quality run validates the workflow revision and exact checkout/head evidence captured at trigger time. Never use an old run to prove a later code checkpoint.
 
-Quality #65 proved the registry tests and exposed the executor compile blocker; it did not prove executor success.
-
-Quality #70 is the current successful CI evidence for AI-1: its `dart` job ran the AI-1 tests and passed them, together with the targeted browser/container/native checks.
+Quality #70 is the current successful CI evidence for AI-1. The Android runtime checklist is manual/device evidence and is not substituted by CI.
 
 Parallel execution is mandatory: while a CI/build/run waits, perform independent source inspection, release analysis, or documentation. Never duplicate an active build, write the same file concurrently, bypass dependency order, or violate YAGNI.
-
-Android testing is a consolidated validation checkpoint, not a prerequisite for independent repository preparation.
 
 ## YAGNI / DO-NOT-REDO
 
@@ -172,7 +174,7 @@ AI-1 inventory + contract + registry ──────────┤
                                                |
                                      integrated foundation
                                                |
-                                     consolidated Android proof
+                                     consolidated Android proof   [NEXT]
                                                |
                                      release validation
                                                |
@@ -198,6 +200,7 @@ A new agent must read:
 2. `WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`
 3. `WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md` when architecture/product scope is relevant
 4. `WEBLIBRE_RESUME_COMMAND_2026-08-30.md`
+5. `WEBLIBRE_ANDROID_RUNTIME_VALIDATION_CHECKLIST_2026-08-30.md` before device validation
 
 Then verify actual GitHub branch/HEAD/PR/CI before editing.
 
@@ -218,9 +221,11 @@ Update this map and workflow state at every material milestone. Save exact HEAD,
 
 **Date:** 2026-08-30
 **Branch:** `weblibre-ua-mainline-v3`
-**Code checkpoint:** `f05f643eda7ffb6503a4d6429b24e0d77ce7ad0d`.
+**Latest product-code checkpoint:** `f05f643eda7ffb6503a4d6429b24e0d77ce7ad0d`.
 **Quality #70:** `33335945926` SUCCESS against `f05f643...`; AI-1 browser tool tests and targeted container/native checks passed.
+**Documentation after checkpoint:** Android runtime checklist `ac2f4a...`, state synchronization `b90aac...`, and this map synchronization `7bf9b00...` are documentation-only; no product-code changes after the CI-verified checkpoint.
 **AI-1 status:** six-tool contract/registry + source-verified mappings + minimal execution boundary + focused tests + CI coverage + successful CI verification.
+**Runtime status:** no dedicated Android integration harness exists; consolidated six-scenario real-device checklist is documented and ready.
 **Browser blocker:** real Android runtime validation.
-**First next step:** inspect existing Android/release validation harness and identify the minimum missing pieces for one consolidated device pass.
+**First next step:** obtain/use one integrated APK from the existing build path and execute the consolidated Android runtime checklist; do not repeat per-subtest APK cycles.
 **Resume protocol:** `docs/WEBLIBRE_RESUME_COMMAND_2026-08-30.md`.
