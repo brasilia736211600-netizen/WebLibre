@@ -31,15 +31,18 @@ REAL ANDROID RUNTIME PROOF       AI-1 BROWSER TOOL
         |                             |
         |                        +--> inventory       [DONE]
         |                        +--> typed registry  [DONE]
-        |                        +--> focused tests   [WRITTEN]
+        |                        +--> focused tests   [DONE]
         |                        +--> API mapping     [SOURCE-VERIFIED]
         |                        +--> execution       [SOURCE-VERIFIED]
-        |                        +--> CI coverage     [ADDED]
-        |                        +--> CI execution    [BLOCKED BY FIXED COMPILE ERROR; RERUN PENDING]
+        |                        +--> CI coverage     [DONE]
+        |                        +--> CI execution    [GREEN / VERIFIED]
         |                             |
         +-------------+---------------+
                       v
               INTEGRATED FOUNDATION
+                      |
+                      v
+              CONSOLIDATED ANDROID PROOF
                       |
                       v
               RELEASE VALIDATION
@@ -126,11 +129,13 @@ Quality #65 (`33335697412`) executed the new AI-1 test step. The registry tests 
 
 A focused unknown-tool test was then added in `91e5e8d64f2d2d164251ae99af8a704392594a28` to exercise the deterministic unknown-tool error path. No new architecture or tool surface was added.
 
-A new Quality run for the fixed/hardened HEAD has not appeared yet; therefore AI-1 remains `SOURCE-VERIFIED`, not `CI-VERIFIED`.
+Quality #66 `33335863267` for `91e9412a...` was cancelled before the AI-1 tests ran because the per-PR concurrency policy superseded it.
+
+Quality #70 `33335945926` completed successfully against `f05f643eda7ffb6503a4d6429b24e0d77ce7ad0d`. Its Dart job successfully executed the AI-1 browser tool tests, targeted container tests, native gomobile build, and targeted native container tests. Therefore the AI-1 execution boundary is now **CI-VERIFIED** at that checkpoint.
 
 ## RELEASE FOUNDATION
 
-Existing release workflow builds the native gomobile runtime, then stable APKs/app bundle. Stable APKs use the existing split-ABI path (`android-arm`, `android-arm64`). Release validation follows integrated browser/runtime readiness.
+Existing release workflow builds the native gomobile runtime, then stable APKs/app bundle. Stable APKs use the existing split-ABI path (`android-arm`, `android-arm64`). Stable release validation follows integrated browser/runtime readiness.
 
 ## CI / EXECUTION CONTROL
 
@@ -138,9 +143,11 @@ The historical native prerequisite blocker is closed. Quality has per-PR/branch 
 
 Important evidence rule: Quality #60 proves only the tests present in that run. Because the AI-1 test step was added afterward, #60 cannot be retroactively used as AI-1 proof.
 
-Quality #65 proves that the registry tests pass and exposes the executor compile blocker; it does not prove executor success because compilation stopped the job before later steps.
+Quality #65 proved the registry tests and exposed the executor compile blocker; it did not prove executor success.
 
-Parallel execution is mandatory: while a CI/build/run waits, perform independent source inspection, contract work, release analysis, or documentation. Never duplicate an active build, write the same file concurrently, bypass dependency order, or violate YAGNI.
+Quality #70 is the current successful CI evidence for AI-1: its `dart` job ran the AI-1 tests and passed them, together with the targeted browser/container/native checks.
+
+Parallel execution is mandatory: while a CI/build/run waits, perform independent source inspection, release analysis, or documentation. Never duplicate an active build, write the same file concurrently, bypass dependency order, or violate YAGNI.
 
 Android testing is a consolidated validation checkpoint, not a prerequisite for independent repository preparation.
 
@@ -161,7 +168,7 @@ AI-1 inventory + contract + registry ──────────┤
                                                v
                                      minimal execution boundary
                                                |
-                                     CI verification
+                                     CI verification        [DONE]
                                                |
                                      integrated foundation
                                                |
@@ -211,11 +218,9 @@ Update this map and workflow state at every material milestone. Save exact HEAD,
 
 **Date:** 2026-08-30
 **Branch:** `weblibre-ua-mainline-v3`
-**Current branch HEAD before this map-only save:** `91e5e8d64f2d2d164251ae99af8a704392594a28`.
-**Quality #65:** `33335697412` FAILED on the AI-1 executor test compile; registry tests passed. The failed run checked out PR merge ref `896283de...` whose head was `c557c914...`.
-**Executor fix:** `91e9412a19b5882cee472ac5653456226ccdb20d`.
-**Focused test hardening:** `91e5e8d64f2d2d164251ae99af8a704392594a28`.
-**Current blocker:** obtain a current Quality run containing the AI-1 tests after the executor fix/hardening and verify success against the relevant PR state.
+**Code checkpoint:** `f05f643eda7ffb6503a4d6429b24e0d77ce7ad0d`.
+**Quality #70:** `33335945926` SUCCESS against `f05f643...`; AI-1 browser tool tests and targeted container/native checks passed.
+**AI-1 status:** six-tool contract/registry + source-verified mappings + minimal execution boundary + focused tests + CI coverage + successful CI verification.
 **Browser blocker:** real Android runtime validation.
-**Current AI-1 status:** six-tool contract/registry + source-verified mappings + minimal execution boundary + focused tests implemented; first CI execution exposed and fixed one compile blocker; deterministic unknown-tool coverage added; successful current CI execution pending.
+**First next step:** inspect existing Android/release validation harness and identify the minimum missing pieces for one consolidated device pass.
 **Resume protocol:** `docs/WEBLIBRE_RESUME_COMMAND_2026-08-30.md`.
