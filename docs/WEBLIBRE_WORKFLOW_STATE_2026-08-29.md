@@ -2,7 +2,7 @@
 
 **Last synchronized:** 2026-08-30
 **Branch:** `weblibre-ua-mainline-v3`
-**Current HEAD:** `45f98d857d3f4a976367d7ff0e57266e9de9d969`
+**Current HEAD:** `3ca43b6182489ad574045de12139118aaafbb6e6`
 
 ## READ THIS FIRST
 This file is the durable execution memory. Do not reconstruct the project from chat history.
@@ -42,32 +42,31 @@ Verified source facts:
 
 ## CURRENT GIT / PR / CI
 - Branch: `weblibre-ua-mainline-v3`.
-- Current HEAD: `45f98d857d3f4a976367d7ff0e57266e9de9d969` (`ci: capture native Gradle failure output`).
-- PR #3: open, draft, mergeable; head branch `weblibre-ua-mainline-v3`; PR metadata currently identifies head SHA `45f98d857d3f4a976367d7ff0e57266e9de9d969`; base `main` at `c82e189b1b78dcc5ded582305c63bd1222eec19c`.
-- PR #3 currently contains 74 commits and 28 changed files; it is not merged.
+- Current HEAD: `3ca43b6182489ad574045de12139118aaafbb6e6` (`docs: synchronize durable workflow checkpoint`).
+- PR #3: open, draft, mergeable; head branch `weblibre-ua-mainline-v3`; base `main` at `c82e189b1b78dcc5ded582305c63bd1222eec19c`.
+- PR #3 is not merged.
 - `quality.yml` is a focused gate: Flutter 3.47.0 bootstrap, targeted container Dart test, then targeted Android unit tests.
-- The previous native quality run for this head failed at the native test step. Its diagnostics artifact contained only `find: 'build/test-results': No such file or directory` and `find: 'build/reports/tests': No such file or directory`; it did not expose the actual Gradle failure output.
-- Commit `45f98d857d...` changed `quality.yml` to capture the native Gradle stdout/stderr into `native-gradle-output.txt`, then upload that file plus failure markers/report files on failure.
-- The failed native job was re-run from GitHub as the exact next action; the current workflow run `33279398301` is now `queued`.
+- The current quality run for the actual branch HEAD is `33325236868` and is `in_progress`; Dart targeted tests and Gradle setup have passed, and the targeted native test step is currently running.
+- The earlier native failure is retained as historical evidence only; its diagnostic artifact did not expose the actual Gradle failure. The current workflow contains failure-only diagnostic capture.
 - Historical native runtime build/Kotlin compilation passed in run `33265003957`.
 
 ## TESTING CHECKPOINT
 - Dart targeted container metadata test: GREEN — 11 tests passed in the latest completed quality run.
-- Native targeted tests: current result pending; rerun is queued after the diagnostic-capture fix.
+- Native targeted tests: current result pending in run `33325236868`.
 - Native restore parser test: source present; runtime execution pending.
 - Full cold-start restore runtime: NOT YET VERIFIED.
 - A/B UA isolation: NOT YET VERIFIED.
 - Proxy regression/A-B: NOT YET VERIFIED.
 
 ## LAST COMPLETED STEP
-The last completed engineering step was to establish actionable native CI diagnostics without changing product code: the native Gradle command now captures its full output and the failure path uploads it as an artifact. This was committed as `45f98d857d3f4a976367d7ff0e57266e9de9d969`.
+Reconciled the durable state against GitHub after interruption: the branch HEAD is `3ca43b6182489ad574045de12139118aaafbb6e6`, and the active quality run is `33325236868`. No product-code changes were made during this reconciliation.
 
 ## CURRENT UNFINISHED STEP
-The current first unfinished step is **obtain and inspect the rerun result of the native targeted tests** for HEAD `45f98d857d3f4a976367d7ff0e57266e9de9d969`. Do not change product code until the actual native failure is visible.
+Obtain and inspect the native targeted-test result for the actual branch HEAD. Do not change product code unless a concrete native compiler/test failure is exposed.
 
 ## EXACT NEXT EXECUTION
-1. Inspect the queued/running/completed quality run `33279398301` for HEAD `45f98d857d3f4a976367d7ff0e57266e9de9d969`.
-2. If native fails, download the new `native-test-diagnostics` artifact and repair only the first causal Gradle/compiler/test failure.
+1. Inspect quality run `33325236868` for completion and native test result.
+2. If native fails, consume its failure diagnostics and repair only the first causal Gradle/compiler/test failure.
 3. If native passes, validate cold-start persisted UA restore and concurrent Container A/B UA isolation.
 4. Validate Proxy A/B regression and fail-closed behavior required by the existing routing design.
 5. Run final targeted Dart/native validation.
@@ -91,9 +90,8 @@ Do not redo completed creation/UI work. Do not add `RecoverableTab.userAgent` un
 ## CHECKPOINT
 **Date:** 2026-08-30
 **Branch:** `weblibre-ua-mainline-v3`
-**HEAD:** `45f98d857d3f4a976367d7ff0e57266e9de9d969`
+**HEAD:** `3ca43b6182489ad574045de12139118aaafbb6e6`
 **Files changed in this checkpoint:** `docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`.
-**Execution performed:** re-ran the failed native CI job after verifying that the earlier diagnostic artifact was insufficient; the rerun is currently queued.
-**Evidence:** HEAD/PR verified from GitHub; PR #3 is open/draft/mergeable; Dart target is 11/11 green; previous native run failed at the native test step; diagnostic artifact from that run only contained missing-build-directory messages; CI HEAD commit now captures full Gradle output.
-**Blocker:** current native test result is not yet available, so product code changes would be speculative.
-**Exact next step:** inspect workflow run `33279398301`; if it fails, consume the new diagnostic artifact and fix only the first causal native failure; if it passes, move to actual cold-start UA restore and A/B runtime verification, then Proxy verification.
+**Tests/results:** Latest completed Dart targeted suite — 11/11 passed. Current branch quality run `33325236868` is in progress; Dart and Gradle setup passed, native targeted tests are running.
+**Blocker:** native test result and runtime/device cold-start restoration are not yet verified.
+**Exact next step:** inspect `33325236868`; if native fails, consume diagnostics and fix only the first causal failure; if green, proceed to restore/A-B, Proxy A/B, split-ABI milestone, then AI-1.
