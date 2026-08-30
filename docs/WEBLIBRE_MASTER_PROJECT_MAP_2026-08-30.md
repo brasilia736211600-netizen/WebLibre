@@ -34,7 +34,8 @@ REAL ANDROID RUNTIME PROOF       AI-1 BROWSER TOOL
         |                        +--> focused tests   [WRITTEN]
         |                        +--> API mapping     [SOURCE-VERIFIED]
         |                        +--> execution       [SOURCE-VERIFIED]
-        |                        +--> CI coverage     [ADDED; RUN PENDING]
+        |                        +--> CI coverage     [ADDED]
+        |                        +--> CI execution    [BLOCKED BY FIXED COMPILE ERROR; RERUN PENDING]
         |                             |
         +-------------+---------------+
                       v
@@ -121,7 +122,9 @@ Focused execution tests:
 
 The execution boundary performs registry lookup, declared-permission checking, typed dispatch, deterministic success/error envelopes, and a non-persistent audit event. It does not execute LLM logic or expose Gecko/Pigeon/database internals.
 
-The Quality workflow now explicitly executes both AI-1 focused test files. The coverage was added after Quality #60, so #60 remains valid only for the steps it actually ran. A new Quality run containing the AI-1 test step is required before promoting AI-1 to `CI-VERIFIED`.
+Quality #65 (`33335697412`) executed the new AI-1 test step. The registry tests passed. The executor test file failed to compile because `BrowserToolExecutor.execute()` had a possible fall-through path. The first causal compile blocker was fixed in `91e9412a19b5882cee472ac5653456226ccdb20d` by adding a deterministic fallback result after the switch. No architecture change was introduced.
+
+A new Quality run for the fixed HEAD has not appeared yet; therefore AI-1 remains `SOURCE-VERIFIED`, not `CI-VERIFIED`.
 
 ## RELEASE FOUNDATION
 
@@ -132,6 +135,8 @@ Existing release workflow builds the native gomobile runtime, then stable APKs/a
 The historical native prerequisite blocker is closed. Quality has per-PR/branch concurrency with `cancel-in-progress: true`, and normal PR triggers cover product paths while `workflow_dispatch` is available.
 
 Important evidence rule: Quality #60 proves only the tests present in that run. Because the AI-1 test step was added afterward, #60 cannot be retroactively used as AI-1 proof.
+
+Quality #65 proves that the registry tests pass and exposes the executor compile blocker; it does not prove executor success because compilation stopped the job before later steps.
 
 Parallel execution is mandatory: while a CI/build/run waits, perform independent source inspection, contract work, release analysis, or documentation. Never duplicate an active build, write the same file concurrently, bypass dependency order, or violate YAGNI.
 
@@ -204,10 +209,11 @@ Update this map and workflow state at every material milestone. Save exact HEAD,
 
 **Date:** 2026-08-30
 **Branch:** `weblibre-ua-mainline-v3`
-**State-save HEAD before this final map-only commit:** `e9306ae4242fb376590a7831582a09f699fded2e`.
-**Quality #60:** `33334955774` GREEN against `477140419642d1170b241dd39f143900b9b98909`; not AI-1 CI proof because AI-1 test coverage was added afterward.
-**AI-1 CI coverage commit:** `b6c866d2e372c2af1ff45b52003a6b469f4f8229`.
-**Current blocker:** no completed Quality run has yet executed the newly added AI-1 tests.
+**Current HEAD at this state-save:** `56e9ef1932c0942d159d98177b9bb0a2e0361365`.
+**Quality #65:** `33335697412` FAILED on the AI-1 executor test compile; registry tests passed. The failed run checked out PR merge ref `896283de...` whose head was `c557c914...`.
+**Executor fix:** `91e9412a19b5882cee472ac5653456226ccdb20d`.
+**State-save commits:** `56e9ef1932c0942d159d98177b9bb0a2e0361365` records the failure/fix state.
+**Current blocker:** obtain a current Quality run containing the AI-1 tests after the executor fix and verify success against the relevant PR state.
 **Browser blocker:** real Android runtime validation.
-**Current AI-1 status:** six-tool contract/registry + source-verified mappings + minimal execution boundary + focused tests implemented; CI coverage added; successful CI execution of those tests pending.
+**Current AI-1 status:** six-tool contract/registry + source-verified mappings + minimal execution boundary + focused tests implemented; first CI execution exposed and fixed one compile blocker; successful current CI execution pending.
 **Resume protocol:** `docs/WEBLIBRE_RESUME_COMMAND_2026-08-30.md`.
