@@ -43,7 +43,7 @@ REAL ANDROID RUNTIME PROOF       AI-1 BROWSER TOOL
               INTEGRATED FOUNDATION
                       |
                       v
-              CONSOLIDATED ANDROID PROOF
+              CONSOLIDATED ANDROID PROOF  [NEXT]
                       |
                       v
               RELEASE VALIDATION
@@ -85,20 +85,32 @@ Implemented and source-verified:
 Focused evidence:
 - Dart container metadata suite: 11/11 green.
 - Quality #39 `33329515686`: GREEN on product checkpoint `66e1dcf82f14333d4d7cd88c202a6e85aae13a4b`.
-- Quality #60 `33334955774`: GREEN against `477140419642d1170b241dd39f143900b9b98909`; it did not contain the AI-1 test step and therefore is not AI-1 CI proof.
 
 ## ANDROID RUNTIME PROOF — PENDING
 
-Repository inspection confirmed there is no dedicated `integration_test` Android runtime harness. The existing release workflow builds the native runtime and stable APK/AAB on version tags, while Quality covers Flutter/native tests; neither proves real-device process-death or network behavior.
+Repository inspection confirmed there is no dedicated `integration_test` Android runtime harness. The existing release workflow builds the native runtime and stable APK/AAB; Quality covers Flutter/native tests; neither proves real-device process-death or network behavior.
 
 One consolidated device pass must prove:
 1. cold-start/restored-tab UA persistence;
 2. Container A/B UA isolation across open, duplicate, and restored tabs;
-3. Proxy A/B isolation and fail-closed behavior;
-4. no cross-container mutation.
+3. Restore isolation;
+4. Proxy A/B isolation;
+5. Proxy fail-closed behavior;
+6. no cross-container mutation.
 
-The exact six-scenario procedure is recorded in:
+The exact procedure is recorded in:
 `docs/WEBLIBRE_ANDROID_RUNTIME_VALIDATION_CHECKLIST_2026-08-30.md`
+
+**Integrated validation artifact now exists:**
+- Workflow run: `33337359647`
+- Branch: `weblibre-ua-mainline-v3`
+- Exact HEAD: `26e96cfc5a13b952ee0f4af31689fb927dbdfd9d`
+- Build job: `99326557994` SUCCESS
+- Stable APK build: SUCCESS
+- Artifact: `weblibre-stable-apk-26e96cfc5a13b952ee0f4af31689fb927dbdfd9d`
+- Artifact id: `9739745969`
+- Artifact SHA-256: `95e399057371d143e08784330280fb8b5106ffb4ec5dd06c35fe952d9703329f`
+- Artifact not expired at last verification.
 
 Do not require a new APK for each subtest.
 
@@ -107,15 +119,16 @@ Do not require a new APK for each subtest.
 Preparation inventory:
 `docs/WEBLIBRE_AI1_BROWSER_TOOL_INVENTORY_2026-08-30.md`
 
-Implemented minimal model-independent registry:
+Implemented minimal model-independent registry and execution boundary:
 - `apps/weblibre/lib/core/ai/tools/browser_tool_contract.dart`
 - `apps/weblibre/lib/core/ai/tools/browser_tool_registry.dart`
-- `apps/weblibre/test/core/ai/tools/browser_tool_registry_test.dart`
+- `apps/weblibre/lib/core/ai/tools/browser_tool_executor.dart`
+- focused tests under `apps/weblibre/test/core/ai/tools/`
 
 First slice:
 `get_tabs`, `get_current_tab`, `create_tab`, `switch_tab`, `close_tab`, `open_url`.
 
-Source-verified stable mappings:
+Stable mappings:
 - `get_tabs` -> `tabListProvider` + `tabStatesProvider`.
 - `get_current_tab` -> `selectedTabProvider` + `tabStatesProvider`.
 - `create_tab` -> existing `TabRepository.addTab` with `TabMode.regular`.
@@ -123,37 +136,30 @@ Source-verified stable mappings:
 - `close_tab` -> existing `TabRepository.closeTab`.
 - `open_url` -> existing `GeckoSessionService(tabId: ...).loadUrl`.
 
-Minimal execution boundary:
-`apps/weblibre/lib/core/ai/tools/browser_tool_executor.dart`
+Execution boundary performs registry lookup, declared-permission checking, typed dispatch, deterministic success/error envelopes, and a non-persistent audit event. It does not execute LLM logic or expose Gecko/Pigeon/database internals.
 
-Focused execution tests:
-`apps/weblibre/test/core/ai/tools/browser_tool_executor_test.dart`
+Quality #65 exposed a concrete executor compile blocker; it was fixed in `91e9412a...`, and the deterministic unknown-tool path was hardened in `91e5e8d...`.
+Quality #70 `33335945926` completed successfully against `f05f643...`; AI-1 browser tool tests and targeted container/native checks passed. AI-1 execution boundary is **CI-VERIFIED**.
 
-The execution boundary performs registry lookup, declared-permission checking, typed dispatch, deterministic success/error envelopes, and a non-persistent audit event. It does not execute LLM logic or expose Gecko/Pigeon/database internals.
-
-Quality #65 (`33335697412`) exposed a concrete executor compile blocker. It was fixed in `91e9412a...`; the deterministic unknown-tool path was then hardened in `91e5e8d...`.
-
-Quality #66 (`33335863267`) was cancelled before AI-1 tests ran because per-PR concurrency superseded it.
-
-Quality #70 (`33335945926`) completed successfully against `f05f643eda7ffb6503a4d6429b24e0d77ce7ad0d`. Its Dart job ran the AI-1 browser tool tests, targeted container tests, native gomobile build, and targeted native container tests successfully. AI-1 execution boundary is therefore **CI-VERIFIED** at that checkpoint.
-
-No product-code changes were introduced by the subsequent runtime-checklist/state/map documentation commits.
+No product-code changes were introduced by the later state/map/build documentation changes.
 
 ## RELEASE FOUNDATION
 
-Existing release workflow builds the native gomobile runtime, then stable APKs/app bundle. Stable APKs use the existing split-ABI path (`android-arm`, `android-arm64`). Stable release validation follows integrated browser/runtime readiness.
+Existing release workflow builds the native gomobile runtime, then stable APKs/app bundle. Stable APKs use the existing split-ABI path (`android-arm`, `android-arm64`).
 
-The release workflow now also has a **manual `workflow_dispatch` path** for producing a validation APK artifact without creating a GitHub release or publishing to Google Play. The manual input selects `stable`, `alpha`, or `alphaLegacy`. This is a CI-operational change only; it does not alter product runtime architecture.
+A minimal manual `workflow_dispatch` path was added to produce a validation APK artifact without creating a GitHub release or publishing to Google Play. Existing tag-triggered release behavior remains unchanged.
+
+Commit introducing manual validation path: `01bf9c0e037145963bb81bca88973f712d8bfa69`.
+
+The manual stable build has now completed successfully at exact HEAD `26e96cfc...`; this is a **build artifact checkpoint**, not Android runtime proof.
 
 ## CI / EXECUTION CONTROL
 
-The historical native prerequisite blocker is closed. Quality has per-PR/branch concurrency with `cancel-in-progress: true`, and normal PR triggers cover product paths while `workflow_dispatch` is available.
+The historical native prerequisite blocker is closed. Quality has per-PR/branch concurrency with `cancel-in-progress: true`.
 
-Important evidence rule: a Quality run validates the workflow revision and exact checkout/head evidence captured at trigger time. Never use an old run to prove a later code checkpoint.
+Evidence rule: a CI/build run validates the workflow revision and exact checkout/head evidence captured at trigger time. Never use an old run to prove a later code checkpoint.
 
-Quality #70 is the current successful CI evidence for AI-1. The Android runtime checklist is manual/device evidence and is not substituted by CI.
-
-Parallel execution is mandatory: while a CI/build/run waits, perform independent source inspection, release analysis, or documentation. Never duplicate an active build, write the same file concurrently, bypass dependency order, or violate YAGNI.
+Parallel execution is mandatory: while a CI/build/run waits, perform independent non-conflicting source inspection, release analysis, or documentation. Never duplicate an active build, write the same file concurrently, bypass dependency order, or violate YAGNI.
 
 ## YAGNI / DO-NOT-REDO
 
@@ -223,12 +229,10 @@ Update this map and workflow state at every material milestone. Save exact HEAD,
 
 **Date:** 2026-08-30
 **Branch:** `weblibre-ua-mainline-v3`
-**Latest product-code checkpoint:** `f05f643eda7ffb6503a4d6429b24e0d77ce7ad0d`.
-**Quality #70:** `33335945926` SUCCESS against `f05f643...`; AI-1 browser tool tests and targeted container/native checks passed.
-**Documentation after checkpoint:** Android runtime checklist `ac2f4a...`, state synchronization `b90aac...`, map synchronization `7bf9b00...`, and subsequent CI/build documentation are documentation/CI-only; no product-code changes after the CI-verified checkpoint.
-**AI-1 status:** six-tool contract/registry + source-verified mappings + minimal execution boundary + focused tests + CI coverage + successful CI verification.
-**Runtime status:** no dedicated Android integration harness exists; consolidated six-scenario real-device checklist is documented and ready.
-**Build status:** manual `workflow_dispatch` validation build is now available; it produces APK artifacts without release/Play publication.
+**Current HEAD:** `26e96cfc5a13b952ee0f4af31689fb927dbdfd9d`.
+**AI-1:** CI-VERIFIED via Quality #70 `33335945926` against `f05f643...`.
+**Manual stable APK:** SUCCESS via Flutter CICD run `33337359647`, exact head `26e96cfc...`; artifact `9739745969`; SHA-256 `95e399057371d143e08784330280fb8b5106ffb4ec5dd06c35fe952d9703329f`.
+**Runtime status:** no dedicated Android integration harness; consolidated six-scenario real-device checklist is ready.
 **Browser blocker:** real Android runtime validation.
-**First next step:** trigger one manual stable validation build from the existing workflow, obtain its APK artifact, and execute the consolidated Android runtime checklist; do not repeat per-subtest APK cycles.
+**First next step:** use the already-produced stable APK on the real Android device and execute the consolidated runtime checklist; do not repeat APK builds per subtest.
 **Resume protocol:** `docs/WEBLIBRE_RESUME_COMMAND_2026-08-30.md`.
