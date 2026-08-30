@@ -147,11 +147,19 @@ No product-code changes were introduced by the later state/map/build documentati
 
 Existing release workflow builds the native gomobile runtime, then stable APKs/app bundle. Stable APKs use the existing split-ABI path (`android-arm`, `android-arm64`).
 
-A minimal manual `workflow_dispatch` path was added to produce a validation APK artifact without creating a GitHub release or publishing to Google Play. Existing tag-triggered release behavior remains unchanged.
+The manual `workflow_dispatch` path produces a validation APK artifact without publishing to Google Play. It now also creates a **GitHub prerelease validation Release** containing the generated APK assets directly. This makes each ABI APK independently downloadable from a GitHub Release asset instead of requiring extraction from a workflow-artifact ZIP.
 
-Commit introducing manual validation path: `01bf9c0e037145963bb81bca88973f712d8bfa69`.
+For manual validation runs:
+- stable creates a prerelease validation Release with both stable split-ABI APKs;
+- alpha/alphaLegacy create a prerelease validation Release with their generated APKs;
+- the release tag is unique per workflow run (`validation-<variant>-<run_number>-<sha>`);
+- manual validation releases do not publish to Google Play.
 
-The manual stable build has now completed successfully at exact HEAD `26e96cfc...`; this is a **build artifact checkpoint**, not Android runtime proof.
+For future production/stable publishing, the existing `v*` tag-triggered full release path continues to create the GitHub Release and attach stable APKs plus the AAB, then publish the AAB to Google Play internal track. No production version is declared stable until the Android runtime and release validation checkpoints are closed.
+
+Manual-release asset implementation commit: `40abfb2a5f796e868bcd0ae0412ab521307166d2`.
+
+The previous manual stable build `33337359647` predates this direct-release-asset step; its ZIP artifact remains valid for the already-built APK, but a new manual stable run is required to produce direct Release asset URLs.
 
 ## CI / EXECUTION CONTROL
 
@@ -229,10 +237,11 @@ Update this map and workflow state at every material milestone. Save exact HEAD,
 
 **Date:** 2026-08-30
 **Branch:** `weblibre-ua-mainline-v3`
-**Current HEAD:** `26e96cfc5a13b952ee0f4af31689fb927dbdfd9d`.
+**Current HEAD:** after the workflow commit `40abfb2...` and this documentation synchronization; verify the exact branch HEAD before the next execution.
 **AI-1:** CI-VERIFIED via Quality #70 `33335945926` against `f05f643...`.
-**Manual stable APK:** SUCCESS via Flutter CICD run `33337359647`, exact head `26e96cfc...`; artifact `9739745969`; SHA-256 `95e399057371d143e08784330280fb8b5106ffb4ec5dd06c35fe952d9703329f`.
-**Runtime status:** no dedicated Android integration harness; consolidated six-scenario real-device checklist is ready.
+**Manual stable APK:** previous SUCCESS via Flutter CICD run `33337359647`, exact head `26e96cfc...`; previous artifact `9739745969` is ZIP-only and predates direct Release asset publishing.
+**Direct APK Release assets:** workflow support is now implemented but **not yet CI-verified** on a fresh manual run.
+**Runtime status:** consolidated six-scenario real-device validation is pending.
 **Browser blocker:** real Android runtime validation.
-**First next step:** use the already-produced stable APK on the real Android device and execute the consolidated runtime checklist; do not repeat APK builds per subtest.
+**First next step:** run a fresh manual `stable` Flutter CICD on `weblibre-ua-mainline-v3`; verify build, GitHub validation Release, both direct APK assets, asset names, and `head_sha`. Then use the ARM64 asset for the consolidated Android runtime checklist.
 **Resume protocol:** `docs/WEBLIBRE_RESUME_COMMAND_2026-08-30.md`.
