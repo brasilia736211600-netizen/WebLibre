@@ -364,7 +364,51 @@ Do not redo or expand these unless a focused test proves a regression or insuffi
 
 ---
 
-## 12. RESUME RULE FOR ANY NEW AGENT
+## 12. PARALLEL EXECUTION RULE
+
+When any independent CI/build/test/run is waiting or in progress, do not remain idle.
+
+Use the waiting interval for independent, non-conflicting work such as:
+
+- inspect source paths and call chains;
+- inspect PR diffs/reviews/issues;
+- inspect release/build scripts;
+- validate documentation/state consistency;
+- analyze another independent subsystem;
+- prepare the next minimal change without applying it to the same files under active modification.
+
+Parallel work rules:
+
+1. Run only tasks that are logically independent of the active run.
+2. Never perform two writes against the same file or dependent code path concurrently.
+3. Never duplicate a test/build already running unless there is a concrete diagnostic reason.
+4. Prefer read/analysis/review work while CI is executing.
+5. As soon as the active run produces a result, reconcile all parallel findings before making a code change.
+6. A parallel task must never bypass the dependency order or YAGNI boundary.
+7. If parallel work exposes a concrete blocker, fix only the first causal blocker and stop unrelated work.
+8. Save every material result back into the durable state files before the next handoff.
+
+Operational loop:
+
+```text
+ACTIVE RUN
+   ||
+   || waiting
+   \/
+PARALLEL INDEPENDENT ANALYSIS
+   ||
+   ||
+   \/
+RECONCILE WITH RUN RESULT
+   -> TEST
+   -> DIFF
+   -> COMMIT
+   -> SAVE STATE + UPDATE MAP
+```
+
+---
+
+## 13. RESUME RULE FOR ANY NEW AGENT
 
 When a new chat/agent starts:
 
@@ -377,7 +421,8 @@ When a new chat/agent starts:
 7. Continue from the first unchecked item only.
 8. Never treat source presence as runtime proof.
 9. Never repeat completed work without evidence of regression.
-10. Follow:
+10. While any run/build/CI is waiting, use the Parallel Execution Rule above for independent work.
+11. Follow:
 
 `READ -> VERIFY -> RECONCILE -> PLAN -> EXECUTE -> TEST -> DIFF -> COMMIT -> SAVE STATE`
 
@@ -397,12 +442,13 @@ The short execution truth remains in `WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`; th
 
 ---
 
-## 13. CURRENT CHECKPOINT
+## 14. CURRENT CHECKPOINT
 
 **Checkpoint date:** 2026-08-30  
 **Branch:** `weblibre-ua-mainline-v3`  
-**HEAD before this map commit:** `533dc9a714eaa6d2dfb615f35787f896e76ddd40`  
+**HEAD before this rule commit:** `ef9a08005b1c9ea4c15814b5c9f8aef85a90378c`  
 **Product-code status:** stable at last verified green gate  
-**Latest CI:** Quality #29 `33327113039` — GREEN  
+**Latest verified CI:** Quality #29 `33327113039` — GREEN  
+**Current live CI:** Quality #32 `33328637149` — in progress at gomobile runtime build when this checkpoint was recorded  
 **Current blocker:** real Android runtime proof for UA restore, UA A/B isolation, and Proxy runtime behavior  
-**Next execution:** cold-start/restored-tab UA test -> Container A/B UA isolation -> Proxy A/B/fail-closed -> final validation -> split-ABI release validation -> AI-1.
+**Next execution:** while CI runs, perform independent source/release analysis; after CI result, reconcile and then proceed to cold-start/restored-tab UA validation -> Container A/B isolation -> Proxy A/B/fail-closed -> final validation -> split-ABI release validation -> AI-1.
