@@ -124,7 +124,9 @@ The execution boundary performs registry lookup, declared-permission checking, t
 
 Quality #65 (`33335697412`) executed the new AI-1 test step. The registry tests passed. The executor test file failed to compile because `BrowserToolExecutor.execute()` had a possible fall-through path. The first causal compile blocker was fixed in `91e9412a19b5882cee472ac5653456226ccdb20d` by adding a deterministic fallback result after the switch. No architecture change was introduced.
 
-A new Quality run for the fixed HEAD has not appeared yet; therefore AI-1 remains `SOURCE-VERIFIED`, not `CI-VERIFIED`.
+A focused unknown-tool test was then added in `91e5e8d64f2d2d164251ae99af8a704392594a28` to exercise the deterministic unknown-tool error path. No new architecture or tool surface was added.
+
+A new Quality run for the fixed/hardened HEAD has not appeared yet; therefore AI-1 remains `SOURCE-VERIFIED`, not `CI-VERIFIED`.
 
 ## RELEASE FOUNDATION
 
@@ -209,11 +211,11 @@ Update this map and workflow state at every material milestone. Save exact HEAD,
 
 **Date:** 2026-08-30
 **Branch:** `weblibre-ua-mainline-v3`
-**Current HEAD at this state-save:** `56e9ef1932c0942d159d98177b9bb0a2e0361365`.
+**Current branch HEAD before this map-only save:** `91e5e8d64f2d2d164251ae99af8a704392594a28`.
 **Quality #65:** `33335697412` FAILED on the AI-1 executor test compile; registry tests passed. The failed run checked out PR merge ref `896283de...` whose head was `c557c914...`.
 **Executor fix:** `91e9412a19b5882cee472ac5653456226ccdb20d`.
-**State-save commits:** `56e9ef1932c0942d159d98177b9bb0a2e0361365` records the failure/fix state.
-**Current blocker:** obtain a current Quality run containing the AI-1 tests after the executor fix and verify success against the relevant PR state.
+**Focused test hardening:** `91e5e8d64f2d2d164251ae99af8a704392594a28`.
+**Current blocker:** obtain a current Quality run containing the AI-1 tests after the executor fix/hardening and verify success against the relevant PR state.
 **Browser blocker:** real Android runtime validation.
-**Current AI-1 status:** six-tool contract/registry + source-verified mappings + minimal execution boundary + focused tests implemented; first CI execution exposed and fixed one compile blocker; successful current CI execution pending.
+**Current AI-1 status:** six-tool contract/registry + source-verified mappings + minimal execution boundary + focused tests implemented; first CI execution exposed and fixed one compile blocker; deterministic unknown-tool coverage added; successful current CI execution pending.
 **Resume protocol:** `docs/WEBLIBRE_RESUME_COMMAND_2026-08-30.md`.
