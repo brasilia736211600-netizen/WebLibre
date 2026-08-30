@@ -22,7 +22,7 @@ PER-CONTAINER USER-AGENT
         +--> restore-source integration         [DONE IN SOURCE]
         |
         v
-QUALITY GATE                                  [GREEN at last verified product checkpoint]
+QUALITY GATE                                  [GREEN at verified checkpoints]
         |
         +-----------------------------+
         |                             |
@@ -31,9 +31,10 @@ REAL ANDROID RUNTIME PROOF       AI-1 BROWSER TOOL
         |                             |
         |                        +--> inventory       [DONE]
         |                        +--> typed registry  [DONE]
-        |                        +--> focused tests   [WRITTEN; CI PENDING]
+        |                        +--> focused tests   [WRITTEN]
         |                        +--> API mapping     [SOURCE-VERIFIED]
-        |                        +--> execution       [ADDED; CI PENDING]
+        |                        +--> execution       [SOURCE-VERIFIED]
+        |                        +--> CI coverage     [ADDED; RUN PENDING]
         |                             |
         +-------------+---------------+
                       v
@@ -79,7 +80,7 @@ Implemented and source-verified:
 Focused evidence:
 - Dart container metadata suite: 11/11 green.
 - Quality #39 `33329515686`: GREEN on product checkpoint `66e1dcf82f14333d4d7cd88c202a6e85aae13a4b`.
-- Quality #39 passed Dart, NDK, pinned native checkout, gomobile build, Gradle setup, `ContainerUserAgentStoreTest`, and `ContainerProxyFeatureTest`.
+- Quality #60 `33334955774`: GREEN against `477140419642d1170b241dd39f143900b9b98909`; this run did not yet contain the newly added AI-1 test step, so it is not AI-1 CI proof.
 
 ## ANDROID RUNTIME PROOF — PENDING
 
@@ -112,15 +113,15 @@ Source-verified stable mappings:
 - `close_tab` -> existing `TabRepository.closeTab`.
 - `open_url` -> existing `GeckoSessionService(tabId: ...).loadUrl`.
 
-Minimal execution boundary added:
+Minimal execution boundary:
 `apps/weblibre/lib/core/ai/tools/browser_tool_executor.dart`
 
-Focused execution tests added:
+Focused execution tests:
 `apps/weblibre/test/core/ai/tools/browser_tool_executor_test.dart`
 
 The execution boundary performs registry lookup, declared-permission checking, typed dispatch, deterministic success/error envelopes, and a non-persistent audit event. It does not execute LLM logic or expose Gecko/Pigeon/database internals.
 
-Current-head CI validation is pending; only a run whose `head_sha` equals the actual branch HEAD may be used as proof.
+CI coverage was added to `.github/workflows/quality.yml` for both AI-1 focused test files. The workflow-only commit does not automatically create a new PR Quality run under the current trigger/path behavior; therefore AI-1 remains CI-unverified until a Quality run actually executes those tests.
 
 ## RELEASE FOUNDATION
 
@@ -128,7 +129,9 @@ Existing release workflow builds the native gomobile runtime, then stable APKs/a
 
 ## CI / EXECUTION CONTROL
 
-The historical native prerequisite blocker is closed. Quality now has per-PR/branch concurrency with `cancel-in-progress: true`, and the workflow file is excluded from normal PR path triggers.
+The historical native prerequisite blocker is closed. Quality has per-PR/branch concurrency with `cancel-in-progress: true`, and normal PR triggers cover product paths while `workflow_dispatch` is available.
+
+Important evidence rule: Quality #60 proves only the tests present in that run. Because the AI-1 test step was added afterward, #60 cannot be retroactively used as AI-1 proof.
 
 Parallel execution is mandatory: while a CI/build/run waits, perform independent source inspection, contract work, release analysis, or documentation. Never duplicate an active build, write the same file concurrently, bypass dependency order, or violate YAGNI.
 
@@ -151,7 +154,11 @@ AI-1 inventory + contract + registry ──────────┤
                                                v
                                      minimal execution boundary
                                                |
+                                     CI verification
+                                               |
                                      integrated foundation
+                                               |
+                                     consolidated Android proof
                                                |
                                      release validation
                                                |
@@ -197,9 +204,9 @@ Update this map and workflow state at every material milestone. Save exact HEAD,
 
 **Date:** 2026-08-30
 **Branch:** `weblibre-ua-mainline-v3`
-**Current HEAD:** `a5c2c1e1da5b9af8057f3de6bba113f388c6e183`.
-**Latest verified Quality:** #39 `33329515686` — GREEN against the older product checkpoint.
-**Current-head AI-1 CI:** pending; do not infer success from stale runs.
+**Current HEAD before this documentation update:** `b6c866d2e372c2af1ff45b52003a6b469f4f8229`.
+**Quality #60:** `33334955774` GREEN against `477140419642d1170b241dd39f143900b9b98909`; not AI-1 CI proof because AI-1 test coverage was added afterward.
+**AI-1 CI coverage:** added in `b6c866d2e372c2af1ff45b52003a6b469f4f8229`; a new Quality run executing that step is required.
 **Android runtime proof:** pending; consolidate into one device pass.
-**AI-1:** contract/registry + source-verified six-tool mappings + minimal execution boundary + focused tests implemented; CI validation pending.
+**AI-1:** contract/registry + source-verified six-tool mappings + minimal execution boundary + focused tests implemented; CI coverage now present, execution proof pending.
 **Resume protocol:** `docs/WEBLIBRE_RESUME_COMMAND_2026-08-30.md`.
