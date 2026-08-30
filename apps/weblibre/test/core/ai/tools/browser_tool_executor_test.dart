@@ -45,6 +45,19 @@ void main() {
     expect(result.audit.success, isFalse);
   });
 
+  test('returns deterministic failure for an unknown tool', () async {
+    final result = await executor.execute(
+      name: 'not_registered',
+      input: const EmptyToolInput(),
+      grantedPermissions: const {},
+    );
+
+    expect(result.success, isFalse);
+    expect(result.error?.code, BrowserToolExecutionErrorCode.unknownTool);
+    expect(result.audit.toolName, 'not_registered');
+    expect(result.audit.success, isFalse);
+  });
+
   test('dispatches typed open_url input through the backend', () async {
     final result = await executor.execute(
       name: 'open_url',
