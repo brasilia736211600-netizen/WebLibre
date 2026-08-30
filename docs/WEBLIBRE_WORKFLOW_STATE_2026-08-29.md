@@ -2,7 +2,7 @@
 
 **Last synchronized:** 2026-08-30
 **Branch:** `weblibre-ua-mainline-v3`
-**Current branch HEAD at this state-save:** `26e96cfc5a13b952ee0f4af31689fb927dbdfd9d`
+**Current branch HEAD at this state-save:** `290dcdeeb18a700c9408b6c2f1fc90290272d4f2`
 
 ## CURRENT EXECUTION TRUTH
 GitHub is the source of truth for code, branch refs, commits, PRs, and CI. Never reconstruct state from chat.
@@ -33,30 +33,32 @@ UA cold-start/restored-tab integration is implemented in source but remains runt
 
 ## GIT / PR / CI
 - Branch: `weblibre-ua-mainline-v3`.
-- Current branch HEAD: `26e96cfc5a13b952ee0f4af31689fb927dbdfd9d`.
+- Current branch HEAD at state save: `290dcdeeb18a700c9408b6c2f1fc90290272d4f2`.
 - PR #3: open, draft, not merged; base `main`.
 - Quality #70 `33335945926`: SUCCESS against exact code checkpoint `f05f643...`; AI-1 browser tool tests and targeted container/native checks passed.
-- Manual Flutter CICD run `33337359647`: SUCCESS on exact branch `weblibre-ua-mainline-v3` and exact HEAD `26e96cfc5a13b952ee0f4af31689fb927dbdfd9d`.
-- Manual build job `99326557994`: native gomobile runtime build SUCCESS; stable APK build SUCCESS; APK artifact upload SUCCESS; release/Play publication skipped as intended.
-- Artifact: `weblibre-stable-apk-26e96cfc5a13b952ee0f4af31689fb927dbdfd9d`, artifact id `9739745969`, SHA-256 `95e399057371d143e08784330280fb8b5106ffb4ec5dd06c35fe952d9703329f`, not expired.
-- Commits after the AI-1 CI checkpoint are documentation/CI-operational changes only; no product runtime architecture changes were introduced.
-- Quality uses per-PR/branch concurrency with `cancel-in-progress: true`.
+- Manual Flutter CICD run `33337359647`: SUCCESS on exact branch `weblibre-ua-mainline-v3` and exact HEAD `26e96cfc...`; it produced the ZIP-only validation artifact `9739745969`.
+- Direct-release-asset workflow implementation commit: `40abfb2a5f796e868bcd0ae0412ab521307166d2`.
+- Documentation synchronization commit: `290dcdeeb18a700c9408b6c2f1fc90290272d4f2`.
+- A fresh manual Flutter CICD run is now required to verify the new GitHub validation Release and direct APK assets; it has not yet been run at this state-save.
 
-## MANUAL ANDROID ARTIFACT BUILD
-The existing `.github/workflows/build.yml` previously triggered only on `v*` tags. A minimal CI-operational path was added:
-- `workflow_dispatch` input `build_type`: `stable`, `alpha`, or `alphaLegacy`.
-- Manual builds compile the selected APK using the existing build commands.
-- Manual builds upload APKs as workflow artifacts.
-- Manual builds explicitly skip GitHub Release creation and Google Play publication.
-- Existing tag-triggered release behavior remains unchanged.
+## MANUAL ANDROID ARTIFACT / RELEASE ASSET BUILD
+The existing `.github/workflows/build.yml` has `workflow_dispatch` inputs `stable`, `alpha`, and `alphaLegacy`.
 
-Commit introducing this path: `01bf9c0e037145963bb81bca88973f712d8bfa69`.
-Manual validation build completed successfully in run `33337359647` at HEAD `26e96cfc...`.
+For `workflow_dispatch` it now:
+- builds the selected APK using the existing build commands;
+- uploads APKs as a workflow artifact;
+- creates a GitHub **prerelease validation Release** containing the generated APK files directly;
+- uses a unique validation tag containing variant, workflow run number, and commit SHA;
+- never publishes a manual validation build to Google Play.
 
-This is CI plumbing only; it does not constitute Android runtime proof and does not change product architecture.
+This direct-release behavior was implemented in commit `40abfb2a5f796e868bcd0ae0412ab521307166d2`.
+
+For future production/stable publishing, the existing `v*` tag path remains the production path: it attaches stable split-ABI APKs and the AAB to the GitHub Release and publishes the AAB to Google Play internal track. Production versioning must wait until runtime/release validation is closed.
+
+Previous manual stable build `33337359647` predates direct-release assets and therefore remains ZIP-only; do not treat it as proof of the new Release-asset behavior.
 
 ## ANDROID RUNTIME VALIDATION
-A single integrated stable APK is now available from the successful manual build. The APK is the exact artifact associated with HEAD `26e96cfc...`; do not build a new APK for individual checklist scenarios.
+A stable APK from the previous build exists and is suitable for runtime testing, but the project is deliberately taking a fresh build now so the direct APK Release assets can be verified at the same checkpoint.
 
 Checklist: `docs/WEBLIBRE_ANDROID_RUNTIME_VALIDATION_CHECKLIST_2026-08-30.md`.
 
@@ -77,14 +79,17 @@ A Quality/build run validates the workflow revision and `head_sha` captured at t
 When an independent CI/build/test/run is waiting or in progress, do not remain idle. Use the interval for independent non-conflicting source inspection, release analysis, or documentation. Never duplicate an active build, write the same file concurrently, bypass dependency order, or violate YAGNI.
 
 ## LAST COMPLETED STEP
-AI-1 execution boundary reached CI-VERIFIED status via Quality #70. The existing release workflow was minimally extended with a manual validation-build trigger. A manual `stable` build was then successfully executed on the exact current branch HEAD, producing the validation APK artifact.
+AI-1 execution boundary reached CI-VERIFIED status via Quality #70. The release workflow was minimally extended first with manual validation builds, then with direct GitHub prerelease validation assets for manually triggered builds. The direct-release change is source-committed but awaits a fresh manual CI execution for verification.
 
 ## CURRENT UNFINISHED STEP
-Real Android runtime proof remains pending on the produced integrated APK:
-- cold-start/restored-tab UA persistence;
-- Container A/B UA isolation across open, duplicate, and restore;
-- Proxy A/B isolation and fail-closed behavior;
-- no cross-container mutation.
+Fresh manual `stable` Flutter CICD verification of the direct GitHub validation Release assets:
+- successful stable APK build;
+- validation Release creation;
+- both split-ABI APKs attached directly;
+- exact asset names;
+- exact triggering `head_sha`.
+
+After that, real Android runtime proof remains pending.
 
 ## AI-1 CHECKPOINT
 Inventory:
@@ -113,10 +118,11 @@ Execution boundary:
 
 ## EXACT NEXT EXECUTION
 1. Do not expand AI-1; its current six-tool execution boundary is CI-VERIFIED.
-2. Use the already-produced stable APK artifact `9739745969` from run `33337359647`; do not create another APK for individual scenarios.
-3. Execute the consolidated Android runtime checklist on a real Android device.
-4. If a runtime scenario fails, preserve first causal evidence and inspect the existing call chain before changing code; do not add architecture speculatively.
-5. Only after browser foundation is ANDROID-RUNTIME-VERIFIED, complete release validation and then continue to AI-2 Agent Core.
+2. Run a fresh manual `stable` Flutter CICD on `weblibre-ua-mainline-v3` using the updated `build.yml`.
+3. Verify the resulting GitHub validation Release contains direct `app-stable-arm64-v8a-release.apk` and `app-stable-armeabi-v7a-release.apk` assets and that the Release/run SHA matches the built commit.
+4. Use the ARM64 Release asset for the consolidated Android runtime checklist.
+5. If a runtime scenario fails, preserve first causal evidence and inspect the existing call chain before changing code; do not add architecture speculatively.
+6. Only after browser foundation is ANDROID-RUNTIME-VERIFIED, complete release validation and then continue to AI-2 Agent Core.
 
 ## RESUME / ANTI-AMNESIA PROTOCOL
 Canonical resume document:
@@ -145,6 +151,8 @@ Do not build the full Agent, memory, provider integration, Telegram/WhatsApp tra
 
 Do not treat source mapping or CI success as proof of real Android cold-start, UA isolation, or proxy fail-closed behavior.
 
+Do not treat a workflow artifact ZIP as equivalent to a direct GitHub Release asset; both must be recorded distinctly.
+
 ## MASTER PROJECT MAP
 `docs/WEBLIBRE_MASTER_PROJECT_MAP_2026-08-30.md` is the durable high-level roadmap. Update it on every material milestone.
 
@@ -154,10 +162,11 @@ Do not treat source mapping or CI success as proof of real Android cold-start, U
 ## CHECKPOINT
 **Date:** 2026-08-30
 **Branch:** `weblibre-ua-mainline-v3`
-**Current state-save HEAD:** `26e96cfc5a13b952ee0f4af31689fb927dbdfd9d`.
+**Current state-save HEAD:** `290dcdeeb18a700c9408b6c2f1fc90290272d4f2`.
 **AI-1 status:** six-tool contract/registry + source-verified mappings + minimal execution boundary + focused tests + CI coverage + successful CI verification via Quality #70 `33335945926` against `f05f643...`.
-**Build status:** manual stable validation build `33337359647` SUCCESS at exact HEAD `26e96cfc...`; artifact `9739745969` exists with SHA-256 `95e399057371d143e08784330280fb8b5106ffb4ec5dd06c35fe952d9703329f`.
-**Runtime status:** consolidated six-scenario real-device validation is pending; no dedicated Android integration harness exists.
+**Previous build status:** manual stable validation build `33337359647` SUCCESS at exact HEAD `26e96cfc...`; artifact `9739745969` is ZIP-only and predates direct Release asset support.
+**Current release-asset status:** workflow support committed in `40abfb2...`; fresh manual CI verification pending.
+**Runtime status:** consolidated six-scenario real-device validation is pending.
 **Browser blocker:** real Android runtime validation.
-**First next step:** install/use the already-produced stable APK and execute the consolidated Android runtime checklist; do not repeat APK builds per subtest.
+**First next step:** run fresh manual `stable` Flutter CICD on `weblibre-ua-mainline-v3`; verify direct APK Release assets and exact SHA, then use the ARM64 asset for runtime validation.
 **Resume protocol:** `docs/WEBLIBRE_RESUME_COMMAND_2026-08-30.md`.
