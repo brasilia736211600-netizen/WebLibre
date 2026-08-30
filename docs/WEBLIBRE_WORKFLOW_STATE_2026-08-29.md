@@ -2,7 +2,7 @@
 
 **Last synchronized:** 2026-08-30
 **Branch:** `weblibre-ua-mainline-v3`
-**Current HEAD:** `9cfeed58ec77fac220b292d74848ed8ef54724cc`
+**Current HEAD:** `1c8e9732fb144f5baf3fb611ef0a6e6ec9c493f1`
 
 ## READ THIS FIRST
 This file is durable execution memory. GitHub is the source of truth for code/PR/CI. Do not reconstruct the project from chat history.
@@ -31,34 +31,35 @@ Restore retains `contextId`; no `RecoverableTab.userAgent` field was added. `tab
 
 ## CURRENT GIT / PR / CI
 - Branch: `weblibre-ua-mainline-v3`.
-- Actual branch ref HEAD: `9cfeed58ec77fac220b292d74848ed8ef54724cc` (`ci: run native tests through Flutter Android project`).
-- PR #3: open, draft, not merged, base `main` at `c82e189b1b78dcc5ded582305c63bd1222eec19c`.
-- The PR metadata endpoint currently reports a stale head SHA (`9c0e30b799b1484afe6f3c9d9e0b74cebf3a80d9`) while the branch ref and commit object both resolve to `9cfeed58ec77fac220b292d74848ed8ef54724cc`; use the branch ref/commit as the actual HEAD.
-- Previous quality run for HEAD `d91aa8ffd99d087fd8882c0ed3143f6fbc1cd03e`: `33325379092` / run #22 — completed failure at native compilation.
-- Its diagnostics artifact `native-test-diagnostics` (artifact id `9736107592`) was successfully downloaded and inspected.
-- First causal native failure: `:compileDebugKotlin` was compiling `packages/flutter_mozilla_components/android` as a standalone Gradle project, so Flutter embedding classes were absent (`Unresolved reference 'io'`, `PlatformViewFactory`, `PlatformView`, `FlutterPlugin`, `ActivityAware`, `readValue`, etc.). This is a CI invocation/classpath problem, not evidence of a product-code defect.
-- The targeted native test invocation was therefore changed to run from `apps/weblibre/android` as `:flutter_mozilla_components:testDebugUnitTest`, where the Flutter Android project/plugin loader supplies the plugin's Flutter dependencies. Diagnostics paths were moved accordingly.
-- New CI commit: `9cfeed58ec77fac220b292d74848ed8ef54724cc`.
-- No CI workflow run for `9cfeed58...` was visible immediately after the commit; the next check is to inspect whether the PR-triggered quality run has started/completed.
+- Actual branch ref HEAD at the start of this execution was `2be3dc78464a97c516cd59541ca4c4578ed9ce75`; after the required CI fix it advanced to `1c8e9732fb144f5baf3fb611ef0a6e6ec9c493f1`.
+- PR #3 is open, draft, and not merged; base `main` remains `c82e189b1b78dcc5ded582305c63bd1222eec19c`.
+- PR metadata may lag the branch ref; branch ref/commit object is the authoritative execution HEAD.
+- Quality run #24 `33326192759` for `9cfeed58...` failed because the Flutter host project was now used correctly, but `apps/weblibre/android/app/build.gradle` stopped configuration because the existing combined gomobile runtime AAR was absent.
+- Quality run #25 `33326217737` for state commit `2be3dc...` reproduced the same first causal failure. Logs expose the exact error: `Missing combined gomobile runtime AAR: native/go_mobile_runtime/build/weblibre-go.aar` from `apps/weblibre/android/app/build.gradle` line 89.
+- The existing release workflow already proves the supported native-runtime preparation: Java 17, Go 1.25.x, NDK from `weblibre.ndkVersion`, pinned `sing-box` and `IPtProxy` sources from `native/go_mobile_runtime/pins.env`, then `melos run build-go-runtime --no-select`.
+- The minimal CI-only fix was applied to `.github/workflows/quality.yml`: install Java 17 and Go 1.25.x, install the pinned Android NDK, checkout the pinned native runtime sources (`SING_BOX_TAG=v1.13.12`, `SING_BOX_COMMIT=1086ab2563320e0da0c23b3a491d8dfa0939dff4`, `IPTPROXY_TAG=5.4.2`, `IPTPROXY_COMMIT=3b99b6b1f4d5b51aea97d7213bc36e74ec77c84d`), build the existing gomobile runtime, then run the targeted native tests through the Flutter Android host project.
+- CI fix commit: `1c8e9732fb144f5baf3fb611ef0a6e6ec9c493f1` (`ci: build gomobile runtime before native tests`).
+- No product-code change was made in this step.
 
 ## TESTING CHECKPOINT
-- Dart targeted container metadata test: GREEN — 11/11 passed in the latest completed quality run.
-- Previous native targeted run `33325379092`: RED at `:compileDebugKotlin`; exact first causal errors are now known and recorded above.
-- Historical native runtime build/Kotlin compilation: passed in run `33265003957`.
+- Dart targeted container metadata test: GREEN — 11/11 passed in runs #24 and #25 before native gating.
+- Native targeted tests in runs #24/#25: RED before test execution because the host Gradle project lacked the generated gomobile AAR; this is now addressed in CI preparation.
+- Native runtime build/Kotlin compilation: historical runtime build/Kotlin compilation passed in run `33265003957`; the new quality workflow now explicitly builds the runtime before native tests.
+- New quality run for `1c8e9732...`: not yet visible immediately after commit creation.
 - Native restore parser test: source present; runtime execution pending.
 - Full cold-start restore runtime: NOT VERIFIED.
 - Concurrent Container A/B UA isolation: NOT VERIFIED.
 - Proxy regression/A-B and fail-closed behavior: NOT VERIFIED.
 
 ## LAST COMPLETED STEP
-After reconciling the durable state with the actual GitHub branch, commits, PR and CI, inspected the previously inaccessible native diagnostics and identified the first causal failure. The minimal fix was applied to CI only: execute the plugin's native unit tests through the Flutter Android host project instead of the standalone plugin Gradle project. Commit: `9cfeed58ec77fac220b292d74848ed8ef54724cc`.
+Inspected the concrete failure of quality runs #24/#25, confirmed the missing `weblibre-go.aar` prerequisite, and applied the smallest CI-only repair by reproducing the already-proven native-runtime build preparation from the release workflow. Commit: `1c8e9732fb144f5baf3fb611ef0a6e6ec9c493f1`.
 
 ## CURRENT UNFINISHED STEP
-Verify the new CI invocation actually compiles/runs the two targeted native test classes. Do not change product code unless the new run exposes a concrete product/test failure.
+Verify that the new CI gate builds the existing gomobile runtime and reaches/runs the two targeted native test classes successfully. Do not change product code unless a concrete native compiler/test failure is exposed after the prerequisite is built.
 
 ## EXACT NEXT EXECUTION
-1. Inspect the PR-triggered `WebLibre Quality` run for HEAD `9cfeed58ec77fac220b292d74848ed8ef54724cc`.
-2. If native tests fail, inspect the new diagnostics and repair only the first causal failure.
+1. Inspect the PR-triggered `WebLibre Quality` run for HEAD `1c8e9732fb144f5baf3fb611ef0a6e6ec9c493f1`.
+2. If the runtime build/native tests fail, inspect the first causal error and repair only that failure.
 3. If native tests pass, validate cold-start persisted UA restore and concurrent Container A/B UA isolation.
 4. Validate Proxy A/B regression and fail-closed behavior.
 5. Run final targeted Dart/native validation.
@@ -82,9 +83,9 @@ Do not redo completed creation/UI work. Do not add `RecoverableTab.userAgent`, a
 ## CHECKPOINT
 **Date:** 2026-08-30
 **Branch:** `weblibre-ua-mainline-v3`
-**HEAD:** `9cfeed58ec77fac220b292d74848ed8ef54724cc`
+**HEAD:** `1c8e9732fb144f5baf3fb611ef0a6e6ec9c493f1`
 **Files changed in this checkpoint:** `.github/workflows/quality.yml`, `docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`.
-**Execution:** inspected artifact `native-test-diagnostics` from run `33325379092`; identified standalone Gradle Flutter-classpath failure; changed only CI invocation to run the plugin unit tests through `apps/weblibre/android`; saved this state.
-**Tests/results:** Dart targeted suite 11/11 green; previous native run failed at `:compileDebugKotlin`; new CI result pending/not yet visible immediately after commit.
-**Blocker:** new native CI result and runtime/device cold-start restoration remain unverified.
-**Exact next step:** inspect the new PR quality run for `9cfeed58...`; fix only a concrete first failure if one appears, otherwise proceed to runtime restore/A-B verification.
+**Execution:** diagnosed the missing gomobile AAR from runs #24/#25; applied only the CI prerequisite needed to build the existing runtime before the targeted native tests; saved this durable state.
+**Tests/results:** Dart 11/11 green; previous native gate failed before test execution on missing AAR; new CI result pending immediately after commit.
+**Blocker:** new native CI run and device/runtime restore remain unverified.
+**Exact next step:** inspect the new quality run for `1c8e9732...`; fix only a concrete first failure, otherwise proceed to runtime restore/A-B verification.
