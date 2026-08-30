@@ -13,6 +13,12 @@ on:
       - '.github/workflows/quality.yml'
   workflow_dispatch:
 
+# Only the newest Quality run for a PR/branch is useful. Cancel superseded runs
+# so repeated PR synchronization does not consume runners on stale commits.
+concurrency:
+  group: quality-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   dart:
     runs-on: ubuntu-latest
