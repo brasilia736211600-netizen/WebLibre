@@ -2,7 +2,7 @@
 
 **Last synchronized:** 2026-08-30
 **Branch:** `weblibre-ua-mainline-v3`
-**Current execution HEAD:** `2e7fca5f1a480ed34461582e3acfa19be7260c0b`
+**Last verified branch HEAD before this state-save:** `868299bf757c2db1e19630f1a4c9189f2b59a1ae`
 
 ## CURRENT EXECUTION TRUTH
 GitHub is the source of truth for code, branch refs, commits, PRs, and CI. Never reconstruct state from chat.
@@ -27,17 +27,17 @@ UA cold-start/restored-tab integration is implemented in source but remains runt
 - Quality #39 `33329515686` completed successfully against product checkpoint `66e1dcf82f14333d4d7cd88c202a6e85aae13a4b`.
 - AI-1 registry tests are added.
 - AI-1 execution-boundary tests are added.
-- Earlier Quality runs that do not match the current HEAD are stale and are not current proof.
+- Quality #59 `33334940889` is queued against branch HEAD `868299bf757c2db1e19630f1a4c9189f2b59a1ae` and therefore is the current CI validation attempt for the restart-safe documentation checkpoint; queued/in-progress is not proof of success.
 - No automated Android process-death/cold-start test; unit/CI tests cannot prove real Android process lifecycle behavior.
 
 ## GIT / PR / CI
 - Branch: `weblibre-ua-mainline-v3`.
-- Current branch HEAD at this state-save: `2e7fca5f1a480ed34461582e3acfa19be7260c0b`.
-- AI-1 implementation checkpoint before documentation-only state synchronization: `21f8ae8ab2b9a0385a7c0880280226d5034a5405`.
+- Last verified branch HEAD before this state-save: `868299bf757c2db1e19630f1a4c9189f2b59a1ae`.
+- Product-code checkpoint: `21f8ae8ab2b9a0385a7c0880280226d5034a5405`.
 - PR #3: open, draft, not merged; base `main`.
 - The PR description can contain an old head value; branch ref is authoritative.
 - Quality #39 `33329515686`: SUCCESS against the older product checkpoint.
-- The latest observed Quality execution before this state synchronization was not current-head proof; always re-observe a run whose `head_sha` matches the actual branch HEAD.
+- Quality #59 `33334940889`: QUEUED with `head_sha=868299bf757c2db1e19630f1a4c9189f2b59a1ae`.
 - Quality workflow uses per-PR/branch `concurrency` with `cancel-in-progress: true`, and excludes `.github/workflows/quality.yml` from normal PR path triggers.
 
 ## RUN INTERPRETATION RULE
@@ -58,7 +58,9 @@ Rules:
 9. Android device testing is a validation checkpoint, not a prerequisite for independent repository preparation. Complete buildable/tooling/design work in parallel, then perform the consolidated Android validation pass when the integrated build is ready.
 
 ## LAST COMPLETED STEP
-Persisted the restart-safe project continuity protocol and updated the master map/state to record the canonical resume instructions. Before this documentation synchronization, the last product-code step was the minimal AI-1 execution boundary with focused tests.
+Persisted the restart-safe continuity protocol, added a canonical copy/paste resume command, and synchronized the master map/workflow state with the durable evidence rules.
+
+Before this documentation synchronization, the last product-code step was the minimal AI-1 execution boundary with focused tests.
 
 ## CURRENT UNFINISHED STEP
 A. Browser runtime proof remains unverified on a real Android runtime:
@@ -66,7 +68,7 @@ A. Browser runtime proof remains unverified on a real Android runtime:
 - Container A/B UA isolation;
 - Proxy A/B/fail-closed behavior.
 
-B. AI-1 execution boundary and focused tests are implemented in source but are not yet current-head CI-proven.
+B. AI-1 execution boundary and focused tests are implemented in source but are not yet CI-verified on a successful current checkpoint.
 
 ## AI-1 CHECKPOINT
 Inventory:
@@ -85,9 +87,9 @@ First slice:
 `open_url` has an explicit typed `{tabId, url}` input.
 
 ## EXACT NEXT EXECUTION
-1. Re-read the actual branch HEAD and observe the newest Quality run; accept CI proof only when `head_sha` exactly equals the current branch HEAD.
+1. Re-read the actual branch HEAD after this documentation commit and inspect the newest Quality run; accept CI proof only when `head_sha` exactly equals the actual branch HEAD and the run is successful.
 2. If current-head Quality reports a concrete blocker, fix only the first causal blocker.
-3. Do not expand the AI-1 tool surface while this validation is pending.
+3. Do not expand the AI-1 tool surface while validation is pending.
 4. Continue independent preparation of the single consolidated Android runtime validation path/checklist without requiring repeated APK downloads.
 5. Perform one consolidated Android validation pass covering UA restore, Container A/B isolation, and proxy behavior when the integrated build is ready.
 6. Validate the existing split-ABI release path.
@@ -130,10 +132,10 @@ Do not treat source mapping or CI success as proof of real Android cold-start, U
 
 ## CHECKPOINT
 **Date:** 2026-08-30
-**Current state-save HEAD:** `2e7fca5f1a480ed34461582e3acfa19be7260c0b`.
+**Current verified pre-state-save HEAD:** `868299bf757c2db1e19630f1a4c9189f2b59a1ae`.
 **Last product-code checkpoint:** `21f8ae8ab2b9a0385a7c0880280226d5034a5405`.
 **Latest verified Quality:** #39 `33329515686` GREEN against the older product checkpoint.
-**Current-head CI:** pending; must match actual branch HEAD before becoming evidence.
+**Current CI attempt:** Quality #59 `33334940889`, queued against `868299bf757c2db1e19630f1a4c9189f2b59a1ae`.
 **Current browser blocker:** real Android runtime validation.
 **Current AI-1 status:** six-tool contract/registry + source-verified execution mappings + minimal execution boundary + focused tests implemented; current-head CI validation pending.
 **Resume protocol:** `docs/WEBLIBRE_RESUME_COMMAND_2026-08-30.md`.
