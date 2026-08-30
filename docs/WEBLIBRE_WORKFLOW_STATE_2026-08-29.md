@@ -2,10 +2,10 @@
 
 **Last synchronized:** 2026-08-30
 **Branch:** `weblibre-ua-mainline-v3`
-**Current HEAD:** `d91aa8ffd99d087fd8882c0ed3143f6fbc1cd03e`
+**Current HEAD:** `9cfeed58ec77fac220b292d74848ed8ef54724cc`
 
 ## READ THIS FIRST
-This file is the durable execution memory. GitHub is the source of truth for code/PR/CI. Do not reconstruct the project from chat history.
+This file is durable execution memory. GitHub is the source of truth for code/PR/CI. Do not reconstruct the project from chat history.
 
 ## FINAL PRODUCT
 Two dependent tracks:
@@ -31,32 +31,35 @@ Restore retains `contextId`; no `RecoverableTab.userAgent` field was added. `tab
 
 ## CURRENT GIT / PR / CI
 - Branch: `weblibre-ua-mainline-v3`.
-- Actual PR #3 head: `d91aa8ffd99d087fd8882c0ed3143f6fbc1cd03e`.
-- PR #3: open, draft, not merged; base `main` at `c82e189b1b78dcc5ded582305c63bd1222eec19c`.
-- Current quality run for the actual PR head: `33325379092` / run #22 — **completed failure**.
-- Job `dart` completed: bootstrap, Dart targeted container test, and Gradle setup passed; `Run targeted native container tests` failed; failure diagnostics artifact uploaded successfully.
-- The artifact exists as `native-test-diagnostics` (artifact id `9736107592`) but the current connector can enumerate it, not read/download its binary payload. Therefore the native causal error is **not yet exposed** and no product-code change is justified.
-- `quality.yml` currently runs `gradle --no-daemon --stacktrace testDebugUnitTest` with the two targeted native test classes and failure-only diagnostics capture.
+- Actual branch ref HEAD: `9cfeed58ec77fac220b292d74848ed8ef54724cc` (`ci: run native tests through Flutter Android project`).
+- PR #3: open, draft, not merged, base `main` at `c82e189b1b78dcc5ded582305c63bd1222eec19c`.
+- The PR metadata endpoint currently reports a stale head SHA (`9c0e30b799b1484afe6f3c9d9e0b74cebf3a80d9`) while the branch ref and commit object both resolve to `9cfeed58ec77fac220b292d74848ed8ef54724cc`; use the branch ref/commit as the actual HEAD.
+- Previous quality run for HEAD `d91aa8ffd99d087fd8882c0ed3143f6fbc1cd03e`: `33325379092` / run #22 — completed failure at native compilation.
+- Its diagnostics artifact `native-test-diagnostics` (artifact id `9736107592`) was successfully downloaded and inspected.
+- First causal native failure: `:compileDebugKotlin` was compiling `packages/flutter_mozilla_components/android` as a standalone Gradle project, so Flutter embedding classes were absent (`Unresolved reference 'io'`, `PlatformViewFactory`, `PlatformView`, `FlutterPlugin`, `ActivityAware`, `readValue`, etc.). This is a CI invocation/classpath problem, not evidence of a product-code defect.
+- The targeted native test invocation was therefore changed to run from `apps/weblibre/android` as `:flutter_mozilla_components:testDebugUnitTest`, where the Flutter Android project/plugin loader supplies the plugin's Flutter dependencies. Diagnostics paths were moved accordingly.
+- New CI commit: `9cfeed58ec77fac220b292d74848ed8ef54724cc`.
+- No CI workflow run for `9cfeed58...` was visible immediately after the commit; the next check is to inspect whether the PR-triggered quality run has started/completed.
 
 ## TESTING CHECKPOINT
 - Dart targeted container metadata test: GREEN — 11/11 passed in the latest completed quality run.
-- Native targeted tests: RED in run `33325379092`; exact Gradle/compiler/test failure text unavailable through the current GitHub connector.
+- Previous native targeted run `33325379092`: RED at `:compileDebugKotlin`; exact first causal errors are now known and recorded above.
+- Historical native runtime build/Kotlin compilation: passed in run `33265003957`.
 - Native restore parser test: source present; runtime execution pending.
 - Full cold-start restore runtime: NOT VERIFIED.
 - Concurrent Container A/B UA isolation: NOT VERIFIED.
 - Proxy regression/A-B and fail-closed behavior: NOT VERIFIED.
-- Historical native runtime build/Kotlin compilation: passed in run `33265003957`.
 
 ## LAST COMPLETED STEP
-After interruption, reconciled the durable state against GitHub: verified the actual PR head, current PR metadata, and current CI. The latest native run completed with failure after Dart and Gradle setup passed; its diagnostics artifact was successfully produced but its payload is not readable through the current connector.
+After reconciling the durable state with the actual GitHub branch, commits, PR and CI, inspected the previously inaccessible native diagnostics and identified the first causal failure. The minimal fix was applied to CI only: execute the plugin's native unit tests through the Flutter Android host project instead of the standalone plugin Gradle project. Commit: `9cfeed58ec77fac220b292d74848ed8ef54724cc`.
 
 ## CURRENT UNFINISHED STEP
-Obtain the actual native Gradle failure text for PR head `d91aa8ffd99d087fd8882c0ed3143f6fbc1cd03e`. Do not change product code until the concrete compiler/test failure is visible.
+Verify the new CI invocation actually compiles/runs the two targeted native test classes. Do not change product code unless the new run exposes a concrete product/test failure.
 
 ## EXACT NEXT EXECUTION
-1. Inspect/read the native failure diagnostics for run `33325379092` if the GitHub connector exposes the artifact/log payload.
-2. If a concrete native failure is exposed, repair only the first causal Gradle/compiler/test failure and rerun targeted tests.
-3. If native is green, validate cold-start persisted UA restore and concurrent Container A/B UA isolation.
+1. Inspect the PR-triggered `WebLibre Quality` run for HEAD `9cfeed58ec77fac220b292d74848ed8ef54724cc`.
+2. If native tests fail, inspect the new diagnostics and repair only the first causal failure.
+3. If native tests pass, validate cold-start persisted UA restore and concurrent Container A/B UA isolation.
 4. Validate Proxy A/B regression and fail-closed behavior.
 5. Run final targeted Dart/native validation.
 6. Use existing `build-browser` with `--split-per-abi`; current scripts target `android-arm,android-arm64`; publish each supported ABI APK independently. Do not promise x86/x86_64 without a successful build.
@@ -79,8 +82,9 @@ Do not redo completed creation/UI work. Do not add `RecoverableTab.userAgent`, a
 ## CHECKPOINT
 **Date:** 2026-08-30
 **Branch:** `weblibre-ua-mainline-v3`
-**HEAD:** `d91aa8ffd99d087fd8882c0ed3143f6fbc1cd03e`
-**Files changed in this checkpoint:** `docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`.
-**Tests/results:** Dart targeted suite 11/11 green; quality run `33325379092` native targeted step failed; diagnostics artifact `native-test-diagnostics` exists but is not readable through the current connector.
-**Blocker:** exact native failure text is unavailable; runtime/device restore is also not yet verified.
-**Exact next step:** obtain the native failure payload; if available, fix only its first causal failure and rerun. Otherwise do not speculate or modify product code.
+**HEAD:** `9cfeed58ec77fac220b292d74848ed8ef54724cc`
+**Files changed in this checkpoint:** `.github/workflows/quality.yml`, `docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`.
+**Execution:** inspected artifact `native-test-diagnostics` from run `33325379092`; identified standalone Gradle Flutter-classpath failure; changed only CI invocation to run the plugin unit tests through `apps/weblibre/android`; saved this state.
+**Tests/results:** Dart targeted suite 11/11 green; previous native run failed at `:compileDebugKotlin`; new CI result pending/not yet visible immediately after commit.
+**Blocker:** new native CI result and runtime/device cold-start restoration remain unverified.
+**Exact next step:** inspect the new PR quality run for `9cfeed58...`; fix only a concrete first failure if one appears, otherwise proceed to runtime restore/A-B verification.
