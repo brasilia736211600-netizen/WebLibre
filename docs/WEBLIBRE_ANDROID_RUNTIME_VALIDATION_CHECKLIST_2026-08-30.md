@@ -12,7 +12,15 @@ Record:
 - observed UA/container/proxy outcome;
 - pass/fail and any logs/screenshots needed to reproduce a failure.
 
-`SOURCE-VERIFIED` and `CI-VERIFIED` are not runtime proof.
+`SOURCE-VERIFIED` and `CI-VERIFIED` are not runtime proof. `ARTIFACT-VERIFIED` does not imply `RELEASE-ASSET-VERIFIED`.
+
+## Distribution precondition
+
+For the validation build used here, prefer the individually downloadable GitHub Release assets when available:
+- `app-stable-arm64-v8a-release.apk`
+- `app-stable-armeabi-v7a-release.apk`
+
+Verify the Release assets belong to the exact intended workflow run and `head_sha`. Do not infer their existence from a ZIP artifact. The ZIP artifact may coexist as additional evidence, but it is not equivalent to direct Release assets.
 
 ## Preconditions
 
@@ -22,6 +30,7 @@ Record:
 4. Assign visibly distinct UAs to A and B.
 5. Configure distinct proxy behavior for A and B where supported by the existing UI/configuration.
 6. Do not change implementation or settings mid-scenario unless the step explicitly requires it.
+7. Record the exact APK asset URL/name used.
 
 ## Scenario 1 — Cold start / restored UA
 
@@ -104,6 +113,13 @@ Record:
 
 Stop the validation pass and preserve evidence if any scenario fails. Do not compensate by changing multiple layers. Reproduce the first causal failure, inspect the existing call chain, and change only the minimum code required if source/runtime evidence proves the current implementation insufficient.
 
+## CI / release evidence
+
+For every build/release checkpoint verify:
+`intended change -> commit SHA -> workflow revision -> run.head_sha -> required job SUCCESS -> required step SUCCESS (not SKIPPED) -> expected artifact/release exists -> exact asset names/URLs/checksum verified`.
+
+A successful older run cannot prove a later workflow change. A workflow-artifact ZIP cannot prove direct Release assets.
+
 ## Relationship to CI
 
-The existing Quality workflow validates source/unit/native checks but cannot establish Android process-death or real-device network behavior. The release workflow already builds the native runtime and stable split-ABI APKs/app bundle. This checklist is therefore a manual/device validation checkpoint, not a replacement for CI.
+The existing Quality workflow validates source/unit/native checks but cannot establish Android process-death or real-device network behavior. The release workflow builds the native runtime and stable split-ABI APKs/app bundle. This checklist is therefore a manual/device validation checkpoint, not a replacement for CI.
