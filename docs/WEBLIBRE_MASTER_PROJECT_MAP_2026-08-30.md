@@ -23,42 +23,43 @@ PER-CONTAINER USER-AGENT
         v
 QUALITY GATE                                  [GREEN]
         |
-        v
-REAL ANDROID RUNTIME PROOF                    [CURRENT BLOCKER]
-        |
-        +--> cold-start/restored UA            [NOT VERIFIED]
-        +--> Container A/B UA isolation         [NOT VERIFIED]
-        +--> Proxy A/B + fail-closed            [NOT VERIFIED]
-        |
-        v
-RELEASE FOUNDATION
-        |
-        +--> final targeted validation          [PENDING]
-        +--> split-ABI APK validation           [PENDING]
-        |
-        v
-AI-1 Browser Tool API                         [NEXT MAJOR PHASE]
-        |
-        v
-AI-2 Agent Core
-        |
-        v
-AI-3 Personal Profile + Memory
-        |
-        v
-AI-4 Permission Engine
-        |
-        v
-AI-5 First Autonomous Workflows
-        |
-        v
-AI-6 Advanced Personal Behavior
-        |
-        v
-AI-7 Model / Provider Adapters
-        |
-        v
-AI-8 End-to-End Validation
+        +-----------------------------+
+        |                             |
+        v                             v
+REAL ANDROID RUNTIME PROOF       AI-1 PREPARATION
+        |                        (inventory/contract)
+        |                             |
+        +-------------+---------------+
+                      |
+                      v
+              INTEGRATED FOUNDATION
+                      |
+                      v
+              RELEASE VALIDATION
+                      |
+                      v
+              AI-1 Browser Tool API
+                      |
+                      v
+              AI-2 Agent Core
+                      |
+                      v
+              AI-3 Personal Profile + Memory
+                      |
+                      v
+              AI-4 Permission Engine
+                      |
+                      v
+              AI-5 First Autonomous Workflows
+                      |
+                      v
+              AI-6 Advanced Personal Behavior
+                      |
+                      v
+              AI-7 Model / Provider Adapters
+                      |
+                      v
+              AI-8 End-to-End Validation
 ```
 
 ## BROWSER / UA MILESTONE — COMPLETED SOURCE + FOCUSED CI
@@ -70,7 +71,7 @@ Implemented and verified at source level:
 - Existing per-container UA UI.
 - Native UA application to the prepared `EngineSession` before first navigation.
 - `ContainerUserAgentStore.kt` resolves persisted UA from the existing profile-scoped `tab.db` by `contextualIdentity`.
-- `HistoryDelegateBindingMiddleware.kt` applies persisted UA at `LinkEngineSessionAction` and handles already-attached sessions via `AddTabAction`.
+- `HistoryDelegateBindingMiddleware.kt` applies UA at restore/session creation using existing state sources.
 - Restore path retains `contextId` and uses existing persisted container metadata; no second DB or `RecoverableTab.userAgent` was added.
 
 Focused evidence:
@@ -93,12 +94,13 @@ Do not rewrite the existing restore or proxy architecture without a focused fail
 
 ## RELEASE FOUNDATION
 
-Existing release workflow builds the native gomobile runtime, then builds stable APKs and the stable app bundle. Stable APKs use the existing `build-browser` path; the intended release policy remains split-ABI (`android-arm`, `android-arm64`) with each APK independently publishable/downloadable. Release validation is pending the browser runtime milestone.
+Existing release workflow builds the native gomobile runtime, then builds stable APKs and the stable app bundle. Stable APKs use the existing `build-browser` path; the intended release policy remains split-ABI (`android-arm`, `android-arm64`) with each APK independently publishable/downloadable. Release validation is pending the integrated browser runtime milestone.
 
 ## AI ROADMAP
 
 AI-0 specification: DONE.
-AI-1 Browser Tool API: NOT STARTED.
+AI-1 preparation/inventory: STARTED.
+AI-1 Browser Tool implementation: NOT STARTED.
 AI-2 Agent Core: PENDING.
 AI-3 Personal Profile + Memory: PENDING.
 AI-4 Permission Engine: PENDING.
@@ -107,15 +109,21 @@ AI-6 Advanced Personal Behavior: PENDING.
 AI-7 Model/Provider Adapters: PENDING.
 AI-8 End-to-End Validation: PENDING.
 
-AI-1 must not bypass the browser foundation. The model will eventually operate through explicit browser tools and permission scopes, not unrestricted internal APIs.
+AI-1 preparation artifact:
+`docs/WEBLIBRE_AI1_BROWSER_TOOL_INVENTORY_2026-08-30.md`
+
+The first minimal tool slice identified from existing source is:
+`get_tabs`, `get_current_tab`, `create_tab`, `switch_tab`, `close_tab`, `open_url`.
+
+No model, memory, remote transport, or unrestricted internal API exposure has been implemented.
 
 ## CI / EXECUTION CONTROL
 
 The historical native CI prerequisite blocker is closed: the corrected Quality gate builds the pinned gomobile runtime before targeted native tests.
 
-The repeated stale-run problem is also closed. `quality.yml` now uses per-PR/branch concurrency with `cancel-in-progress: true` and excludes itself from normal PR path triggers. This prevents old snapshots from consuming full gomobile/native builds when a newer commit arrives.
+The repeated stale-run problem is closed: `quality.yml` uses per-PR/branch concurrency with `cancel-in-progress: true` and excludes itself from normal PR path triggers.
 
-Parallel execution rule is mandatory: while an independent run/build waits, perform independent non-conflicting source/release/review/state analysis; never duplicate an active build and never write the same file concurrently.
+Parallel execution is mandatory. Android device testing is a consolidated validation checkpoint, not a prerequisite for independent repository preparation. While a run/build waits, complete independent source inspection, contract preparation, release analysis, and documentation work. Do not duplicate builds or write the same file concurrently.
 
 ## YAGNI / DO-NOT-REDO
 
@@ -130,23 +138,36 @@ Do not introduce:
 - an Android Components fork;
 - unrelated refactors.
 
+For AI, do not introduce an LLM/provider, memory system, remote gateway, or full Agent Core before the minimal Browser Tool boundary is established and tested.
+
 ## MASTER DEPENDENCY ORDER
 
 ```text
-Android UA restore proof
- -> UA A/B runtime isolation
- -> Proxy A/B + fail-closed runtime proof
- -> final targeted validation
- -> split-ABI release validation
- -> AI-1 Browser Tool API
- -> AI-2 Agent Core
- -> AI-3 Profile + Memory
- -> AI-4 Permission Engine
- -> AI-5 workflows
- -> AI-6 advanced behavior
- -> AI-7 model adapters
- -> AI-8 end-to-end validation
- -> final release
+Browser runtime proof ─────────────────────┐
+                                           │
+AI-1 inventory/contract preparation ───────┤
+                                           v
+                                    integrated foundation
+                                           |
+                                    release validation
+                                           |
+                                    AI-1 tool registry
+                                           |
+                                    AI-2 Agent Core
+                                           |
+                                    AI-3 Profile + Memory
+                                           |
+                                    AI-4 Permission Engine
+                                           |
+                                    AI-5 workflows
+                                           |
+                                    AI-6 advanced behavior
+                                           |
+                                    AI-7 model adapters
+                                           |
+                                    AI-8 end-to-end validation
+                                           |
+                                    final release
 ```
 
 ## RESUME RULE
@@ -161,10 +182,8 @@ Update this map and the short workflow state at every material milestone.
 
 **Date:** 2026-08-30
 **Branch:** `weblibre-ua-mainline-v3`
-**Current branch HEAD before this state commit:** `901bf4156b4b5b21bc8352c268b4e715ca73faa0`
-**Latest product checkpoint with green Quality:** `66e1dcf82f14333d4d7cd88c202a6e85aae13a4b`
-**PR:** #3, open, draft, base `main`.
-**Latest verified Quality:** #39 `33329515686` — GREEN against product checkpoint `66e1dcf82f14333d4d7cd88c202a6e85aae13a4b`.
-**Product-code change in this checkpoint:** none.
-**Current blocker:** real Android runtime/device validation.
-**Exact next step:** cold-start/restored-tab UA validation -> Container A/B isolation -> Proxy A/B/fail-closed -> release validation -> AI-1.
+**Last known product checkpoint:** `66e1dcf82f14333d4d7cd88c202a6e85aae13a4b`.
+**Latest verified Quality:** #39 `33329515686` — GREEN against the product checkpoint.
+**Latest change:** AI-1 source inventory/preparation documentation only.
+**Android runtime proof:** pending; will be consolidated into one final device validation pass rather than repeated downloads for each subtest.
+**Exact parallel next steps:** verify exact existing APIs for the six-tool AI-1 slice; prepare consolidated Android validation/build path; then implement only the minimal typed tool contract/registry if the existing APIs are stable.
