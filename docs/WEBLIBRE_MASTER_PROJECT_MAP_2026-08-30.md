@@ -143,6 +143,8 @@ No product-code changes were introduced by the subsequent runtime-checklist/stat
 
 Existing release workflow builds the native gomobile runtime, then stable APKs/app bundle. Stable APKs use the existing split-ABI path (`android-arm`, `android-arm64`). Stable release validation follows integrated browser/runtime readiness.
 
+The release workflow now also has a **manual `workflow_dispatch` path** for producing a validation APK artifact without creating a GitHub release or publishing to Google Play. The manual input selects `stable`, `alpha`, or `alphaLegacy`. This is a CI-operational change only; it does not alter product runtime architecture.
+
 ## CI / EXECUTION CONTROL
 
 The historical native prerequisite blocker is closed. Quality has per-PR/branch concurrency with `cancel-in-progress: true`, and normal PR triggers cover product paths while `workflow_dispatch` is available.
@@ -223,9 +225,10 @@ Update this map and workflow state at every material milestone. Save exact HEAD,
 **Branch:** `weblibre-ua-mainline-v3`
 **Latest product-code checkpoint:** `f05f643eda7ffb6503a4d6429b24e0d77ce7ad0d`.
 **Quality #70:** `33335945926` SUCCESS against `f05f643...`; AI-1 browser tool tests and targeted container/native checks passed.
-**Documentation after checkpoint:** Android runtime checklist `ac2f4a...`, state synchronization `b90aac...`, and this map synchronization `7bf9b00...` are documentation-only; no product-code changes after the CI-verified checkpoint.
+**Documentation after checkpoint:** Android runtime checklist `ac2f4a...`, state synchronization `b90aac...`, map synchronization `7bf9b00...`, and subsequent CI/build documentation are documentation/CI-only; no product-code changes after the CI-verified checkpoint.
 **AI-1 status:** six-tool contract/registry + source-verified mappings + minimal execution boundary + focused tests + CI coverage + successful CI verification.
 **Runtime status:** no dedicated Android integration harness exists; consolidated six-scenario real-device checklist is documented and ready.
+**Build status:** manual `workflow_dispatch` validation build is now available; it produces APK artifacts without release/Play publication.
 **Browser blocker:** real Android runtime validation.
-**First next step:** obtain/use one integrated APK from the existing build path and execute the consolidated Android runtime checklist; do not repeat per-subtest APK cycles.
+**First next step:** trigger one manual stable validation build from the existing workflow, obtain its APK artifact, and execute the consolidated Android runtime checklist; do not repeat per-subtest APK cycles.
 **Resume protocol:** `docs/WEBLIBRE_RESUME_COMMAND_2026-08-30.md`.
