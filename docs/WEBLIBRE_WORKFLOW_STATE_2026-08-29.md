@@ -2,7 +2,7 @@
 
 **Last synchronized:** 2026-08-30
 **Branch:** `weblibre-ua-mainline-v3`
-**Current branch HEAD after this state-save:** `TO_BE_FILLED_AFTER_COMMIT`
+**Current branch HEAD at this state-save:** `1117cd785142e1fddc01c18d94cc337584218fbf`
 
 ## CURRENT EXECUTION TRUTH
 GitHub is the source of truth for code, branch refs, commits, PRs, and CI. Never reconstruct state from chat.
@@ -13,7 +13,7 @@ Implemented and source-verified:
 - `AddTabParams.userAgent` source contract and generated bindings.
 - Normal/multi/duplicate UA propagation.
 - Existing per-container UA UI.
-- `ContainerUserAgentStore.kt` resolves persisted container UA from the existing profile-scoped `tab.db` by `contextualIdentity`.
+- `ContainerUserAgentStore.kt` resolves persisted per-container UA from the existing profile-scoped `tab.db` by `contextualIdentity`.
 - `HistoryDelegateBindingMiddleware.kt` applies persisted per-container UA at `LinkEngineSessionAction` and handles already-attached sessions through `AddTabAction`.
 - Native creation paths apply UA to the prepared `EngineSession` before first navigation.
 - No global GeckoRuntime UA, second DB, new recovery Pigeon field, or Android Components fork.
@@ -29,12 +29,12 @@ UA cold-start/restored-tab integration is implemented in source but remains runt
 - Quality #60 is NOT AI-1 CI proof because its workflow revision predates the AI-1 test step.
 - AI-1 registry tests and execution-boundary tests are present in source.
 - AI-1 CI coverage was added to `.github/workflows/quality.yml` in commit `b6c866d2e372c2af1ff45b52003a6b469f4f8229`.
-- No new Quality run was created for `b6c866d2...` by the workflow-file-only change; under the current trigger/path behavior, a later eligible PR change or manual `workflow_dispatch` is required to execute the new AI-1 test step.
+- No new Quality run was created for the workflow-only change; the current workflow requires a later eligible PR change or manual `workflow_dispatch` to execute the newly added AI-1 test step.
 - No automated Android process-death/cold-start test; unit/CI tests cannot prove real Android process lifecycle behavior.
 
 ## GIT / PR / CI
 - Branch: `weblibre-ua-mainline-v3`.
-- Product-code checkpoint remains the minimal AI-1 execution boundary and its focused tests.
+- Product-code checkpoint: minimal AI-1 execution boundary and focused tests remain unchanged since the last product checkpoint.
 - PR #3: open, draft, not merged; base `main`.
 - Quality #60 `33334955774`: SUCCESS against `477140419642d1170b241dd39f143900b9b98909`, but without the AI-1 test step.
 - `quality.yml` now explicitly runs:
@@ -55,12 +55,12 @@ Rules:
 4. Prefer read/analysis/review while CI executes.
 5. Reconcile parallel findings with the active run before modifying code.
 6. Never bypass dependency order or YAGNI.
-7. If parallel work exposes a concrete blocker, fix only that first causal blocker.
+7. If parallel work exposes a concrete blocker, fix only the first causal blocker.
 8. Save material results to durable state before handoff.
 9. Android device testing is a validation checkpoint, not a prerequisite for independent repository preparation. Complete buildable/tooling/design work in parallel, then perform the consolidated Android validation pass when the integrated build is ready.
 
 ## LAST COMPLETED STEP
-Verified Quality #60 successfully against its exact `head_sha`, discovered that the Quality workflow did not execute the AI-1 focused tests, added those tests to the workflow, and saved the reconciliation in durable project documentation.
+Verified Quality #60 successfully against its exact `head_sha`, discovered that the Quality workflow did not execute the AI-1 focused tests, added those tests to the workflow, and synchronized the discrepancy into durable documentation.
 
 ## CURRENT UNFINISHED STEP
 A. AI-1 CI verification: the workflow now covers the registry and executor tests, but no run containing that step has completed successfully yet.
@@ -110,7 +110,7 @@ Canonical resume document:
 
 Every new chat/agent must:
 - read the canonical map, state, AI specification when relevant, and resume protocol;
-- verify actual branch/HEAD/PR/CI in GitHub;
+- verify actual GitHub branch/HEAD/PR/CI;
 - reconcile documentation against repository truth before editing;
 - identify exactly one first next step;
 - preserve evidence levels and dependency order;
@@ -123,8 +123,6 @@ Evidence levels:
 - `DOCUMENTED`
 
 Never promote a lower evidence level to a higher one. `[x]` is a documentation marker, not runtime proof. Chat memory is never authoritative over GitHub.
-
-Copy/paste resume command is stored in the canonical resume document and intentionally re-verifies the repository instead of trusting the saved SHA.
 
 ## YAGNI / SAFETY BOUNDARY
 Do not redo completed creation/UI work. Do not add `RecoverableTab.userAgent`, a new Pigeon API, a second DB, event-arrival freshness heuristics, global GeckoRuntime UA, an Android Components fork, or unrelated refactors unless focused runtime/test evidence proves the current path insufficient.
@@ -142,7 +140,7 @@ Do not treat source mapping or CI success as proof of real Android cold-start, U
 ## CHECKPOINT
 **Date:** 2026-08-30
 **Branch:** `weblibre-ua-mainline-v3`
-**Pre-state-save HEAD:** `8bdae5ab8ed9339537cee8fd2cb71566e8455cdc`.
+**Current state-save HEAD:** `1117cd785142e1fddc01c18d94cc337584218fbf`.
 **Quality #60:** `33334955774` GREEN against `477140419642d1170b241dd39f143900b9b98909`, but not AI-1 proof because its workflow revision predates AI-1 test coverage.
 **AI-1 CI coverage commit:** `b6c866d2e372c2af1ff45b52003a6b469f4f8229`.
 **Current blocker:** no completed Quality run has yet executed the newly added AI-1 tests.
