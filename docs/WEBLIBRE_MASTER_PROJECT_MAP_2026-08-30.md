@@ -80,9 +80,17 @@ Actual current-branch inspection found the cold-start path in `GlobalComponents.
 
 That path is distinct from the normal `GeckoTabsApiImpl.addTab(...)` path where `session.settings.userAgentString = userAgent` is explicitly applied before navigation.
 
-The current Pigeon `RecoverableTab` representation contains `engineSessionStateJson` plus `TabState`; `TabState` contains `contextId` but no per-container `userAgent`. `GeckoTabsApiImpl.mapTab(...)` therefore cannot supply the persisted custom UA to the automatic session restore path.
+The repository **does already contain** a restore-binding implementation:
+- `packages/flutter_mozilla_components/android/src/main/kotlin/eu/weblibre/flutter_mozilla_components/middleware/HistoryDelegateBindingMiddleware.kt`
+- `packages/flutter_mozilla_components/android/src/main/kotlin/eu/weblibre/flutter_mozilla_components/feature/ContainerUserAgentStore.kt`
 
-The previously documented claim that dedicated native `ContainerUserAgentStore.kt` and `HistoryDelegateBindingMiddleware.kt` files were present and source-verified is **not supported by the actual current branch**: direct path inspection and GitHub code search found no such implementation. This documentation drift is now explicitly corrected. The forensic details are in `WEBLIBRE_RUNTIME_UA_RESTORE_FORENSICS_2026-08-31.md`.
+`Core.kt` installs the middleware before `EngineMiddleware`. On `LinkEngineSessionAction`, it reads the restored tab's `contextId`, looks up the existing per-profile `tab.db`, and applies `engineSession.settings.userAgentString` when a matching persisted UA is found.
+
+The implementation was introduced by commits `435c1e8b...` and `64e196c6...`. Therefore the runtime failure does **not** prove that the restore hook is absent. It proves that the existing source-level hook is not producing the expected UA at runtime.
+
+The current Pigeon `RecoverableTab` still carries `engineSessionStateJson` plus `TabState`; `TabState` has `contextId` but no UA. This is not the first fix target because the existing middleware was specifically designed to avoid needing a new recovery field.
+
+The strongest unresolved boundary is one of: missing/wrong `contextId`, DB lookup failure/timing, UA assignment too late, or a different EngineSession producing the observed request. A dedicated forensic record tracks these hypotheses.
 
 ## ANDROID RUNTIME PROOF — BLOCKED AT SCENARIO 1
 
@@ -95,6 +103,18 @@ Scenario 1 result: **FAIL**.
 
 Scenarios 2–6 are intentionally blocked until the first causal Scenario 1 failure is fixed and revalidated.
 
+## CURRENT DIAGNOSTIC CHANGE
+
+A focused diagnostic was added to the existing restore hook and UA store. It records, at debug level:
+- whether `LinkEngineSessionAction` reaches the middleware;
+- `tabId` and `contextId`;
+- whether an active profile context exists;
+- whether the `tab.db` lookup is a hit, miss, missing-database case, or SQLite exception;
+- whether setting `engineSession.settings.userAgentString` reports the expected effective value;
+- elapsed time for the lookup/bind path.
+
+This is diagnostic instrumentation only; it does not add a new persistence system or architecture.
+
 ## USER OBSERVATIONS / FUTURE PRODUCT DIRECTION
 
 The first real-device pass also produced product observations that are now documented separately rather than implemented prematurely:
@@ -103,8 +123,8 @@ The first real-device pass also produced product observations that are now docum
 - The current UA UX is too primitive and should evolve from raw-string editing toward coherent profile presets and expert customization.
 - Desired profile dimensions include OS/platform, browser family and version, device/display characteristics, locale/timezone/geolocation, proxy/network, and supported fingerprint surfaces such as fonts, media devices, WebRTC, Canvas, WebGL, AudioContext, ClientRects, and navigator/hardware signals.
 - The product should enforce coherent combinations rather than arbitrary impossible UA/fingerprint tuples.
-- The external benchmark research covers GoLogin, Multilogin, AdsPower, and Kameleo and is recorded in `WEBLIBRE_UA_FINGERPRINT_PRODUCT_REQUIREMENTS_2026-08-31.md`.
-- These requirements do **not** authorize implementing every commercial anti-detect feature. Only capabilities supported coherently by WebLibre's existing engine should be added, and only after the current runtime blocker is fixed.
+- External benchmark research covers GoLogin, Multilogin, AdsPower, and Kameleo in `WEBLIBRE_UA_FINGERPRINT_PRODUCT_REQUIREMENTS_2026-08-31.md`.
+- These requirements do not authorize implementing every commercial anti-detect feature. Only capabilities supported coherently by WebLibre's existing engine should be added, and only after the current runtime blocker is fixed.
 
 ## AI-1
 
@@ -188,11 +208,11 @@ Update Master Map and Workflow State at every material milestone with exact HEAD
 
 **Date:** 2026-08-31
 **Branch:** `weblibre-ua-mainline-v3`
-**Current HEAD:** `63227a52409157c684738b154e68f37671a023b7`.
+**Current code checkpoint:** `2e3534c28787ab6bdaf00585e48e6384113bea77`.
 **Runtime-tested APK source checkpoint:** `3aa06cf6ee090e42c9b7bff6abbf17f737b1fef5`.
 **Manual stable Release:** Run `33341230075`, validation tag `validation-stable-5-3aa06cf6...`.
 **Android runtime:** Scenario 1 FAIL — container/tab restore succeeded, per-container UA did not survive restored navigation.
-**Forensic checkpoint:** `63227a52409157c684738b154e68f37671a023b7`.
-**First next step:** inspect the smallest existing startup/session-restore hook that can make the persisted `ContainerMetadata.userAgent` available to the automatic `sessionStorage.restore -> tabsUseCases.restore` path before restored navigation, without adding a second persistence system; then focused-test and revalidate Scenario 1.
+**Diagnostic checkpoint:** `2e3534c28787ab6bdaf00585e48e6384113bea77`.
+**First next step:** run focused CI/native checks for the diagnostic restore-boundary change; then produce one diagnostic ARM64 validation APK and inspect the restore-binding logs to identify the exact runtime failure branch before implementing any functional correction.
 **Secondary product work after runtime blocker:** measure performance/reload behavior, then design the smallest coherent UA/profile editor from the requirements document.
 **Resume protocol:** `docs/WEBLIBRE_RESUME_COMMAND_2026-08-30.md`.
