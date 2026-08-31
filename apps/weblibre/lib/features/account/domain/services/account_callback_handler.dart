@@ -1,31 +1,27 @@
 /*
  * Copyright (c) 2024-2026 Fabian Freund.
  *
- * This file is part of WebLibre
- * (see https://weblibre.eu).
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ * This file is part of WebLibre and is licensed under the GNU Affero General Public License v3.
  */
+
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'account_callback_handler.g.dart';
 
+/// Parsed shape retained only so the legacy intent parser remains type-safe.
+/// The personal build never redeems or transmits the callback.
+class AccountCallback {
+  final String handoffCode;
+  const AccountCallback(this.handoffCode);
+}
+
+AccountCallback? tryParseAccountCallback(Uri uri) {
+  if (uri.scheme != 'weblibre' || uri.host != 'account') return null;
+  final code = uri.queryParameters['handoff_code'];
+  if (code == null || code.isEmpty) return null;
+  return AccountCallback(code);
+}
+
 /// Account callbacks are intentionally disabled in the personal WebLibre build.
-///
-/// The provider remains as a compatibility boundary for existing startup wiring,
-/// but it performs no account authentication, handoff redemption, synchronization,
-/// or network operation. This prevents an inherited account/deep-link path from
-/// transmitting user data without explicit product opt-in.
 @Riverpod(keepAlive: true)
 void accountCallbackHandler(Ref ref) {}
