@@ -18,51 +18,14 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:weblibre/core/logger.dart';
-import 'package:weblibre/features/account/domain/repositories/account_auth.dart';
-import 'package:weblibre/features/share_intent/domain/services/sharing_intent.dart';
 
 part 'account_callback_handler.g.dart';
 
-/// Parsed `weblibre://account/callback?code=...` deep link.
-class AccountCallback {
-  final String handoffCode;
-
-  const AccountCallback({required this.handoffCode});
-}
-
-/// Parses [data] as a WebLibre account callback URI. Returns `null` if it
-/// isn't one (any other intent) or if the `code` query parameter is
-/// missing/empty. Callers can check `!= null` instead of running two
-/// passes (used-to-be `isAccountCallbackUri` then `extractHandoffCode`).
-AccountCallback? tryParseAccountCallback(String data) {
-  final uri = Uri.tryParse(data);
-  if (uri == null) return null;
-  if (uri.scheme != 'weblibre' ||
-      uri.host != 'account' ||
-      uri.path != '/callback') {
-    return null;
-  }
-  final code = uri.queryParameters['code'];
-  if (code == null || code.isEmpty) return null;
-  return AccountCallback(handoffCode: code);
-}
-
-/// Listens for account callback deep links and forwards handoff codes
-/// to the account auth repository.
+/// Account callbacks are intentionally disabled in the personal WebLibre build.
 ///
-/// This provider must be watched during app initialization to activate
-/// the callback listener.
+/// The provider remains as a compatibility boundary for existing startup wiring,
+/// but it performs no account authentication, handoff redemption, synchronization,
+/// or network operation. This prevents an inherited account/deep-link path from
+/// transmitting user data without explicit product opt-in.
 @Riverpod(keepAlive: true)
-void accountCallbackHandler(Ref ref) {
-  final stream = ref.watch(accountCallbackStreamProvider);
-
-  final subscription = stream.listen((code) async {
-    logger.i('Received account handoff callback');
-    await ref
-        .read(accountAuthRepositoryProvider.notifier)
-        .handleHandoffCode(code);
-  });
-
-  ref.onDispose(subscription.cancel);
-}
+void accountCallbackHandler(Ref ref) {}
