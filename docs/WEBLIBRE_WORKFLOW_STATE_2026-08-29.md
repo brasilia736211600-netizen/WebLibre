@@ -2,7 +2,7 @@
 
 **Last synchronized:** 2026-08-31  
 **Branch:** `weblibre-ua-mainline-v3`  
-**Current HEAD:** `2f670a05b41df0a4741711a02a8760e3f14b19fa`
+**Current HEAD:** `7c5edd21e405cc5406a403dc8598a487bb3c68d0`
 
 ## Source of truth
 
@@ -18,7 +18,7 @@ GitHub code, refs, commits, PRs, CI/build/release runs, artifacts and release as
 - The ARM64 runtime test from that Release produced the first causal Scenario 1 failure.
 - Diagnostic Flutter CICD `33346310470` used older diagnostic HEAD `c331fed0e422e01b5004a48d6b4f6400fa212689`; it is not proof for later privacy changes.
 - Manual Flutter CICD `33349437332`: SUCCESS on exact privacy/About-fix HEAD `afaf255d92fcd879905ab98bcf1dc061be6caa80`.
-- Manual Flutter CICD `33350986535`: FAILED on exact privacy HEAD `492e385d31f50488dd89531bd6fcf25b2237e5f9`. Failure was Dart compilation because legacy account files still referenced `package:supabase/supabase.dart` and sharing-intent still expected the legacy account callback type.
+- Manual Flutter CICD `33350986535`: FAILED on exact privacy HEAD `492e385d31f50488dd89531bd6fcf25b2237e5f9`. The failure exposed remaining legacy Supabase/account callback dependencies.
 
 ## Browser / Android runtime
 
@@ -59,7 +59,7 @@ Legal boundary: inherited AGPL/copyright notices remain where required. Product 
 
 ## Current verification status
 
-The current privacy/account boundary is **SOURCE-VERIFIED only**. No CI run exists yet for HEAD `2f670a05...`.
+The current privacy/account boundary is **SOURCE-VERIFIED only**. No CI run exists yet for the current HEAD `7c5edd21...`.
 
 ## Still pending
 
@@ -88,11 +88,11 @@ The incomplete Supabase-removal attempt was reconciled after CI exposed all rema
 
 ## Current unfinished step
 
-Focused Flutter CI has not yet been run against HEAD `2f670a05...`.
+Focused Flutter CI has not yet been run against the current HEAD `7c5edd21e405cc5406a403dc8598a487bb3c68d0`.
 
 ## FIRST NEXT STEP — exactly one
 
-**Run and verify focused Flutter CI on `weblibre-ua-mainline-v3` at HEAD `2f670a05b41df0a4741711a02a8760e3f14b19fa`. Do not install an APK or resume UA runtime work until this dependency-boundary build is green.**
+**Run and verify focused Flutter CI on `weblibre-ua-mainline-v3` at HEAD `7c5edd21e405cc5406a403dc8598a487bb3c68d0`. Do not install an APK or resume UA runtime work until this dependency-boundary build is green.**
 
 ## Mandatory loop
 
