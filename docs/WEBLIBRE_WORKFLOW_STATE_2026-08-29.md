@@ -2,7 +2,7 @@
 
 **Last synchronized:** 2026-08-31  
 **Branch:** `weblibre-ua-mainline-v3`  
-**Source HEAD before this final state-save commit:** `bf374d10faced96467605f8571f28db1fc85022f`
+**Source HEAD before this final state-save commit:** `11e8799db16b5f505a0eb9a158d81f145e3fccef`
 
 ## Source of truth
 
@@ -17,6 +17,8 @@ GitHub code, refs, commits, PRs, CI/build/release runs, artifacts and release as
 - Validation Release `validation-stable-5-3aa06cf6ee090e42c9b7bff6abbf17f737b1fef5` is RELEASE-ASSET-VERIFIED for the ARM64 and ARMv7 split APKs.
 - The ARM64 runtime test from that Release produced the first causal Scenario 1 failure.
 - Diagnostic Flutter CICD `33346310470` was created against older diagnostic HEAD `c331fed0e422e01b5004a48d6b4f6400fa212689`; it must not be used as proof for the current privacy commits.
+- Manual Flutter CICD `33349437332`: SUCCESS on exact privacy/About-fix HEAD `afaf255d92fcd879905ab98bcf1dc061be6caa80`.
+- Privacy cleanup subsequently advanced to the current state-save chain; no CI result exists yet for the latest account callback/Supabase changes.
 
 ## Browser / Android runtime
 
@@ -27,7 +29,7 @@ Scenario 1 remains **FAIL**:
 - After relaunch: restored navigation observed Gecko/Firefox 152 UA.
 - Post-relaunch screen directly showed the restored tab; no `Resume last tab` control was present in that state.
 
-The existing source-level restore binding uses `HistoryDelegateBindingMiddleware` + `ContainerUserAgentStore`. It is not yet runtime-proven effective. The dedicated diagnostic instrumentation records link entry, tab/context/profile identity, DB lookup result, UA assignment timing and effective setting.
+The existing source-level restore binding uses `HistoryDelegateBindingMiddleware` + `ContainerUserAgentStore`. It is not yet runtime-proven effective. Dedicated diagnostic instrumentation exists for link entry, tab/context/profile identity, DB lookup result, UA assignment timing and effective setting, but the diagnostic APK was built from an older HEAD and must not be treated as proof of later privacy changes.
 
 Do not run Scenarios 2–6 until Scenario 1 passes.
 
@@ -45,16 +47,19 @@ Canonical identity rules: `docs/WEBLIBRE_PERSONAL_PRODUCT_IDENTITY_2026-08-31.md
 
 Completed source changes:
 1. About identity cleanup: `WebLibre Personal Edition • Maintained by Braziao`; former upstream promotional links removed.
-2. Account callback service is no longer initialized by app startup.
-3. Account and Firefox Sync categories are no longer exposed in the personal Settings UI.
-4. Account sign-in no longer sends Android `device_name` in the handoff query.
-5. Account sync repository now hard-enforces `source_device_id: null` at the persistence boundary.
+2. Account callback/handoff startup path is now a no-op compatibility boundary; it performs no authentication, handoff redemption, synchronization, or network operation.
+3. Direct `supabase` application dependency has been removed from `apps/weblibre/pubspec.yaml`.
+4. Account and Firefox Sync categories are no longer exposed in the personal Settings UI.
+5. Account sign-in no longer sends Android `device_name` in the handoff query.
+6. Account sync repository now hard-enforces `source_device_id: null` at the persistence boundary.
 
 Legal boundary: inherited AGPL/copyright notices remain where required. Product identity changes do not authorize false claims of upstream authorship or rewriting historical Git authorship.
 
 Still pending:
+- focused CI on the current account/privacy dependency boundary;
 - automatic `background_fetch` release startup removal/disablement;
 - prove no hidden account/sync initializer remains;
+- dead account/sync source-tree cleanup after reachability is proven;
 - full outbound endpoint/background-service audit;
 - Android permission and cleartext-traffic minimization review;
 - local privacy/data-flow screen.
@@ -83,15 +88,15 @@ Never promote a lower evidence level. A successful build does not prove runtime 
 
 ## Last completed step
 
-Privacy hardening source pass: user-facing account/sync exposure was removed, account callback startup was disabled, account sign-in device-name transmission was removed, and sync source-device metadata is now null-enforced. Durable privacy/identity documents were updated.
+Privacy hardening pass: inherited account callback/handoff execution was disabled and the direct Supabase application dependency was removed; the durable privacy audit, Master Map, and Workflow State were updated. This is **SOURCE-VERIFIED only** until CI runs against the resulting HEAD.
 
 ## Current unfinished step
 
-Focused CI has not yet been run against the current privacy-hardening HEAD. The older diagnostic run is not evidence for this HEAD.
+Focused CI has not yet been run against the current privacy-hardening state-save HEAD.
 
 ## FIRST NEXT STEP — exactly one
 
-**Run and verify focused CI against the resulting state-save HEAD; do not build/install a new APK or modify the UA runtime fix until the privacy changes compile and their dependency boundary is known.**
+**Run and verify focused Flutter CI on the current branch `weblibre-ua-mainline-v3` at/after the state-save HEAD. Do not install an APK or resume UA runtime work until this dependency-boundary build is green.**
 
 ## Mandatory loop
 
