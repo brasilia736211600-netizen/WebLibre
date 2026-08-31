@@ -7,7 +7,7 @@
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
+ * License, or any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -22,8 +22,6 @@ import 'package:flutter_material_design_icons/flutter_material_design_icons.dart
 import 'package:flutter_svg/svg.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:weblibre/core/providers/defaults.dart';
-import 'package:weblibre/core/routing/routes.dart';
-import 'package:weblibre/features/about/domain/providers.dart';
 import 'package:weblibre/features/geckoview/domain/repositories/tab.dart';
 import 'package:weblibre/features/geckoview/features/tabs/data/entities/tab_mode.dart';
 
@@ -34,7 +32,7 @@ class AboutDialogScreen extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final packageInfo = ref.watch(
       packageInfoProvider.select(
-        //During startup we make sure
+        // During startup we make sure package information is available.
         (value) => value.value!,
       ),
     );
@@ -46,7 +44,8 @@ class AboutDialogScreen extends HookConsumerWidget {
       ),
       applicationName: packageInfo.appName,
       applicationVersion: packageInfo.version,
-      applicationLegalese: 'Copyright © Fabian Freund, 2024-2026',
+      applicationLegalese:
+          'WebLibre Personal Edition • Maintained by Braziao • AGPL-3.0-or-later',
       children: [
         ListTile(
           contentPadding: EdgeInsets.zero,
@@ -60,78 +59,29 @@ class AboutDialogScreen extends HookConsumerWidget {
           ),
         ),
         const Divider(),
-        ListTile(
+        const ListTile(
           contentPadding: EdgeInsets.zero,
-          leading: const Icon(MdiIcons.charity),
-          title: const Text('Feedback'),
-          onTap: () async {
-            await ref
-                .read(tabRepositoryProvider.notifier)
-                .addTab(
-                  url: Uri.https('feedback.weblibre.eu'),
-                  tabMode: TabMode.regular,
-                  selectTab: true,
-                );
-
-            if (context.mounted) {
-              const BrowserRoute().go(context);
-            }
-          },
+          leading: Icon(MdiIcons.shieldCheck),
+          title: Text('Personal build'),
+          subtitle: Text(
+            'This build is maintained as a personal project. '
+            'Network access is intended to occur only for user-requested '
+            'web content or explicitly enabled online features.',
+          ),
         ),
         ListTile(
           contentPadding: EdgeInsets.zero,
-          leading: const Icon(MdiIcons.handHeart),
-          title: const Text('Donate'),
+          leading: const Icon(MdiIcons.bookOpenPageVariant),
+          title: const Text('Open-source license'),
+          subtitle: const Text('GNU AGPL-3.0-or-later'),
           onTap: () async {
             await ref
                 .read(tabRepositoryProvider.notifier)
                 .addTab(
-                  url: Uri.https('github.com').replace(path: 'FaFre/WebLibre'),
+                  url: Uri.parse('https://www.gnu.org/licenses/agpl-3.0.html'),
                   tabMode: TabMode.regular,
                   selectTab: true,
                 );
-
-            if (context.mounted) {
-              const BrowserRoute().go(context);
-            }
-          },
-        ),
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          // ignore: deprecated_member_use
-          leading: const Icon(Icons.book),
-          title: const Text('Documentation'),
-          onTap: () async {
-            await ref
-                .read(tabRepositoryProvider.notifier)
-                .addTab(
-                  url: ref.read(docsUriProvider),
-                  tabMode: TabMode.regular,
-                  selectTab: true,
-                );
-
-            if (context.mounted) {
-              const BrowserRoute().go(context);
-            }
-          },
-        ),
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          // ignore: deprecated_member_use
-          leading: const Icon(MdiIcons.github),
-          title: const Text('Github'),
-          onTap: () async {
-            await ref
-                .read(tabRepositoryProvider.notifier)
-                .addTab(
-                  url: Uri.https('github.com').replace(path: 'FaFre/WebLibre'),
-                  tabMode: TabMode.regular,
-                  selectTab: true,
-                );
-
-            if (context.mounted) {
-              const BrowserRoute().go(context);
-            }
           },
         ),
       ],
