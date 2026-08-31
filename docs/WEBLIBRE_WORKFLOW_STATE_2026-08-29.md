@@ -1,8 +1,8 @@
 # WebLibre — Durable Workflow State
 
-**Last synchronized:** 2026-08-31  
-**Branch:** `weblibre-ua-mainline-v3`  
-**Current HEAD:** `7c5edd21e405cc5406a403dc8598a487bb3c68d0`
+**Last synchronized:** 2026-08-31
+**Branch:** `weblibre-ua-mainline-v3`
+**Current HEAD:** `feee97f2e9c696429e59b2c055ed7633ff3dcc9c`
 
 ## Source of truth
 
@@ -15,21 +15,20 @@ GitHub code, refs, commits, PRs, CI/build/release runs, artifacts and release as
 - Manual Flutter CICD `33337359647`: SUCCESS on exact branch/head `26e96cfc5a13b952ee0f4af31689fb927dbdfd9d`.
 - Manual Flutter CICD `33341230075`: SUCCESS on exact branch/head `3aa06cf6ee090e42c9b7bff6abbf17f737b1fef5`; validation Release direct APK assets created.
 - Validation Release `validation-stable-5-3aa06cf6ee090e42c9b7bff6abbf17f737b1fef5` is RELEASE-ASSET-VERIFIED for ARM64 and ARMv7 split APKs.
-- The ARM64 runtime test from that Release produced the first causal Scenario 1 failure.
-- Diagnostic Flutter CICD `33346310470` used older diagnostic HEAD `c331fed0e422e01b5004a48d6b4f6400fa212689`; it is not proof for later privacy changes.
-- Manual Flutter CICD `33349437332`: SUCCESS on exact privacy/About-fix HEAD `afaf255d92fcd879905ab98bcf1dc061be6caa80`.
-- Manual Flutter CICD `33350986535`: FAILED on exact privacy HEAD `492e385d31f50488dd89531bd6fcf25b2237e5f9`. The failure exposed remaining legacy Supabase/account callback dependencies.
+- ARM64 runtime test from that Release produced the first causal Scenario 1 failure.
+- Diagnostic Flutter CICD `33346310470`: older diagnostic HEAD `c331fed0e422e01b5004a48d6b4f6400fa212689`; not proof for later changes.
+- Manual Flutter CICD `33349437332`: SUCCESS on exact HEAD `afaf255d92fcd879905ab98bcf1dc061be6caa80`.
+- Manual Flutter CICD `33350986535`: FAILED on exact HEAD `492e385d31f50488dd89531bd6fcf25b2237e5f9`; exposed remaining legacy Supabase/account dependencies.
+- Manual Flutter CICD `33353864553 / 99502870834`: FAILED on exact HEAD `e3f2086fa349afe2858e83bda53de30ce5ae8f11`; exposed remaining `auth`, `rpc`, Riverpod notifier, and account-callback compile references. Native Go runtime and browser components succeeded.
 
 ## Browser / Android runtime
 
 Scenario 1 remains **FAIL**:
 - Container A restored.
 - Tab restored.
-- Before process death: configured Chrome/120 UA was observed.
+- Before process death: configured Chrome/120 UA observed.
 - After relaunch: restored navigation observed Gecko/Firefox 152 UA.
-- Post-relaunch screen directly showed the restored tab; no `Resume last tab` control was present in that state.
-
-The existing source-level restore binding uses `HistoryDelegateBindingMiddleware` + `ContainerUserAgentStore`. It is not runtime-proven effective. Dedicated diagnostic instrumentation exists for link entry, tab/context/profile identity, DB lookup result, UA assignment timing and effective setting, but the diagnostic APK came from an older HEAD.
+- No `Resume last tab` control was present in that post-relaunch state.
 
 Do not run Scenarios 2–6 until Scenario 1 passes.
 
@@ -42,60 +41,65 @@ Contracts, registry, executor, focused tests and CI coverage are complete. Do no
 
 ## Privacy / personal-product hardening
 
-Canonical audit: `docs/WEBLIBRE_PRIVACY_DATA_FLOW_AUDIT_2026-08-31.md`.  
+Canonical audit: `docs/WEBLIBRE_PRIVACY_DATA_FLOW_AUDIT_2026-08-31.md`.
 Canonical identity rules: `docs/WEBLIBRE_PERSONAL_PRODUCT_IDENTITY_2026-08-31.md`.
 
-Completed source changes in the current chain:
-1. About identity cleanup: `WebLibre Personal Edition • Maintained by Braziao`; former upstream promotional links removed.
-2. Account callback/handoff startup path is a no-op compatibility boundary; it performs no authentication, handoff redemption, synchronization, or network operation.
-3. Direct `supabase` application dependency was removed from `apps/weblibre/pubspec.yaml`.
-4. Account/Firefox Sync categories are no longer exposed in the personal Settings UI.
-5. Account sign-in no longer sends Android `device_name` in the handoff query.
-6. Account sync no longer has a remote client: its repository is now a local disabled boundary and never transmits data.
-7. Legacy account auth state no longer contains Supabase types; the auth repository is a local disabled boundary that never authenticates or persists remote sessions.
-8. Legacy account callback parsing remains type-safe for existing share-intent code but performs no redemption or network operation.
+### Current source-verified boundary
 
-Legal boundary: inherited AGPL/copyright notices remain where required. Product identity changes do not authorize false claims of upstream authorship or rewriting historical Git authorship.
+1. About identity cleanup remains in place.
+2. Account callback/handoff startup is a no-op compatibility boundary.
+3. Direct `supabase` application dependency is removed.
+4. Account/Firefox Sync categories are no longer exposed in personal Settings.
+5. Account sign-in no longer sends Android `device_name`.
+6. Account sync repository is a local disabled boundary and never transmits data.
+7. Legacy account auth state/repository is a local disabled boundary.
+8. Search credits repository is a local zero-credit boundary and no longer invokes remote RPC.
+9. Subscription repository is a local inactive boundary and no longer invokes remote RPC.
+10. Search token issuance is disabled and no longer obtains an account access token or calls remote issuance.
+11. Account Settings no longer imports subscription/search-credit/sync UI dependencies.
+12. Share-intent callback parsing is type-correct; callback redemption/upload remains disabled.
+13. Required upstream AGPL/copyright notices remain. Product identity changes do not erase legal attribution or historical Git authorship.
 
-## Current verification status
+### Current verification
 
-The current privacy/account boundary is **SOURCE-VERIFIED only**. No CI run exists yet for the current HEAD `7c5edd21...`.
+The privacy/account dependency cleanup at `b958b5eb5549ae47c4249d729b4575c7f643bdbb` is **SOURCE-VERIFIED only**. The map/state documentation was then updated in commit `feee97f2e9c696429e59b2c055ed7633ff3dcc9c`; the current HEAD is therefore `feee97f2...` and must be the next CI target.
 
 ## Still pending
 
-- focused CI on current HEAD;
-- remove/disable automatic `background_fetch` release startup while retaining manual feed refresh;
-- prove no hidden account/sync initializer remains;
-- dead account/sync source-tree cleanup after reachability is proven;
-- full outbound endpoint/background-service audit;
-- Android permission and cleartext-traffic minimization review;
-- local privacy/data-flow screen.
+- CI verification of current HEAD `feee97f2...`.
+- Remove/disable automatic `background_fetch` release startup while retaining manual feed refresh.
+- Prove no hidden account/sync initializer remains.
+- Remove dead account/sync source files only after dependency reachability is proven.
+- Full outbound endpoint/background-service audit.
+- Android permission and cleartext-traffic minimization review.
+- Local privacy/data-flow screen.
+- UA runtime Scenario 1 root-cause fix and Android revalidation.
 
 ## Product observations
 
-- Browser feels heavy: **unmeasured observation**.
-- Previously visited pages should not be unnecessarily reloaded: **requirement/observation; root cause unproven**.
-- UA UX should become a coherent profile editor rather than raw UA text: **product requirement only**.
-- UA/fingerprint research is stored in `WEBLIBRE_UA_FINGERPRINT_PRODUCT_REQUIREMENTS_2026-08-31.md`; implementation remains blocked behind runtime foundation and engine-capability verification.
+- Browser feels heavy: unmeasured observation.
+- Previously visited pages should not be unnecessarily reloaded: requirement/observation; root cause unproven.
+- UA UX should become a coherent profile editor rather than raw UA text: product requirement only.
+- UA/fingerprint research is stored in `WEBLIBRE_UA_FINGERPRINT_PRODUCT_REQUIREMENTS_2026-08-31.md`; implementation remains behind runtime foundation and engine-capability verification.
 
 ## Release / artifact
 
-Direct validation Release assets are verified for the exact `3aa06cf...` build. Future production `v*` release remains blocked on Android runtime + release validation.
+Direct validation Release assets are verified for exact `3aa06cf...` build. Production `v*` release remains blocked on Android runtime + release validation.
 
 ## Last completed step
 
-The incomplete Supabase-removal attempt was reconciled after CI exposed all remaining compile dependencies. The legacy account auth/sync boundaries were converted to inert local compatibility implementations, and the callback parser was retained only for type safety. This checkpoint is **SOURCE-VERIFIED**.
+Account/Supabase dependency closure was corrected against the concrete CI errors: search credits and subscription remote RPC paths were converted to local disabled boundaries; token issuance was disabled; Account Settings was reduced to a local compatibility screen; share-intent callback parsing was made type-correct. Documentation was synchronized afterward. This is **SOURCE-VERIFIED**, not CI-VERIFIED.
 
 ## Current unfinished step
 
-Focused Flutter CI has not yet been run against the current HEAD `7c5edd21e405cc5406a403dc8598a487bb3c68d0`.
+Current HEAD `feee97f2e9c696429e59b2c055ed7633ff3dcc9c` has not yet passed Flutter CI.
 
 ## FIRST NEXT STEP — exactly one
 
-**Run and verify focused Flutter CI on `weblibre-ua-mainline-v3` at HEAD `7c5edd21e405cc5406a403dc8598a487bb3c68d0`. Do not install an APK or resume UA runtime work until this dependency-boundary build is green.**
+**Run and verify Flutter CI on `weblibre-ua-mainline-v3` at HEAD `feee97f2e9c696429e59b2c055ed7633ff3dcc9c`. Do not install an APK or resume UA runtime work until this build is green.**
 
 ## Mandatory loop
 
 `READ -> VERIFY -> RECONCILE -> PLAN -> EXECUTE -> TEST -> DIFF -> COMMIT -> SAVE STATE`
 
-Every material milestone must update this state, the Master Map, and the affected specialized document with exact HEAD, evidence, run IDs, tests, blocker and one first next step.
+Every material milestone must update this state, the Master Map, and the affected specialized document with exact HEAD, evidence, tests/run IDs, blocker and one first next step.
