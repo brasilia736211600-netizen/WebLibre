@@ -1,8 +1,8 @@
 # WebLibre — Durable Workflow State
 
-**Last synchronized:** 2026-08-31
-**Branch:** `weblibre-ua-mainline-v3`
-**Current HEAD at this state-save:** `eb64ad2cb369814c921fbffd1ce84014ddae5ce7`
+**Last synchronized:** 2026-08-31  
+**Branch:** `weblibre-ua-mainline-v3`  
+**Current HEAD at this state-save:** `bbfbe61d31caa6b7b1e508ad1c1f02463c1ef023`
 
 ## Source of truth
 GitHub code, refs, commits, PRs, CI/build/release runs, artifacts, and release assets are authoritative. Chat memory and `[x]` markers are not evidence.
@@ -14,7 +14,8 @@ GitHub code, refs, commits, PRs, CI/build/release runs, artifacts, and release a
 - Manual Flutter CICD `33341230075`: SUCCESS on exact branch `weblibre-ua-mainline-v3` and exact `head_sha=3aa06cf6ee090e42c9b7bff6abbf17f737b1fef5`; stable APK build and direct validation Release asset creation/upload passed.
 - Validation Release `validation-stable-5-3aa06cf6ee090e42c9b7bff6abbf17f737b1fef5`: contains the individually downloadable ARM64 and ARMv7 APK assets. This is RELEASE-ASSET-VERIFIED for that exact build.
 - Runtime test of the ARM64 asset from that Release produced the first causal failure recorded below.
-- Current branch HEAD was re-verified before source inspection: `5c7f81023792b51d9185f6c572f1f361bbbf9a01`. The later commits in this milestone are source-diagnostic and documentation state saves.
+- Diagnostic Flutter CICD `33346310470`: IN PROGRESS on exact branch `weblibre-ua-mainline-v3`, exact `head_sha=c331fed0e422e01b5004a48d6b4f6400fa212689`; stable APK build is currently in progress. This run does **not** contain the later privacy-only commits.
+- Current branch HEAD after the privacy audit/About commits is `bbfbe61d31caa6b7b1e508ad1c1f02463c1ef023`.
 
 ## Browser/runtime state
 Browser/UA implementation is SOURCE-VERIFIED for normal/pre-navigation tab creation and focused CI is green, but real Android runtime proof is explicitly **FAILED at Scenario 1** for the tested build.
@@ -59,6 +60,20 @@ Source commits for the diagnostic code:
 - `6aa1cd4f519951468dbb192894489160d2635dfb` — instrument session-link boundary.
 - `2e3534c28787ab6bdaf00585e48e6384113bea77` — instrument container UA lookup boundary.
 
+## Privacy / personal-product hardening
+A source audit is now durably recorded in `docs/WEBLIBRE_PRIVACY_DATA_FLOW_AUDIT_2026-08-31.md`.
+
+Confirmed findings:
+- The user-facing About dialog previously promoted the former upstream developer through legalese and feedback/donation/documentation/GitHub links. Those promotional links have been removed and the About identity is now `WebLibre Personal Edition • Maintained by Braziao`.
+- Upstream copyright/license headers remain in source because they are legal/license notices and must not be blindly removed.
+- Release startup configures `background_fetch` to fetch all locally configured RSS/feed URLs every 15 minutes, including after termination/boot. This is a confirmed automatic outbound-data/battery hardening target.
+- Account sign-in explicitly uses Supabase/account services and currently includes `device_name` in the handoff query. This is unnecessary device-identifying metadata and is a confirmed hardening target.
+- Encrypted account sync is gated on explicit sign-in, but sync metadata currently includes source device ID/name and app version. Sending the Android device name is a confirmed hardening target.
+- The `supabase` dependency is used by the explicit account/auth/sync feature; dependency presence alone is not evidence of anonymous telemetry.
+- Android permissions and `usesCleartextTraffic="true"` require capability-by-capability review; no permission is to be removed blindly.
+
+Privacy hardening is separate from user-directed browser traffic. Normal navigation, user-entered searches, explicit feed refreshes, proxies/Tor, sharing, and explicit account operations are not classified as silent telemetry merely because they transmit data.
+
 ## User observations captured for later product work
 - The browser feels relatively heavy. This is currently an observed UX/performance issue, not yet a measured regression or a reason to remove features.
 - Previously visited pages should not be unnecessarily reloaded as if they were first visits. The intended behavior is to preserve normal cache/session semantics and avoid avoidable restore-time reloads. Root cause is not yet established.
@@ -87,25 +102,27 @@ For every build/release milestone, do not mark the step complete until this chai
 A successful older run cannot prove a later workflow change. An artifact ZIP is not equivalent to individual GitHub Release assets.
 
 ## Last completed step
-The direct GitHub validation Release asset path is RELEASE-ASSET-VERIFIED. The first Android runtime pass produced a reproducible Scenario 1 failure. Source inspection then verified the existing restore-binding implementation and narrowed the blocker to its runtime effectiveness/timing/data boundary. A focused diagnostic was added to distinguish those branches without changing architecture.
+The direct GitHub validation Release asset path is RELEASE-ASSET-VERIFIED. The first Android runtime pass produced a reproducible Scenario 1 failure. Source inspection then verified the existing restore-binding implementation and narrowed the blocker to its runtime effectiveness/timing/data boundary. A focused diagnostic was added and a diagnostic APK run was started. In parallel, the privacy audit and first user-facing identity cleanup were committed.
 
 ## Current unfinished step
-Run focused CI/native checks for the diagnostic restore-boundary change, then create one diagnostic ARM64 validation APK and inspect the restore-binding logs to identify the exact runtime failure branch. Only then implement the minimum functional correction indicated by evidence.
+Critical path: finish run `33346310470` on diagnostic HEAD `c331fed0e422e01b5004a48d6b4f6400fa212689`, install only that diagnostic ARM64 APK, reproduce Scenario 1, and inspect restore-binding logs.  
+Parallel privacy path: remove automatic background feed fetching and stop sending device-name identifiers from account/sync paths, then run focused CI.
 
 ## Exact next execution
-1. Verify the diagnostic commits are present on the intended branch/HEAD and that no relevant CI run exists yet for that exact HEAD.
-2. Run the focused Quality/native checks for the changed middleware/store path.
-3. If focused checks are green, run one integrated ARM64 validation build containing the diagnostic instrumentation.
-4. On the device, reproduce only Scenario 1 and capture the restore-binding log evidence; do not run Scenarios 2–6.
-5. Identify the exact failing branch and implement only the minimum correction.
-6. Re-run focused CI, produce one corrected integrated ARM64 validation APK, and repeat Scenario 1.
-7. If Scenario 1 passes, resume the consolidated runtime checklist from Scenario 2.
-8. Only after the browser foundation runtime milestone is closed, measure cold start, memory, unnecessary reloads, cache/session behavior, and APK size before removing any features.
+1. Finish and verify diagnostic run `33346310470` against its exact `head_sha=c331fed0e422e01b5004a48d6b4f6400fa212689`.
+2. On the device, reproduce only Scenario 1 and capture the restore-binding diagnostic evidence; do not run Scenarios 2–6.
+3. Identify the exact failing restore branch and implement only the minimum UA correction.
+4. In parallel after the diagnostic run is captured, remove the automatic `background_fetch` release startup path while retaining manual feed refresh.
+5. Remove `device_name` from account sign-in handoff and stop passing Android device name as sync metadata.
+6. Run focused CI for the runtime correction and privacy hardening, then produce one integrated validation APK only when the changed paths are green.
+7. Re-run Scenario 1. If it passes, resume Scenarios 2–6.
+8. Only after the browser foundation runtime milestone is closed, measure cold start, memory, unnecessary reloads, cache/session behavior, and APK size before removing unrelated features.
 9. Then design the smallest coherent UA/profile editor from `WEBLIBRE_UA_FINGERPRINT_PRODUCT_REQUIREMENTS_2026-08-31.md`, implementing only engine-supported controls.
 
 ## Resume / anti-amnesia
 Canonical resume: `docs/WEBLIBRE_RESUME_COMMAND_2026-08-30.md`.
 Canonical forensic record: `docs/WEBLIBRE_RUNTIME_UA_RESTORE_FORENSICS_2026-08-31.md`.
+Canonical privacy audit: `docs/WEBLIBRE_PRIVACY_DATA_FLOW_AUDIT_2026-08-31.md`.
 Evidence levels: `SOURCE-VERIFIED`, `CI-VERIFIED`, `ANDROID-RUNTIME-VERIFIED`, `ARTIFACT-VERIFIED`, `RELEASE-ASSET-VERIFIED`, `DOCUMENTED`.
 At every material milestone update both Master Map and Workflow State with exact HEAD, CI/build/release identifiers, test evidence, blockers, and one first next step.
 
