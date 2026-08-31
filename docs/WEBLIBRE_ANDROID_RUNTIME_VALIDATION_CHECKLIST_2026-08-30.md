@@ -121,15 +121,28 @@ The post-relaunch screenshot also shows the restored page directly; there was no
 | Scenario | Runtime result | Evidence |
 |---|---|---|
 | Cold start / restored UA | **FAIL** | Container A restored; UA changed from Chrome/120 to Gecko/152 Firefox/152 after process death |
-| Container A/B UA isolation | PENDING | blocked by Scenario 1 failure |
-| Restore isolation | PENDING | blocked by Scenario 1 failure |
-| Proxy A/B isolation | PENDING | blocked by first causal runtime failure |
-| Proxy fail-closed | PENDING | blocked by first causal runtime failure |
-| No cross-container mutation | PENDING | blocked by first causal runtime failure |
+| Container A/B UA isolation | BLOCKED | first-causal Scenario 1 failure |
+| Restore isolation | BLOCKED | first-causal Scenario 1 failure |
+| Proxy A/B isolation | BLOCKED | first-causal Scenario 1 failure |
+| Proxy fail-closed | BLOCKED | first-causal Scenario 1 failure |
+| No cross-container mutation | BLOCKED | first-causal Scenario 1 failure |
 
 ## Stop conditions
 
 Stop the validation pass and preserve evidence if any scenario fails. Do not compensate by changing multiple layers. Reproduce the first causal failure, inspect the existing call chain, and change only the minimum code required if source/runtime evidence proves the current implementation insufficient.
+
+## Performance / navigation observations — 2026-08-31
+
+Captured during the first device pass; these are observations, not measured regressions:
+- The browser feels relatively heavy during use.
+- Previously visited pages should not be unnecessarily reloaded as first visits. This is a product requirement to investigate, not evidence that browser/HTTP caching is disabled.
+- Before changing implementation or removing features, measure cold start, time to first usable content, memory footprint, tab/session restoration behavior, engine-session recreation, cache behavior where observable, and APK composition.
+
+## Product direction — professional UA/profile identity
+
+The raw UA-string UI is considered insufficient for the intended product. The target is a coherent per-container/profile identity editor with presets and expert controls, not arbitrary UA text alone. Candidate dimensions include OS/platform, browser family/version, device/display metrics, locale/timezone/geolocation, proxy/network, and only those fingerprint surfaces that the actual Gecko/Android stack can control coherently. Research and requirements are recorded in `docs/WEBLIBRE_UA_FINGERPRINT_PRODUCT_REQUIREMENTS_2026-08-31.md`.
+
+Commercial anti-detect products commonly keep related identity fields internally consistent rather than exposing arbitrary independent combinations. WebLibre should follow the consistency principle and avoid cosmetic choices that its underlying engine cannot reproduce.
 
 ## CI / release evidence
 
