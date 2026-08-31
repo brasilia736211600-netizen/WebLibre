@@ -2,7 +2,7 @@
 
 **Last synchronized:** 2026-08-31
 **Branch:** `weblibre-ua-mainline-v3`
-**Current HEAD at this state-save:** `8c2c513cc24454716437f1a2669ecbe05e6ee662`
+**Current HEAD at this state-save:** `eb64ad2cb369814c921fbffd1ce84014ddae5ce7`
 
 ## Source of truth
 GitHub code, refs, commits, PRs, CI/build/release runs, artifacts, and release assets are authoritative. Chat memory and `[x]` markers are not evidence.
