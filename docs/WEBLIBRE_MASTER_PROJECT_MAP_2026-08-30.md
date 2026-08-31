@@ -2,7 +2,7 @@
 
 **Canonical source of truth:** GitHub repository, refs, commits, PRs, CI/build/release runs, artifacts and release assets.  
 **Branch:** `weblibre-ua-mainline-v3`  
-**Current source HEAD:** `d27544941dc6636828de330e764c923919f31f1f1`
+**Current source HEAD:** `a20f1ba7d055caa23629023d9929740067cb24ef`
 
 ## Canonical durable documents
 
@@ -91,7 +91,7 @@ User-directed browsing/search/feed/proxy/Tor/sharing is not automatically teleme
 
 ### Still pending
 
-- Run focused CI on current HEAD `d27544941...`.
+- Run focused CI on current HEAD `a20f1ba7...`.
 - Remove/disable automatic `background_fetch` release startup while retaining manual feed refresh.
 - Verify no other account/sync call path silently initializes removed services.
 - Remove dead account/sync source files only after CI/dependency reachability is proven.
@@ -120,7 +120,7 @@ At every material milestone update this map, the Workflow State, and the affecte
 
 ## Current checkpoint
 
-**Current source HEAD:** `d27544941dc6636828de330e764c923919f31f1f1`.  
+**Current source HEAD:** `a20f1ba7d055caa23629023d9929740067cb24ef`.  
 **Privacy hardening:** remote account/auth/sync execution disabled and direct Supabase application dependency removed; current compatibility boundary is SOURCE-VERIFIED pending CI.  
 **Android:** Scenario 1 FAIL on the tested validation Release; diagnostic reproduction pending.  
 **First next step:** run and verify focused CI against the current HEAD; do not build/install a new APK or modify the UA runtime fix until the privacy changes compile and their dependency boundary is known.
