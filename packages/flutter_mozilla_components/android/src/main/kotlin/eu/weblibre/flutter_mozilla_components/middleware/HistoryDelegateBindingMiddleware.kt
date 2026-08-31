@@ -6,6 +6,7 @@
 
 package eu.weblibre.flutter_mozilla_components.middleware
 
+import android.os.SystemClock
 import eu.weblibre.flutter_mozilla_components.GlobalComponents
 import eu.weblibre.flutter_mozilla_components.feature.ContainerUserAgentStore
 import eu.weblibre.flutter_mozilla_components.history.HistoryExclusions
@@ -114,11 +115,32 @@ class HistoryDelegateBindingMiddleware(
         // row is persisted in the same profile-scoped tab.db used by Dart, so we
         // can restore the session UA without a second database, recovery Pigeon
         // field, or upstream Android Components fork.
-        val profileContext = GlobalComponents.components?.profileApplicationContext ?: return
+        val startedAt = SystemClock.elapsedRealtime()
+        logger.debug(
+            "UA restore bind start tabId=$tabId contextId=$contextId profile=" +
+                (GlobalComponents.components?.profileApplicationContext?.relativePath ?: "<none>")
+        )
+
+        val profileContext = GlobalComponents.components?.profileApplicationContext
+        if (profileContext == null) {
+            logger.warn("UA restore bind skipped: no active profile context tabId=$tabId contextId=$contextId")
+            return
+        }
+
         val userAgent = ContainerUserAgentStore.get(profileContext, contextId)
+        logger.debug(
+            "UA restore lookup tabId=$tabId contextId=$contextId found=${userAgent != null} " +
+                "elapsedMs=${SystemClock.elapsedRealtime() - startedAt}"
+        )
+
         if (userAgent != null) {
             try {
                 engineSession.settings.userAgentString = userAgent
+                logger.debug(
+                    "UA restore applied tabId=$tabId contextId=$contextId " +
+                        "effective=${runCatching { engineSession.settings.userAgentString == userAgent }.getOrDefault(false)} " +
+                        "elapsedMs=${SystemClock.elapsedRealtime() - startedAt}"
+                )
             } catch (e: UnsupportedOperationException) {
                 logger.error("Failed to bind persisted container UA for $tabId", e)
             }
