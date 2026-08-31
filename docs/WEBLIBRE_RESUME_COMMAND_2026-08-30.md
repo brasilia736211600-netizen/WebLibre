@@ -11,6 +11,7 @@ Canonical documents:
 - `docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`
 - `docs/WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md`
 - `docs/WEBLIBRE_ANDROID_RUNTIME_VALIDATION_CHECKLIST_2026-08-30.md`
+- `docs/WEBLIBRE_UA_FINGERPRINT_PRODUCT_REQUIREMENTS_2026-08-31.md` for UA/profile/performance product scope
 
 ## Mandatory recovery sequence
 
@@ -20,6 +21,7 @@ READ
   -> read WORKFLOW_STATE
   -> read PERSONAL_AI_AGENT_SPEC when architecture/product scope is involved
   -> read ANDROID_RUNTIME_VALIDATION_CHECKLIST before device validation
+  -> read UA_FINGERPRINT_PRODUCT_REQUIREMENTS when UA/profile/performance scope is involved
 
 VERIFY
   -> read actual branch ref and HEAD
@@ -36,6 +38,7 @@ RECONCILE
   -> never treat [x] alone as runtime proof
   -> never treat a successful build as proof that a later workflow revision ran
   -> never treat an artifact ZIP as equivalent to separately published release assets
+  -> preserve user-observed runtime failures as evidence until explicitly revalidated
 
 PLAN
   -> identify exactly one first next step
@@ -99,6 +102,14 @@ The final production/stable release must continue using the existing `v*` releas
 
 A validation artifact ZIP and direct Release assets may coexist; they are not equivalent evidence. Verify each requested distribution surface explicitly.
 
+## Runtime product-observation rule
+
+User-observed behavior from real-device testing is evidence and must be recorded even when it does not yet establish root cause. In particular:
+- container/tab restoration and per-container UA correctness are separate assertions;
+- perceived performance/heaviness is an observation requiring measurement before optimization;
+- unnecessary page reloads require diagnosis of restore/session/cache/engine-session behavior before implementation changes;
+- desired UA/profile capabilities should be captured as requirements before implementation.
+
 ## Anti-amnesia rules
 
 1. Never trust a remembered HEAD. Re-read the branch ref.
@@ -113,6 +124,8 @@ A validation artifact ZIP and direct Release assets may coexist; they are not eq
 10. At each material milestone, update both the master map and workflow state, then commit them.
 11. When a workflow definition is changed, do not use any run created before that workflow change as proof of the new behavior.
 12. When an asset/release step is requested, verify the actual asset/release object rather than inferring it from logs.
+13. Keep product requirements separate from implementation commitments; do not implement every benchmark feature without checking engine capability and YAGNI.
+14. Before removing features for size/performance reasons, measure actual APK contribution and runtime cost.
 
 ## What every handoff must contain
 
@@ -132,6 +145,7 @@ ANDROID RUNTIME STATUS: <verified/pending + exact scenarios>
 FILES CHANGED AT LAST MILESTONE: <paths>
 LAST COMMIT: <sha + message>
 STATE DOCS UPDATED: <yes/no + commit>
+PRODUCT OBSERVATIONS: <measured/unmeasured observations and source>
 ```
 
 ## Copy/paste resume command
@@ -148,6 +162,7 @@ Use this as the first message when starting a new chat or handing the project to
 3. docs/WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md
 4. docs/WEBLIBRE_RESUME_COMMAND_2026-08-30.md
 5. docs/WEBLIBRE_ANDROID_RUNTIME_VALIDATION_CHECKLIST_2026-08-30.md قبل اختبار Android
+6. docs/WEBLIBRE_UA_FINGERPRINT_PRODUCT_REQUIREMENTS_2026-08-31.md عند مناقشة أو تنفيذ UA/profile/performance
 
 ثم نفّذ:
 READ -> VERIFY -> RECONCILE -> PLAN -> EXECUTE -> TEST -> DIFF -> COMMIT -> SAVE STATE
@@ -182,9 +197,12 @@ commit SHA -> workflow revision -> run head_sha -> job SUCCESS -> required step 
 لا تضف architecture جديدة إلا إذا أثبت test/runtime أن الحالية غير كافية.
 التزم بـYAGNI وبترتيب الاعتماديات.
 
+سجّل أدلة Android الحقيقية كما هي، بما فيها الفشل والملاحظات غير المقاسة؛ لا تحول الملاحظة إلى سبب جذري دون تحقق.
+
 عند كل milestone مادي:
 - حدّث MASTER_PROJECT_MAP
 - حدّث WORKFLOW_STATE
+- حدّث الوثيقة المتخصصة المتأثرة إن وجدت
 - سجّل HEAD وCI/build/release والأدلة والاختبارات والـnext step
 - نفّذ commit واضح
 
@@ -194,6 +212,10 @@ commit SHA -> workflow revision -> run head_sha -> job SUCCESS -> required step 
 كـGitHub Release assets منفصلة، ولا تكتفِ بوجود ZIP artifact.
 
 في النسخ الإنتاجية المستقرة مستقبلًا، استخدم مسار v* الموجود للنشر الفعلي بعد اكتمال Android runtime + release validation، مع APKs للـABIs وAAB.
+
+عند تقييم UA/profile، لا تكتفِ بتغيير raw UA string: افحص اتساق OS/browser/version/display/locale/network والحقول التي يستطيع المحرك فعليًا التحكم بها. اقرأ وثيقة UA_FINGERPRINT_PRODUCT_REQUIREMENTS قبل التصميم.
+
+إذا كان الادعاء متعلقًا بالأداء أو إعادة تحميل الصفحات، قِس أولًا cold start/memory/reload/session/cache/engine-session behavior وAPK composition قبل إزالة أي ميزة.
 
 إذا وجدت تعارضًا بين الذاكرة/الرسائل والـrepository، فالـrepository هو الحقيقة.
 إذا كانت نتيجة CI/build/release لا تطابق HEAD المقصود، لا تستخدمها كدليل للـHEAD الحالي.
