@@ -20,69 +20,57 @@ Required policy for future work:
 
 The source files retain upstream copyright headers. These must **not** be blindly deleted: the repository is AGPL-licensed and required copyright/license notices must remain where legally required.
 
-The user-facing About dialog, however, previously promoted the upstream developer through:
-- upstream copyright/legalese;
-- feedback URL;
-- donation URL;
-- documentation URL;
-- upstream GitHub URL.
+The user-facing About dialog, however, previously promoted the upstream developer through feedback, donation, documentation, and upstream GitHub links. Those promotional links have been removed and the visible identity is now `WebLibre Personal Edition • Maintained by Braziao`.
 
-The About dialog has now been changed to the personal-build identity and no longer contains those upstream promotional links. Legal source notices remain intact.
+The personal product identity must not falsely claim original authorship of inherited code. Upstream legal notices remain where required.
 
 ### 2. Background feed fetching is an automatic outbound-data path
 
-`apps/weblibre/lib/main.dart` imports `background_fetch` and configures a release-mode background task with:
-- `minimumFetchInterval: 15`;
-- `stopOnTerminate: false`;
-- `startOnBoot: true`;
-- network type `ANY`.
+`apps/weblibre/lib/main.dart` imports `background_fetch` and configures a release-mode background task with `minimumFetchInterval: 15`, `stopOnTerminate: false`, `startOnBoot: true`, and network type `ANY`. The task calls `FetchArticlesController.fetchAllArticles()`, which reads all locally configured feed URLs and requests them.
 
-The task calls `FetchArticlesController.fetchAllArticles()`, which reads all locally configured feed URLs and requests them through the feed reader.
+This is not required for normal browsing and is not a user-initiated request at the time it executes. It remains a confirmed privacy/battery hardening target.
 
-This is not required for normal browsing and is not a user-initiated request at the time it executes. It is therefore a privacy/battery hardening target and should be removed or changed to an explicit user-controlled refresh setting. The default personal build must not silently fetch user-configured feeds in the background.
+**Status:** PENDING. The current code has not yet been changed because the background registration lives in the large application bootstrap file. Do not mark this item complete until the exact startup path is removed/disabled and CI verifies it.
 
-**Status:** identified; implementation removal pending because `main.dart` is a large generated/application file and must be changed and tested as a complete source update.
+### 3. Account sign-in no longer sends device name
 
-### 3. Account service is an explicit online feature, but it currently sends a device identifier during sign-in
+`AccountAuthRepository.startSignIn()` previously added `device_name` from Android device information to the account handoff query.
 
-`AccountAuthRepository.startSignIn()` builds the account URL with:
-- `mode=handoff`;
-- PKCE challenge;
-- `app_version`;
-- `device_name`.
+**Status:** SOURCE-CHANGED. The handoff now sends only the authentication flow parameters and app version; the device name is no longer included.
 
-The account client then maintains an authenticated session and can access account/subscription/search-credit/sync services.
+The account feature itself remains an explicit user-initiated online service for now, but it is no longer allowed to attach the device name to the sign-in handoff.
 
-The account feature is user-initiated by sign-in and is therefore not equivalent to hidden telemetry. However, `device_name` is unnecessary device-identifying metadata for the core sign-in handoff and should not be transmitted by default.
+### 4. Account sync no longer persists source device identifier
 
-**Target:** remove `device_name` from the sign-in handoff and stop passing `sourceDeviceId` into sync-document metadata. Preserve explicit account functionality unless a later product decision removes the whole account service.
+`AccountSyncRepository.storeDocument()` previously accepted and persisted `sourceDeviceId` in the `account_sync_documents` row.
 
-### 4. Encrypted sync is opt-in but still transmits metadata
+**Status:** SOURCE-CHANGED. The repository now deliberately writes `source_device_id: null` even if a legacy caller supplies a value. This is a defense-in-depth boundary so an older caller cannot silently reintroduce the Android device name into sync metadata.
 
-The account sync repository requires a signed-in account and stores encrypted content blobs, but its rows also contain metadata including:
-- source device ID;
-- source app version;
-- labels and timestamps.
+Existing server-side records are not assumed to be deleted by a client-side code change. Deletion of already-uploaded data requires an explicit account/data-management action.
 
-The current UI passes the Android device name as `sourceDeviceId`.
+### 5. Account and Firefox Sync are removed from the personal Settings UI
 
-The personal build should stop sending the device name as sync metadata. Existing server-side records are not assumed to be deleted by a client-side code change; deletion of already-uploaded data requires an explicit account/data-management action.
+The personal Settings screen no longer exposes `WebLibre Account` or `Firefox Sync` as user-facing service categories.
 
-### 5. Supabase is an account backend, not evidence of anonymous telemetry by itself
+The account callback service is also no longer activated by `AppInitializationService`.
 
-`pubspec.yaml` contains the `supabase` dependency. `account_auth.dart` uses it for account authentication/session management and `account_sync_repository.dart` uses it for explicitly signed-in sync documents.
+**Status:** SOURCE-CHANGED. The underlying legacy account/sync source remains temporarily in the repository so the next focused CI run can prove there are no unintended compile/runtime dependencies before dead-code deletion. It must not be described as removed from the source tree yet.
 
-The presence of the dependency alone is not sufficient evidence of background telemetry. Do not delete it solely because it exists; trace actual call sites and user gating before changing account architecture.
+### 6. Supabase is an account backend, not evidence of anonymous telemetry by itself
 
-### 6. Android permissions need capability-by-capability review
+`pubspec.yaml` contains the `supabase` dependency. It is tied to explicit account/auth/sync functionality. Dependency presence alone is not evidence of anonymous telemetry.
+
+The account/sync UI is no longer exposed in the personal Settings screen, and the account callback is no longer initialized automatically. Full source-tree removal of the account stack remains a separate cleanup step after CI proves no hidden dependency.
+
+### 7. Android permissions need capability-by-capability review
 
 The manifest requests network, camera, microphone, location, storage/media, notifications, credential-manager, and package-visibility capabilities, among others.
 
-These permissions are not automatically evidence of data exfiltration. Browser functions such as websites requesting camera/microphone/location and user-initiated file/media handling can legitimately require them. `QUERY_ALL_PACKAGES` and persistent/background services deserve separate minimization review because they are broader than ordinary page browsing.
+These permissions are not automatically evidence of data exfiltration. Browser functions such as websites requesting camera/microphone/location and user-initiated file/media handling can legitimately require them. `QUERY_ALL_PACKAGES` and persistent/background services deserve separate minimization review.
 
 No permission is to be removed blindly; each must be mapped to a concrete feature and then tested after removal.
 
-### 7. `usesCleartextTraffic="true"` is a security-hardening candidate
+### 8. `usesCleartextTraffic="true"` is a security-hardening candidate
 
 The Android manifest currently allows cleartext traffic. This is not itself proof that user data is being transmitted in cleartext, especially because Gecko has its own networking stack, but it weakens the platform-level default. It should be investigated separately and changed only after confirming compatibility with required browser/proxy functionality.
 
@@ -106,14 +94,15 @@ However, AGPL/license/copyright notices that must be retained remain in source a
 
 ## Immediate execution queue
 
-1. Remove automatic `background_fetch` article refresh from release startup; retain manual feed refresh.
-2. Remove `device_name` from account sign-in handoff.
-3. Stop sending Android device name as sync-document `sourceDeviceId`.
-4. Audit push/unified-push registration and all background services for silent identifiers/network traffic.
-5. Audit `QUERY_ALL_PACKAGES`, location, camera, microphone, media, and cleartext-network capability against concrete feature use.
-6. Search all application code for outbound HTTP/WebSocket/Supabase/search/feed endpoints and classify each as user-initiated, explicitly opted-in, or silent.
-7. Add a local privacy/data-flow screen that accurately states what is sent, when, and under what user action; do not claim zero network traffic because WebLibre is a browser.
-8. Measure APK/runtime cost before removing unrelated features for size/performance reasons.
+1. Remove automatic `background_fetch` article refresh from release startup; retain manual feed refresh. **PENDING**
+2. Remove `device_name` from account sign-in handoff. **DONE — source changed**
+3. Stop sending Android device name as sync-document `sourceDeviceId`. **DONE — source changed**
+4. Remove account and Firefox Sync from the personal Settings UI and automatic account callback startup. **DONE — source changed; legacy source cleanup pending CI**
+5. Audit push/unified-push registration and all background services for silent identifiers/network traffic.
+6. Audit `QUERY_ALL_PACKAGES`, location, camera, microphone, media, and cleartext-network capability against concrete feature use.
+7. Search all application code for outbound HTTP/WebSocket/Supabase/search/feed endpoints and classify each as user-initiated, explicitly opted-in, or silent.
+8. Add a local privacy/data-flow screen that accurately states what is sent, when, and under what user action; do not claim zero network traffic because WebLibre is a browser.
+9. Measure APK/runtime cost before removing unrelated features for size/performance reasons.
 
 ## Evidence rule
 
