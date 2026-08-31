@@ -44,6 +44,24 @@ Verify the Release assets belong to the exact intended workflow run and `head_sh
 
 **Pass condition:** restored tab keeps its container identity and its persisted per-container UA.
 
+### Scenario 1 runtime evidence — 2026-08-31
+
+APK under test: validation prerelease `validation-stable-5-3aa06cf6ee090e42c9b7bff6abbf17f737b1fef5`, ARM64 asset `app-stable-arm64-v8a-release.apk`.
+
+Before process termination, the request-observed UA in Google Search was:
+`Mozilla/5.0 (Linux; Android 14; SM-S928B/DS) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.230 Mobile Safari/537.36`
+
+The tab was associated with `Container A`.
+
+After process termination and relaunch, the restored tab remained in `Container A`, but the request-observed UA changed to:
+`Mozilla/5.0 (Android 12; Mobile; rv:152.0) Gecko/152.0 Firefox/152.0`
+
+Therefore the runtime result is **FAIL**: container identity restored, but the persisted per-container UA was not applied to the restored navigation.
+
+The post-relaunch screenshot also shows the restored page directly; there was no `Resume last tab` control at that point. The earlier home-state `Resume last tab` button must not be interpreted as proof of post-relaunch deferred restoration.
+
+**Stop condition triggered:** preserve the first causal runtime failure and inspect the existing restore/session UA call chain before any unrelated scenario or architecture change.
+
 ## Scenario 2 — Container A/B isolation
 
 1. Create one tab in A with UA-A.
@@ -102,12 +120,12 @@ Verify the Release assets belong to the exact intended workflow run and `head_sh
 
 | Scenario | Runtime result | Evidence |
 |---|---|---|
-| Cold start / restored UA | PENDING | — |
-| Container A/B UA isolation | PENDING | — |
-| Restore isolation | PENDING | — |
-| Proxy A/B isolation | PENDING | — |
-| Proxy fail-closed | PENDING | — |
-| No cross-container mutation | PENDING | — |
+| Cold start / restored UA | **FAIL** | Container A restored; UA changed from Chrome/120 to Gecko/152 Firefox/152 after process death |
+| Container A/B UA isolation | PENDING | blocked by Scenario 1 failure |
+| Restore isolation | PENDING | blocked by Scenario 1 failure |
+| Proxy A/B isolation | PENDING | blocked by first causal runtime failure |
+| Proxy fail-closed | PENDING | blocked by first causal runtime failure |
+| No cross-container mutation | PENDING | blocked by first causal runtime failure |
 
 ## Stop conditions
 
