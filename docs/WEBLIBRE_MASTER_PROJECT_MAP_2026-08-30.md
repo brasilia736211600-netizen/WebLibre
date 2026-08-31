@@ -2,7 +2,7 @@
 
 **Canonical source of truth:** GitHub repository, refs, commits, PRs, CI/build/release runs, artifacts and release assets.  
 **Branch:** `weblibre-ua-mainline-v3`  
-**Current source HEAD at this state-save:** `bf374d10faced96467605f8571f28db1fc85022f`  
+**Current source HEAD before this state-save:** `dc378410b1773ac61fede912f0a3470b3ca286c0`  
 
 ## Canonical durable documents
 
@@ -29,10 +29,11 @@ AI-1 Browser Tool
 
 Privacy / Personal Product Hardening
     About identity cleanup                      DONE
-    Account callback startup                   REMOVED
+    Account callback startup                   DISABLED
     Account/Firefox Sync Settings UI           REMOVED
     Account sign-in device_name                 REMOVED
     Sync source_device_id                      NULL-ENFORCED
+    Direct Supabase application dependency     REMOVED — CI PENDING
     Automatic background feed fetch             PENDING
     Full dead account/sync source cleanup       PENDING CI/dependency audit
     outbound endpoint audit                    PENDING
@@ -77,7 +78,8 @@ User-directed browsing/search/feed/proxy/Tor/sharing is not automatically teleme
 ### Completed privacy changes in this checkpoint
 
 - About presents `WebLibre Personal Edition • Maintained by Braziao` and no longer promotes the former upstream maintainer.
-- Account callback service is no longer initialized automatically.
+- Inherited account callback/handoff listener is now a no-op compatibility boundary and performs no account/network operation.
+- Direct `supabase` application dependency has been removed from `apps/weblibre/pubspec.yaml`.
 - `WebLibre Account` and `Firefox Sync` were removed from the personal Settings UI.
 - Account sign-in no longer adds Android `device_name` to the handoff query.
 - Account sync repository now writes `source_device_id: null` even when legacy callers provide a device identifier.
@@ -86,15 +88,17 @@ User-directed browsing/search/feed/proxy/Tor/sharing is not automatically teleme
 
 ### Still pending
 
+- Run focused CI on the current privacy-hardening HEAD.
 - Remove/disable automatic `background_fetch` release startup while retaining manual feed refresh.
 - Verify no other account/sync call path silently initializes the removed services.
-- Audit push/background services and all outbound HTTP/WebSocket/Supabase/search/feed endpoints.
+- Remove dead account/sync source files only after CI/dependency reachability is proven.
+- Audit push/background services and all outbound HTTP/WebSocket/search/feed endpoints.
 - Review broad Android permissions and `usesCleartextTraffic` against concrete feature use.
 - Add an accurate local privacy/data-flow screen.
 
 ## Performance/product observations
 
-The browser feels heavy and previously visited pages appear to risk unnecessary reloads. These are observations, not root causes. Measure startup, memory, cache/session/engine-session behavior, reloads, and APK composition before removing unrelated features.
+The browser feels heavy and previously visited pages appear to risk unnecessary reloads. These are observations, not root causes. Measure startup, memory, cache/session/engine-session behavior, reloads, and APK composition before removing unrelated features for size/performance reasons.
 
 The future UA direction is a coherent profile editor (OS, browser/version, display, locale/timezone, network/proxy and engine-supported fingerprint surfaces) with consistency constraints. Do not implement the full anti-detect feature set yet.
 
@@ -113,7 +117,7 @@ At every material milestone update this map, the Workflow State, and the affecte
 
 ## Current checkpoint
 
-**Source HEAD before this final state-save commit:** `bf374d10faced96467605f8571f28db1fc85022f`.  
-**Privacy hardening:** source-changed; focused CI on the current HEAD is pending.  
+**Current source HEAD before this state-save:** `dc378410b1773ac61fede912f0a3470b3ca286c0`.  
+**Privacy hardening:** account callback data path disabled; direct Supabase dependency removed; focused CI pending.  
 **Android:** Scenario 1 FAIL on the tested validation Release; diagnostic reproduction pending.  
 **First next step:** run and verify focused CI against the resulting state-save HEAD; do not build/install a new APK or modify the UA runtime fix until the privacy changes compile and their dependency boundary is known.
