@@ -42,10 +42,16 @@ internal object ContainerUserAgentStore {
     }
 
     fun get(context: Context, contextualIdentity: String?): String? {
-        if (contextualIdentity.isNullOrBlank()) return null
+        if (contextualIdentity.isNullOrBlank()) {
+            logger.debug("UA lookup skipped: blank contextualIdentity")
+            return null
+        }
 
         val databaseFile = context.getDatabasePath(DATABASE_NAME)
-        if (!databaseFile.exists()) return null
+        if (!databaseFile.exists()) {
+            logger.debug("UA lookup skipped: database missing path=${databaseFile.path}")
+            return null
+        }
 
         var database: SQLiteDatabase? = null
         var cursor: Cursor? = null
@@ -60,9 +66,17 @@ internal object ContainerUserAgentStore {
             while (cursor.moveToNext()) {
                 val metadata = cursor.getString(0) ?: continue
                 val userAgent = parseUserAgent(metadata, contextualIdentity)
-                if (userAgent != null) return userAgent
+                if (userAgent != null) {
+                    logger.debug(
+                        "UA lookup hit contextId=$contextualIdentity path=${databaseFile.path}"
+                    )
+                    return userAgent
+                }
             }
 
+            logger.debug(
+                "UA lookup miss contextId=$contextualIdentity path=${databaseFile.path}"
+            )
             null
         } catch (e: SQLiteException) {
             // Startup must remain safe if the Flutter/Drift connection currently
