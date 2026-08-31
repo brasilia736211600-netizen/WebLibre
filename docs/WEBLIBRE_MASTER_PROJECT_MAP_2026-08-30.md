@@ -2,7 +2,7 @@
 
 **Canonical source of truth:** GitHub repository, refs, commits, PRs, CI/build/release runs, artifacts and release assets.  
 **Branch:** `weblibre-ua-mainline-v3`  
-**Current source HEAD before this state-save:** `dc378410b1773ac61fede912f0a3470b3ca286c0`  
+**Current source HEAD:** `d27544941dc6636828de330e764c923919f31f1f1`
 
 ## Canonical durable documents
 
@@ -33,7 +33,8 @@ Privacy / Personal Product Hardening
     Account/Firefox Sync Settings UI           REMOVED
     Account sign-in device_name                 REMOVED
     Sync source_device_id                      NULL-ENFORCED
-    Direct Supabase application dependency     REMOVED — CI PENDING
+    Direct Supabase application dependency     REMOVED
+    Legacy auth/sync source boundary           INERT — CI PENDING
     Automatic background feed fetch             PENDING
     Full dead account/sync source cleanup       PENDING CI/dependency audit
     outbound endpoint audit                    PENDING
@@ -48,7 +49,7 @@ The first real Android validation of the ARM64 validation Release proved:
 - After relaunch the restored navigation sent Gecko/Firefox 152 UA instead.
 - No `Resume last tab` control was present in that post-relaunch state.
 
-The existing restore-binding middleware/store is present in source. It is not yet runtime-proven effective. The diagnostic run `33346310470` was created against older diagnostic HEAD `c331fed0e422e01b5004a48d6b4f6400fa212689` and therefore does not prove the current privacy changes.
+The existing restore-binding middleware/store is present in source. It is not yet runtime-proven effective. The diagnostic run `33346310470` was created against older diagnostic HEAD `c331fed0e422e01b5004a48d6b4f6400fa212689` and therefore does not prove later changes.
 
 Do not run Scenarios 2–6 until Scenario 1 passes.
 
@@ -78,19 +79,21 @@ User-directed browsing/search/feed/proxy/Tor/sharing is not automatically teleme
 ### Completed privacy changes in this checkpoint
 
 - About presents `WebLibre Personal Edition • Maintained by Braziao` and no longer promotes the former upstream maintainer.
-- Inherited account callback/handoff listener is now a no-op compatibility boundary and performs no account/network operation.
+- Inherited account callback/handoff listener is a no-op compatibility boundary and performs no account/network operation.
 - Direct `supabase` application dependency has been removed from `apps/weblibre/pubspec.yaml`.
 - `WebLibre Account` and `Firefox Sync` were removed from the personal Settings UI.
 - Account sign-in no longer adds Android `device_name` to the handoff query.
-- Account sync repository now writes `source_device_id: null` even when legacy callers provide a device identifier.
+- Account sync repository no longer has a remote client and never transmits data.
+- Legacy account auth state/repository no longer contains Supabase transport types and is an inert local compatibility boundary.
+- Legacy account callback parsing is retained only to keep existing share-intent code type-safe; no callback is redeemed or uploaded.
 - Personal product identity/attribution rules are documented in `WEBLIBRE_PERSONAL_PRODUCT_IDENTITY_2026-08-31.md`.
 - Upstream AGPL/copyright notices remain where legally required; do not erase them merely to change branding.
 
 ### Still pending
 
-- Run focused CI on the current privacy-hardening HEAD.
+- Run focused CI on current HEAD `d27544941...`.
 - Remove/disable automatic `background_fetch` release startup while retaining manual feed refresh.
-- Verify no other account/sync call path silently initializes the removed services.
+- Verify no other account/sync call path silently initializes removed services.
 - Remove dead account/sync source files only after CI/dependency reachability is proven.
 - Audit push/background services and all outbound HTTP/WebSocket/search/feed endpoints.
 - Review broad Android permissions and `usesCleartextTraffic` against concrete feature use.
@@ -117,7 +120,7 @@ At every material milestone update this map, the Workflow State, and the affecte
 
 ## Current checkpoint
 
-**Current source HEAD before this state-save:** `dc378410b1773ac61fede912f0a3470b3ca286c0`.  
-**Privacy hardening:** account callback data path disabled; direct Supabase dependency removed; focused CI pending.  
+**Current source HEAD:** `d27544941dc6636828de330e764c923919f31f1f1`.  
+**Privacy hardening:** remote account/auth/sync execution disabled and direct Supabase application dependency removed; current compatibility boundary is SOURCE-VERIFIED pending CI.  
 **Android:** Scenario 1 FAIL on the tested validation Release; diagnostic reproduction pending.  
-**First next step:** run and verify focused CI against the resulting state-save HEAD; do not build/install a new APK or modify the UA runtime fix until the privacy changes compile and their dependency boundary is known.
+**First next step:** run and verify focused CI against the current HEAD; do not build/install a new APK or modify the UA runtime fix until the privacy changes compile and their dependency boundary is known.
