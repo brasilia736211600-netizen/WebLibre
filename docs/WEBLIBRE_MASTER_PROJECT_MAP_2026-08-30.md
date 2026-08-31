@@ -1,14 +1,15 @@
 # WebLibre — Master Project Map
 
-**Created:** 2026-08-30
-**Purpose:** Durable high-level map for resuming WebLibre with a new chat or agent.
-**Repository source of truth:** GitHub code, refs, commits, PRs, CI/build/release runs, artifacts, and release assets.
-**Canonical execution state:** `docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`
-**Canonical AI specification:** `docs/WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md`
-**Canonical resume protocol:** `docs/WEBLIBRE_RESUME_COMMAND_2026-08-30.md`
-**Canonical Android runtime checklist:** `docs/WEBLIBRE_ANDROID_RUNTIME_VALIDATION_CHECKLIST_2026-08-30.md`
-**UA/fingerprint product requirements:** `docs/WEBLIBRE_UA_FINGERPRINT_PRODUCT_REQUIREMENTS_2026-08-31.md`
-**UA restore forensic record:** `docs/WEBLIBRE_RUNTIME_UA_RESTORE_FORENSICS_2026-08-31.md`
+**Created:** 2026-08-30  
+**Purpose:** Durable high-level map for resuming WebLibre with a new chat or agent.  
+**Repository source of truth:** GitHub code, refs, commits, PRs, CI/build/release runs, artifacts, and release assets.  
+**Canonical execution state:** `docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`  
+**Canonical AI specification:** `docs/WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md`  
+**Canonical resume protocol:** `docs/WEBLIBRE_RESUME_COMMAND_2026-08-30.md`  
+**Canonical Android runtime checklist:** `docs/WEBLIBRE_ANDROID_RUNTIME_VALIDATION_CHECKLIST_2026-08-30.md`  
+**UA/fingerprint product requirements:** `docs/WEBLIBRE_UA_FINGERPRINT_PRODUCT_REQUIREMENTS_2026-08-31.md`  
+**UA restore forensic record:** `docs/WEBLIBRE_RUNTIME_UA_RESTORE_FORENSICS_2026-08-31.md`  
+**Privacy/data-flow audit:** `docs/WEBLIBRE_PRIVACY_DATA_FLOW_AUDIT_2026-08-31.md`
 
 ## CURRENT POSITION
 
@@ -33,7 +34,7 @@ QUALITY GATE
 REAL ANDROID RUNTIME PROOF       AI-1 BROWSER TOOL
         |                             |
         |  Scenario 1 FAIL             |
-        |  restore UA mismatch         |
+        |  restore UA mismatch        |
         |                             |
         |                        +--> inventory       [DONE]
         |                        +--> typed registry  [DONE]
@@ -115,6 +116,21 @@ A focused diagnostic was added to the existing restore hook and UA store. It rec
 
 This is diagnostic instrumentation only; it does not add a new persistence system or architecture.
 
+## PRIVACY / PERSONAL-PRODUCT HARDENING
+
+A source audit is now durable in `docs/WEBLIBRE_PRIVACY_DATA_FLOW_AUDIT_2026-08-31.md`.
+
+Confirmed source findings:
+- The user-facing About dialog previously promoted the former upstream developer through legalese and feedback/donation/documentation/GitHub links. Those promotional links are now removed and the visible identity is `WebLibre Personal Edition • Maintained by Braziao`.
+- Upstream copyright/license headers remain in source because they are legal/license notices and must not be blindly deleted.
+- Release startup configures `background_fetch` to fetch all locally configured RSS/feed URLs every 15 minutes, including after termination/boot. This is a confirmed automatic outbound-data/battery hardening target.
+- Account sign-in uses explicit Supabase/account services but currently includes `device_name` in the handoff query. This is unnecessary device-identifying metadata and is a confirmed hardening target.
+- Explicit encrypted account sync is gated on sign-in, but sync metadata currently includes source device ID/name and app version. Sending the Android device name is a confirmed hardening target.
+- The `supabase` dependency is tied to the explicit account/auth/sync feature; dependency presence alone is not evidence of anonymous telemetry.
+- Android permissions and `usesCleartextTraffic="true"` require capability-by-capability review.
+
+The privacy rule is **no silent telemetry, no silent device identifiers, no silent background user-data upload, and explicit opt-in for optional online services**. User-directed browser traffic is not treated as telemetry merely because it is network traffic.
+
 ## USER OBSERVATIONS / FUTURE PRODUCT DIRECTION
 
 The first real-device pass also produced product observations that are now documented separately rather than implemented prematurely:
@@ -179,6 +195,7 @@ Every new agent must read:
 5. `WEBLIBRE_ANDROID_RUNTIME_VALIDATION_CHECKLIST_2026-08-30.md` before device validation
 6. `WEBLIBRE_UA_FINGERPRINT_PRODUCT_REQUIREMENTS_2026-08-31.md` when UA/profile/performance product scope is being discussed
 7. `WEBLIBRE_RUNTIME_UA_RESTORE_FORENSICS_2026-08-31.md` when diagnosing the current Scenario 1 blocker
+8. `WEBLIBRE_PRIVACY_DATA_FLOW_AUDIT_2026-08-31.md` for privacy/data-flow changes
 
 Then verify actual branch/HEAD/PR/CI/build/release/assets before editing.
 
@@ -199,6 +216,8 @@ Do not add global GeckoRuntime UA, `RecoverableTab.userAgent`, second DB, new re
 
 Do not remove browser features merely because the APK feels large. First measure APK composition, native/runtime contributions, startup, memory, and feature usage.
 
+Do not remove upstream legal/license notices merely to change product identity.
+
 ## MANDATORY LOOP
 `READ -> VERIFY -> RECONCILE -> PLAN -> EXECUTE -> TEST -> DIFF -> COMMIT -> SAVE STATE`
 
@@ -206,13 +225,12 @@ Update Master Map and Workflow State at every material milestone with exact HEAD
 
 ## CURRENT CHECKPOINT
 
-**Date:** 2026-08-31
-**Branch:** `weblibre-ua-mainline-v3`
-**Current code checkpoint:** `2e3534c28787ab6bdaf00585e48e6384113bea77`.
-**Runtime-tested APK source checkpoint:** `3aa06cf6ee090e42c9b7bff6abbf17f737b1fef5`.
-**Manual stable Release:** Run `33341230075`, validation tag `validation-stable-5-3aa06cf6...`.
-**Android runtime:** Scenario 1 FAIL — container/tab restore succeeded, per-container UA did not survive restored navigation.
-**Diagnostic checkpoint:** `2e3534c28787ab6bdaf00585e48e6384113bea77`.
-**First next step:** run focused CI/native checks for the diagnostic restore-boundary change; then produce one diagnostic ARM64 validation APK and inspect the restore-binding logs to identify the exact runtime failure branch before implementing any functional correction.
-**Secondary product work after runtime blocker:** measure performance/reload behavior, then design the smallest coherent UA/profile editor from the requirements document.
+**Date:** 2026-08-31  
+**Branch:** `weblibre-ua-mainline-v3`  
+**Current HEAD:** `9b5e839dfb341a4a0fad210a647a60df5b4b3831`.  
+**Runtime-tested APK source checkpoint:** `3aa06cf6ee090e42c9b7bff6abbf17f737b1fef5`.  
+**Diagnostic CI run:** `33346310470`, exact head `c331fed0e422e01b5004a48d6b4f6400fa212689`, currently in progress.  
+**Android runtime:** Scenario 1 FAIL — container/tab restore succeeded, per-container UA did not survive restored navigation.  
+**Privacy audit:** SOURCE-REVIEWED; About identity cleanup committed; automatic background feed fetch and device-name transmission are confirmed pending hardening changes.  
+**First next step:** finish diagnostic run `33346310470`, install its exact diagnostic ARM64 build, reproduce Scenario 1, and inspect the restore-binding logs before implementing any functional UA correction.  
 **Resume protocol:** `docs/WEBLIBRE_RESUME_COMMAND_2026-08-30.md`.
