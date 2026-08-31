@@ -2,7 +2,7 @@
 
 **Canonical source of truth:** GitHub repository, refs, commits, PRs, CI/build/release runs, artifacts and release assets.  
 **Branch:** `weblibre-ua-mainline-v3`  
-**Current HEAD at this save:** `ef9a08047585303c584888838bae833c7215fae5`  
+**Current source HEAD at this state-save:** `bf374d10faced96467605f8571f28db1fc85022f`  
 
 ## Canonical durable documents
 
@@ -47,9 +47,7 @@ The first real Android validation of the ARM64 validation Release proved:
 - After relaunch the restored navigation sent Gecko/Firefox 152 UA instead.
 - No `Resume last tab` control was present in that post-relaunch state.
 
-The existing restore-binding middleware/store is present in source. It is not yet runtime-proven effective. The current diagnostic run was started before the privacy-only commits and must not be used as proof for the current HEAD.
-
-**Critical path remains:** finish the exact diagnostic build/run, reproduce Scenario 1 only, inspect restore-binding logs, isolate the failing boundary, implement the minimum correction, run focused CI, then revalidate Scenario 1.
+The existing restore-binding middleware/store is present in source. It is not yet runtime-proven effective. The diagnostic run `33346310470` was created against older diagnostic HEAD `c331fed0e422e01b5004a48d6b4f6400fa212689` and therefore does not prove the current privacy changes.
 
 Do not run Scenarios 2–6 until Scenario 1 passes.
 
@@ -78,7 +76,7 @@ User-directed browsing/search/feed/proxy/Tor/sharing is not automatically teleme
 
 ### Completed privacy changes in this checkpoint
 
-- About already presents `WebLibre Personal Edition • Maintained by Braziao` and no longer promotes the former upstream maintainer.
+- About presents `WebLibre Personal Edition • Maintained by Braziao` and no longer promotes the former upstream maintainer.
 - Account callback service is no longer initialized automatically.
 - `WebLibre Account` and `Firefox Sync` were removed from the personal Settings UI.
 - Account sign-in no longer adds Android `device_name` to the handoff query.
@@ -115,8 +113,7 @@ At every material milestone update this map, the Workflow State, and the affecte
 
 ## Current checkpoint
 
-**HEAD:** `ef9a08047585303c584888838bae833c7215fae5`  
-**Latest privacy commit:** `ef9a08047585303c584888838bae833c7215fae5`  
-**Diagnostic CI:** `33346310470` was created against older diagnostic HEAD `c331fed0e422e01b5004a48d6b4f6400fa212689`; it does not prove the current privacy changes.  
+**Source HEAD before this final state-save commit:** `bf374d10faced96467605f8571f28db1fc85022f`.  
+**Privacy hardening:** source-changed; focused CI on the current HEAD is pending.  
 **Android:** Scenario 1 FAIL on the tested validation Release; diagnostic reproduction pending.  
-**First next step:** run focused CI on the current privacy/runtime branch state and verify the changed privacy paths compile before touching the UA runtime fix.
+**First next step:** run and verify focused CI against the resulting state-save HEAD; do not build/install a new APK or modify the UA runtime fix until the privacy changes compile and their dependency boundary is known.

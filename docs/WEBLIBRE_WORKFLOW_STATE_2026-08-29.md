@@ -2,7 +2,7 @@
 
 **Last synchronized:** 2026-08-31  
 **Branch:** `weblibre-ua-mainline-v3`  
-**Current HEAD at this state-save:** `f01b1ef37698a428674b62dab049e48d80ecb1f4`
+**Source HEAD before this final state-save commit:** `bf374d10faced96467605f8571f28db1fc85022f`
 
 ## Source of truth
 
@@ -43,14 +43,14 @@ Contracts, registry, executor, focused tests and CI coverage are complete. Do no
 Canonical audit: `docs/WEBLIBRE_PRIVACY_DATA_FLOW_AUDIT_2026-08-31.md`.  
 Canonical identity rules: `docs/WEBLIBRE_PERSONAL_PRODUCT_IDENTITY_2026-08-31.md`.
 
-Completed source changes in the current branch:
-1. About identity cleanup already committed earlier: `WebLibre Personal Edition • Maintained by Braziao`; upstream promotional links removed.
+Completed source changes:
+1. About identity cleanup: `WebLibre Personal Edition • Maintained by Braziao`; former upstream promotional links removed.
 2. Account callback service is no longer initialized by app startup.
 3. Account and Firefox Sync categories are no longer exposed in the personal Settings UI.
 4. Account sign-in no longer sends Android `device_name` in the handoff query.
 5. Account sync repository now hard-enforces `source_device_id: null` at the persistence boundary.
 
-Important legal boundary: inherited AGPL/copyright notices remain where required. Product identity changes do not authorize false claims of upstream authorship or rewriting historical Git authorship.
+Legal boundary: inherited AGPL/copyright notices remain where required. Product identity changes do not authorize false claims of upstream authorship or rewriting historical Git authorship.
 
 Still pending:
 - automatic `background_fetch` release startup removal/disablement;
@@ -87,11 +87,11 @@ Privacy hardening source pass: user-facing account/sync exposure was removed, ac
 
 ## Current unfinished step
 
-Run focused CI against the current HEAD `f01b1ef37698a428674b62dab049e48d80ecb1f4` to verify these privacy changes compile and to detect any hidden dependency on the removed account/sync UI/startup paths.
+Focused CI has not yet been run against the current privacy-hardening HEAD. The older diagnostic run is not evidence for this HEAD.
 
 ## FIRST NEXT STEP — exactly one
 
-**Run and verify focused CI for current HEAD `f01b1ef37698a428674b62dab049e48d80ecb1f4`; do not build/install a new APK or modify the UA runtime fix until this CI result is known.**
+**Run and verify focused CI against the resulting state-save HEAD; do not build/install a new APK or modify the UA runtime fix until the privacy changes compile and their dependency boundary is known.**
 
 ## Mandatory loop
 
