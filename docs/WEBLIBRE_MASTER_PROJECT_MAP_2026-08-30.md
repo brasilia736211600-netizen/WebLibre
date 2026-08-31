@@ -7,6 +7,7 @@
 **Canonical AI specification:** `docs/WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md`
 **Canonical resume protocol:** `docs/WEBLIBRE_RESUME_COMMAND_2026-08-30.md`
 **Canonical Android runtime checklist:** `docs/WEBLIBRE_ANDROID_RUNTIME_VALIDATION_CHECKLIST_2026-08-30.md`
+**UA/fingerprint product requirements:** `docs/WEBLIBRE_UA_FINGERPRINT_PRODUCT_REQUIREMENTS_2026-08-31.md`
 
 ## CURRENT POSITION
 
@@ -84,6 +85,17 @@ Scenario 1 result: **FAIL**.
 
 Scenarios 2–6 are intentionally blocked until the first causal Scenario 1 failure is fixed and revalidated.
 
+## USER OBSERVATIONS / FUTURE PRODUCT DIRECTION
+
+The first real-device pass also produced product observations that are now documented separately rather than implemented prematurely:
+- The browser feels relatively heavy; this must be measured before optimization or feature removal.
+- Previously visited pages should not be unnecessarily reloaded as new visits; cache/session/restore behavior must be measured before changing it.
+- The current UA UX is too primitive and should evolve from raw-string editing toward coherent profile presets and expert customization.
+- Desired profile dimensions include OS/platform, browser family and version, device/display characteristics, locale/timezone/geolocation, proxy/network, and supported fingerprint surfaces such as fonts, media devices, WebRTC, Canvas, WebGL, AudioContext, ClientRects, and navigator/hardware signals.
+- The product should enforce coherent combinations rather than arbitrary impossible UA/fingerprint tuples.
+- The external benchmark research covers GoLogin, Multilogin, AdsPower, and Kameleo and is recorded in `WEBLIBRE_UA_FINGERPRINT_PRODUCT_REQUIREMENTS_2026-08-31.md`.
+- These requirements do **not** authorize implementing every commercial anti-detect feature. Only capabilities supported coherently by WebLibre's existing engine should be added, and only after the current runtime blocker is fixed.
+
 ## AI-1
 
 First slice:
@@ -135,6 +147,7 @@ Every new agent must read:
 3. `WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md` when architecture/product scope is relevant
 4. `WEBLIBRE_RESUME_COMMAND_2026-08-30.md`
 5. `WEBLIBRE_ANDROID_RUNTIME_VALIDATION_CHECKLIST_2026-08-30.md` before device validation
+6. `WEBLIBRE_UA_FINGERPRINT_PRODUCT_REQUIREMENTS_2026-08-31.md` when UA/profile/performance product scope is being discussed
 
 Then verify actual branch/HEAD/PR/CI/build/release/assets before editing.
 
@@ -153,6 +166,8 @@ Never promote a lower evidence level to a higher one. `[x]` is documentation onl
 Do not redo completed UA/container/proxy/AI-1 work unless focused evidence proves insufficiency.
 Do not add global GeckoRuntime UA, `RecoverableTab.userAgent`, second DB, new recovery Pigeon fields, event-arrival freshness heuristics, Android Components fork, LLM/provider integration, memory, remote gateway, or unrelated refactors without evidence.
 
+Do not remove browser features merely because the APK feels large. First measure APK composition, native/runtime contributions, startup, memory, and feature usage.
+
 ## MANDATORY LOOP
 `READ -> VERIFY -> RECONCILE -> PLAN -> EXECUTE -> TEST -> DIFF -> COMMIT -> SAVE STATE`
 
@@ -162,9 +177,11 @@ Update Master Map and Workflow State at every material milestone with exact HEAD
 
 **Date:** 2026-08-31
 **Branch:** `weblibre-ua-mainline-v3`
-**Current HEAD:** `5b3d8e2ff0904851739ff26f192e9b05e7b1dc4f`.
+**Current HEAD:** `b46839006e412d67574f1af4d8d00aa6efdb4bb4`.
 **Runtime-tested APK source checkpoint:** `3aa06cf6ee090e42c9b7bff6abbf17f737b1fef5`.
 **Manual stable Release:** Run `33341230075`, validation tag `validation-stable-5-3aa06cf6...`.
 **Android runtime:** Scenario 1 FAIL — container/tab restore succeeded, per-container UA did not survive restored navigation.
+**New product-requirements checkpoint:** `dec34fa60cbf8b2c17d91339cd646d8a32260a98`.
 **First next step:** inspect the existing restore/session UA call chain at the actual branch HEAD and identify the first causal point where the persisted container UA is lost; implement only a minimum correction if source evidence proves it necessary, then focused-test and revalidate Scenario 1 before any other runtime scenario.
+**Secondary product work after runtime blocker:** measure performance/reload behavior, then design the smallest coherent UA/profile editor from the requirements document.
 **Resume protocol:** `docs/WEBLIBRE_RESUME_COMMAND_2026-08-30.md`.
