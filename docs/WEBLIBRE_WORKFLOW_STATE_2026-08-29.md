@@ -2,7 +2,7 @@
 
 **Last synchronized:** 2026-08-31  
 **Branch:** `weblibre-ua-mainline-v3`  
-**Source HEAD before this final state-save commit:** `11e8799db16b5f505a0eb9a158d81f145e3fccef`
+**Current HEAD:** `2f670a05b41df0a4741711a02a8760e3f14b19fa`
 
 ## Source of truth
 
@@ -14,11 +14,11 @@ GitHub code, refs, commits, PRs, CI/build/release runs, artifacts and release as
 - Quality #70 `33335945926`: SUCCESS against `f05f643eda7ffb6503a4d6429b24e0d77ce7ad0d`; AI-1 browser-tool boundary is CI-VERIFIED.
 - Manual Flutter CICD `33337359647`: SUCCESS on exact branch/head `26e96cfc5a13b952ee0f4af31689fb927dbdfd9d`.
 - Manual Flutter CICD `33341230075`: SUCCESS on exact branch/head `3aa06cf6ee090e42c9b7bff6abbf17f737b1fef5`; validation Release direct APK assets created.
-- Validation Release `validation-stable-5-3aa06cf6ee090e42c9b7bff6abbf17f737b1fef5` is RELEASE-ASSET-VERIFIED for the ARM64 and ARMv7 split APKs.
+- Validation Release `validation-stable-5-3aa06cf6ee090e42c9b7bff6abbf17f737b1fef5` is RELEASE-ASSET-VERIFIED for ARM64 and ARMv7 split APKs.
 - The ARM64 runtime test from that Release produced the first causal Scenario 1 failure.
-- Diagnostic Flutter CICD `33346310470` was created against older diagnostic HEAD `c331fed0e422e01b5004a48d6b4f6400fa212689`; it must not be used as proof for the current privacy commits.
+- Diagnostic Flutter CICD `33346310470` used older diagnostic HEAD `c331fed0e422e01b5004a48d6b4f6400fa212689`; it is not proof for later privacy changes.
 - Manual Flutter CICD `33349437332`: SUCCESS on exact privacy/About-fix HEAD `afaf255d92fcd879905ab98bcf1dc061be6caa80`.
-- Privacy cleanup subsequently advanced to the current state-save chain; no CI result exists yet for the latest account callback/Supabase changes.
+- Manual Flutter CICD `33350986535`: FAILED on exact privacy HEAD `492e385d31f50488dd89531bd6fcf25b2237e5f9`. Failure was Dart compilation because legacy account files still referenced `package:supabase/supabase.dart` and sharing-intent still expected the legacy account callback type.
 
 ## Browser / Android runtime
 
@@ -29,7 +29,7 @@ Scenario 1 remains **FAIL**:
 - After relaunch: restored navigation observed Gecko/Firefox 152 UA.
 - Post-relaunch screen directly showed the restored tab; no `Resume last tab` control was present in that state.
 
-The existing source-level restore binding uses `HistoryDelegateBindingMiddleware` + `ContainerUserAgentStore`. It is not yet runtime-proven effective. Dedicated diagnostic instrumentation exists for link entry, tab/context/profile identity, DB lookup result, UA assignment timing and effective setting, but the diagnostic APK was built from an older HEAD and must not be treated as proof of later privacy changes.
+The existing source-level restore binding uses `HistoryDelegateBindingMiddleware` + `ContainerUserAgentStore`. It is not runtime-proven effective. Dedicated diagnostic instrumentation exists for link entry, tab/context/profile identity, DB lookup result, UA assignment timing and effective setting, but the diagnostic APK came from an older HEAD.
 
 Do not run Scenarios 2–6 until Scenario 1 passes.
 
@@ -45,19 +45,26 @@ Contracts, registry, executor, focused tests and CI coverage are complete. Do no
 Canonical audit: `docs/WEBLIBRE_PRIVACY_DATA_FLOW_AUDIT_2026-08-31.md`.  
 Canonical identity rules: `docs/WEBLIBRE_PERSONAL_PRODUCT_IDENTITY_2026-08-31.md`.
 
-Completed source changes:
+Completed source changes in the current chain:
 1. About identity cleanup: `WebLibre Personal Edition • Maintained by Braziao`; former upstream promotional links removed.
-2. Account callback/handoff startup path is now a no-op compatibility boundary; it performs no authentication, handoff redemption, synchronization, or network operation.
-3. Direct `supabase` application dependency has been removed from `apps/weblibre/pubspec.yaml`.
-4. Account and Firefox Sync categories are no longer exposed in the personal Settings UI.
+2. Account callback/handoff startup path is a no-op compatibility boundary; it performs no authentication, handoff redemption, synchronization, or network operation.
+3. Direct `supabase` application dependency was removed from `apps/weblibre/pubspec.yaml`.
+4. Account/Firefox Sync categories are no longer exposed in the personal Settings UI.
 5. Account sign-in no longer sends Android `device_name` in the handoff query.
-6. Account sync repository now hard-enforces `source_device_id: null` at the persistence boundary.
+6. Account sync no longer has a remote client: its repository is now a local disabled boundary and never transmits data.
+7. Legacy account auth state no longer contains Supabase types; the auth repository is a local disabled boundary that never authenticates or persists remote sessions.
+8. Legacy account callback parsing remains type-safe for existing share-intent code but performs no redemption or network operation.
 
 Legal boundary: inherited AGPL/copyright notices remain where required. Product identity changes do not authorize false claims of upstream authorship or rewriting historical Git authorship.
 
-Still pending:
-- focused CI on the current account/privacy dependency boundary;
-- automatic `background_fetch` release startup removal/disablement;
+## Current verification status
+
+The current privacy/account boundary is **SOURCE-VERIFIED only**. No CI run exists yet for HEAD `2f670a05...`.
+
+## Still pending
+
+- focused CI on current HEAD;
+- remove/disable automatic `background_fetch` release startup while retaining manual feed refresh;
 - prove no hidden account/sync initializer remains;
 - dead account/sync source-tree cleanup after reachability is proven;
 - full outbound endpoint/background-service audit;
@@ -75,28 +82,17 @@ Still pending:
 
 Direct validation Release assets are verified for the exact `3aa06cf...` build. Future production `v*` release remains blocked on Android runtime + release validation.
 
-## Evidence levels
-
-- `SOURCE-VERIFIED`
-- `CI-VERIFIED`
-- `ANDROID-RUNTIME-VERIFIED`
-- `ARTIFACT-VERIFIED`
-- `RELEASE-ASSET-VERIFIED`
-- `DOCUMENTED`
-
-Never promote a lower evidence level. A successful build does not prove runtime behavior. A ZIP is not a direct Release asset.
-
 ## Last completed step
 
-Privacy hardening pass: inherited account callback/handoff execution was disabled and the direct Supabase application dependency was removed; the durable privacy audit, Master Map, and Workflow State were updated. This is **SOURCE-VERIFIED only** until CI runs against the resulting HEAD.
+The incomplete Supabase-removal attempt was reconciled after CI exposed all remaining compile dependencies. The legacy account auth/sync boundaries were converted to inert local compatibility implementations, and the callback parser was retained only for type safety. This checkpoint is **SOURCE-VERIFIED**.
 
 ## Current unfinished step
 
-Focused CI has not yet been run against the current privacy-hardening state-save HEAD.
+Focused Flutter CI has not yet been run against HEAD `2f670a05...`.
 
 ## FIRST NEXT STEP — exactly one
 
-**Run and verify focused Flutter CI on the current branch `weblibre-ua-mainline-v3` at/after the state-save HEAD. Do not install an APK or resume UA runtime work until this dependency-boundary build is green.**
+**Run and verify focused Flutter CI on `weblibre-ua-mainline-v3` at HEAD `2f670a05b41df0a4741711a02a8760e3f14b19fa`. Do not install an APK or resume UA runtime work until this dependency-boundary build is green.**
 
 ## Mandatory loop
 
