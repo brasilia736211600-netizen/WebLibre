@@ -7,7 +7,7 @@
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
+ * License, or any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -26,11 +26,6 @@ part 'account_sync_repository.g.dart';
 enum SyncDocumentKind {
   weblibreSettings('weblibre_settings', 'Settings'),
   geckoUserJs('gecko_user_js', 'Gecko Prefs'),
-
-  /// Small encrypted canary written on first-device sync setup so a second
-  /// device can verify the candidate sync key before persisting it. Not
-  /// surfaced in any settings UI — it has no corresponding
-  /// [SyncDocumentService] wired in [AccountSettingsScreen].
   syncValidationProbe('sync_validation_probe', 'Sync Validation Probe');
 
   final String value;
@@ -79,12 +74,8 @@ class SyncDocumentResult {
 }
 
 /// All write methods on this repository require the user to be signed in.
-/// Callers MUST gate on `ref.watch(accountSyncRepositoryProvider) != null`
-/// (or the equivalent `AccountAuthState.isSignedIn` check) before invoking
-/// `storeDocument`, `listDocuments`, `fetchDocument`, `deleteDocument`, or
-/// `updateLabel`. Calling them on a signed-out instance throws
-/// [StateError]; the repository deliberately doesn't fail silently because
-/// silent no-ops would hide UI bugs (a "Store" button that does nothing).
+/// Device identifiers are deliberately discarded at the repository boundary
+/// even if a legacy caller supplies one.
 @Riverpod(keepAlive: true)
 class AccountSyncRepository extends _$AccountSyncRepository {
   @override
@@ -106,8 +97,6 @@ class AccountSyncRepository extends _$AccountSyncRepository {
     return client;
   }
 
-  /// Stores a new document. Always inserts a new row.
-  /// Returns the generated document UUID.
   Future<String> storeDocument({
     required SyncDocumentKind kind,
     required int schemaVersion,
@@ -124,7 +113,7 @@ class AccountSyncRepository extends _$AccountSyncRepository {
           'label': label,
           'schema_version': schemaVersion,
           'content_blob': contentBlob,
-          'source_device_id': sourceDeviceId,
+          'source_device_id': null,
           'source_app_version': sourceAppVersion,
         })
         .select('id')
@@ -133,8 +122,6 @@ class AccountSyncRepository extends _$AccountSyncRepository {
     return row['id'] as String;
   }
 
-  /// Lists all documents of a given kind, ordered by most recent first.
-  /// Returns metadata only (no content).
   Future<List<SyncDocumentMetadata>> listDocuments({
     required SyncDocumentKind kind,
   }) async {
@@ -150,7 +137,6 @@ class AccountSyncRepository extends _$AccountSyncRepository {
     return rows.map(SyncDocumentMetadata.fromRow).toList();
   }
 
-  /// Fetches a single document by ID (with encrypted content blob).
   Future<SyncDocumentResult?> fetchDocument({required String id}) async {
     final row = await _client
         .from('account_sync_documents')
@@ -166,12 +152,10 @@ class AccountSyncRepository extends _$AccountSyncRepository {
     );
   }
 
-  /// Deletes a document by ID.
   Future<void> deleteDocument({required String id}) async {
     await _client.from('account_sync_documents').delete().eq('id', id);
   }
 
-  /// Updates the label of a document.
   Future<void> updateLabel({required String id, required String? label}) async {
     await _client
         .from('account_sync_documents')
