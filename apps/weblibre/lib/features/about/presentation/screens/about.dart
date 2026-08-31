@@ -65,8 +65,8 @@ class AboutDialogScreen extends HookConsumerWidget {
           title: Text('Personal build'),
           subtitle: Text(
             'This build is maintained as a personal project. '
-            'Network access is intended to occur only for user-requested '
-            'web content or explicitly enabled online features.',
+            'Privacy and data-flow controls are tracked and hardened in the '
+            'project source.',
           ),
         ),
         ListTile(
