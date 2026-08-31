@@ -2,7 +2,7 @@
 
 **Last synchronized:** 2026-08-31
 **Branch:** `weblibre-ua-mainline-v3`
-**Current HEAD at this state-save:** `44b5524e72dec42d5db58e6d0c90260ff7884dce`
+**Current HEAD at this state-save:** `dec34fa60cbf8b2c17d91339cd646d8a32260a98`
 
 ## Source of truth
 GitHub code, refs, commits, PRs, CI/build/release runs, artifacts, and release assets are authoritative. Chat memory and `[x]` markers are not evidence.
@@ -26,6 +26,15 @@ Scenario 1 evidence:
 
 The failure is runtime evidence against the current restore/session UA path. Do not proceed to Scenarios 2–6 until the first causal failure is inspected and a focused fix is validated.
 
+## User observations captured for later product work
+- The browser feels relatively heavy. This is currently an observed UX/performance issue, not yet a measured regression or a reason to remove features.
+- Previously visited pages should not be unnecessarily reloaded as if they were first visits. The intended behavior is to preserve normal cache/session semantics and avoid avoidable restore-time reloads. Root cause is not yet established.
+- Current UA UX is too primitive: raw UA input does not provide coherent OS/browser/version presets or a professional profile-oriented editor.
+- Desired future direction is a customizable, coherent browser identity/profile system inspired by current profile/anti-detect browsers, while preserving technical consistency with the underlying Gecko/Android engine.
+- A detailed research/requirements document was added at `docs/WEBLIBRE_UA_FINGERPRINT_PRODUCT_REQUIREMENTS_2026-08-31.md`.
+- Benchmarked current GoLogin, Multilogin, AdsPower, and Kameleo documentation. The common pattern is profile-level coherent identity management: OS/browser/version, display metrics, locale/timezone, proxy/network, fonts/media devices, WebRTC, Canvas/WebGL/AudioContext and related navigator/hardware signals, with consistency constraints rather than arbitrary UA-string editing.
+- These are product requirements/research observations only. Do not implement the full feature set yet and do not infer that all fingerprint surfaces are technically available in WebLibre.
+
 ## AI-1 state
 Six-tool model-independent Browser Tool boundary:
 `get_tabs`, `get_current_tab`, `create_tab`, `switch_tab`, `close_tab`, `open_url`.
@@ -45,24 +54,24 @@ For every build/release milestone, do not mark the step complete until this chai
 A successful older run cannot prove a later workflow change. An artifact ZIP is not equivalent to individual GitHub Release assets.
 
 ## Last completed step
-The direct GitHub validation Release asset path is RELEASE-ASSET-VERIFIED. The first real Android runtime pass was started and produced a reproducible Scenario 1 failure: Container A restored, but its persisted UA was not applied after process death.
+The direct GitHub validation Release asset path is RELEASE-ASSET-VERIFIED. The first real Android runtime pass was started and produced a reproducible Scenario 1 failure: Container A restored, but its persisted UA was not applied after process death. User observations and benchmark requirements for future professional UA/profile controls and performance/navigation behavior are now documented without changing product architecture.
 
 ## Current unfinished step
-Root-cause source inspection and minimum fix for the Scenario 1 restored-session UA failure. No new architecture should be added unless source/runtime evidence proves the existing restore/session path cannot be corrected minimally.
+Root-cause source inspection and minimum fix for the Scenario 1 restored-session UA failure. The newly documented performance/page-reload observations and professional UA/profile requirements are secondary product work and must not displace the runtime blocker until its first causal failure is resolved.
 
 ## Exact next execution
-1. Inspect the existing restore/session UA call chain that is supposed to apply the persisted container UA before restored navigation, using the actual code at the current branch HEAD.
-2. Identify the first point where `contextId`/container identity is available versus where the `EngineSession` or WebView UA is initialized.
-3. Reproduce the failure with the smallest focused test/source reasoning possible; do not run Scenarios 2–6 yet.
-4. Implement only the minimum correction if the source path is demonstrably insufficient.
-5. Run focused Dart/native/Android-build CI appropriate to the changed path.
-6. Produce one new integrated ARM64 validation APK only after the focused checks are green, then repeat Scenario 1.
-7. If Scenario 1 passes, resume the consolidated runtime checklist from Scenario 2.
+1. Inspect the existing restore/session UA call chain at the actual branch HEAD and identify the first causal point where the persisted container UA is lost.
+2. Implement only the minimum correction if source/runtime evidence proves it necessary.
+3. Run focused tests/build CI for the changed path.
+4. Produce one new integrated ARM64 validation APK only after focused checks are green, then repeat Scenario 1.
+5. If Scenario 1 passes, resume the consolidated runtime checklist from Scenario 2.
+6. After the browser foundation runtime milestone is closed, measure cold start, memory, unnecessary reloads, cache/session behavior, and APK size before removing any features.
+7. Then design the smallest coherent UA/profile editor from `WEBLIBRE_UA_FINGERPRINT_PRODUCT_REQUIREMENTS_2026-08-31.md`, implementing only engine-supported controls.
 
 ## Resume / anti-amnesia
 Canonical resume: `docs/WEBLIBRE_RESUME_COMMAND_2026-08-30.md`.
 Evidence levels: `SOURCE-VERIFIED`, `CI-VERIFIED`, `ANDROID-RUNTIME-VERIFIED`, `ARTIFACT-VERIFIED`, `RELEASE-ASSET-VERIFIED`, `DOCUMENTED`.
-At every material milestone update both the master map and workflow state with exact HEAD, CI/build/release identifiers, test evidence, blockers, and one first next step.
+At every material milestone update both Master Map and Workflow State with exact HEAD, CI/build/release identifiers, test evidence, blockers, and one first next step.
 
 ## Mandatory loop
 `READ -> VERIFY -> RECONCILE -> PLAN -> EXECUTE -> TEST -> DIFF -> COMMIT -> SAVE STATE`
