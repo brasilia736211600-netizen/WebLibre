@@ -8,6 +8,7 @@
 **Canonical resume protocol:** `docs/WEBLIBRE_RESUME_COMMAND_2026-08-30.md`
 **Canonical Android runtime checklist:** `docs/WEBLIBRE_ANDROID_RUNTIME_VALIDATION_CHECKLIST_2026-08-30.md`
 **UA/fingerprint product requirements:** `docs/WEBLIBRE_UA_FINGERPRINT_PRODUCT_REQUIREMENTS_2026-08-31.md`
+**UA restore forensic record:** `docs/WEBLIBRE_RUNTIME_UA_RESTORE_FORENSICS_2026-08-31.md`
 
 ## CURRENT POSITION
 
@@ -21,7 +22,7 @@ PER-CONTAINER USER-AGENT
         +--> normal / multi / duplicate         [DONE]
         +--> native pre-navigation UA           [DONE]
         +--> container UA UI                    [DONE]
-        +--> restore-source integration         [SOURCE-VERIFIED, RUNTIME-CONTRADICTED]
+        +--> cold-start restore UA              [RUNTIME FAIL]
         |
         v
 QUALITY GATE
@@ -64,15 +65,24 @@ Implemented and source-verified:
 - Normal, multi-add, and duplicate-tab UA propagation.
 - Existing per-container UA UI.
 - Native UA application to the prepared `EngineSession` before first navigation.
-- `ContainerUserAgentStore.kt` resolves persisted UA from the existing profile-scoped `tab.db` by `contextualIdentity`.
-- `HistoryDelegateBindingMiddleware.kt` applies UA at restore/session creation using existing state sources.
-- Restore retains `contextId`; no second DB or `RecoverableTab.userAgent` was added.
 
 Focused evidence:
 - Dart container metadata suite: 11/11 green.
 - Quality #39 `33329515686`: SUCCESS on the UA/container product checkpoint.
 
-**Runtime contradiction discovered:** on the integrated ARM64 validation build, Container A restored after process death, but its network-observed UA changed from the configured Chrome/120 UA to the default Gecko/152 Firefox UA. Therefore the source-verified restore claim is not sufficient for runtime proof and must be debugged before proceeding.
+### Runtime contradiction and corrected source finding
+
+The integrated ARM64 validation build proved that Container A can restore while its persisted UA is not applied to the restored navigation.
+
+Actual current-branch inspection found the cold-start path in `GlobalComponents.restoreBrowserState(...)`:
+
+`sessionStorage.restore -> RecoverableBrowserState -> tabsUseCases.restore -> RestoreCompleteAction`
+
+That path is distinct from the normal `GeckoTabsApiImpl.addTab(...)` path where `session.settings.userAgentString = userAgent` is explicitly applied before navigation.
+
+The current Pigeon `RecoverableTab` representation contains `engineSessionStateJson` plus `TabState`; `TabState` contains `contextId` but no per-container `userAgent`. `GeckoTabsApiImpl.mapTab(...)` therefore cannot supply the persisted custom UA to the automatic session restore path.
+
+The previously documented claim that dedicated native `ContainerUserAgentStore.kt` and `HistoryDelegateBindingMiddleware.kt` files were present and source-verified is **not supported by the actual current branch**: direct path inspection and GitHub code search found no such implementation. This documentation drift is now explicitly corrected. The forensic details are in `WEBLIBRE_RUNTIME_UA_RESTORE_FORENSICS_2026-08-31.md`.
 
 ## ANDROID RUNTIME PROOF — BLOCKED AT SCENARIO 1
 
@@ -148,6 +158,7 @@ Every new agent must read:
 4. `WEBLIBRE_RESUME_COMMAND_2026-08-30.md`
 5. `WEBLIBRE_ANDROID_RUNTIME_VALIDATION_CHECKLIST_2026-08-30.md` before device validation
 6. `WEBLIBRE_UA_FINGERPRINT_PRODUCT_REQUIREMENTS_2026-08-31.md` when UA/profile/performance product scope is being discussed
+7. `WEBLIBRE_RUNTIME_UA_RESTORE_FORENSICS_2026-08-31.md` when diagnosing the current Scenario 1 blocker
 
 Then verify actual branch/HEAD/PR/CI/build/release/assets before editing.
 
@@ -177,11 +188,11 @@ Update Master Map and Workflow State at every material milestone with exact HEAD
 
 **Date:** 2026-08-31
 **Branch:** `weblibre-ua-mainline-v3`
-**Current HEAD:** `b46839006e412d67574f1af4d8d00aa6efdb4bb4`.
+**Current HEAD:** `63227a52409157c684738b154e68f37671a023b7`.
 **Runtime-tested APK source checkpoint:** `3aa06cf6ee090e42c9b7bff6abbf17f737b1fef5`.
 **Manual stable Release:** Run `33341230075`, validation tag `validation-stable-5-3aa06cf6...`.
 **Android runtime:** Scenario 1 FAIL — container/tab restore succeeded, per-container UA did not survive restored navigation.
-**New product-requirements checkpoint:** `dec34fa60cbf8b2c17d91339cd646d8a32260a98`.
-**First next step:** inspect the existing restore/session UA call chain at the actual branch HEAD and identify the first causal point where the persisted container UA is lost; implement only a minimum correction if source evidence proves it necessary, then focused-test and revalidate Scenario 1 before any other runtime scenario.
+**Forensic checkpoint:** `63227a52409157c684738b154e68f37671a023b7`.
+**First next step:** inspect the smallest existing startup/session-restore hook that can make the persisted `ContainerMetadata.userAgent` available to the automatic `sessionStorage.restore -> tabsUseCases.restore` path before restored navigation, without adding a second persistence system; then focused-test and revalidate Scenario 1.
 **Secondary product work after runtime blocker:** measure performance/reload behavior, then design the smallest coherent UA/profile editor from the requirements document.
 **Resume protocol:** `docs/WEBLIBRE_RESUME_COMMAND_2026-08-30.md`.
