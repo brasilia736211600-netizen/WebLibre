@@ -7,7 +7,7 @@
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
+ * License, or any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -34,17 +34,11 @@ import 'package:weblibre/features/account/domain/services/handoff_redeem_client.
 import 'package:weblibre/features/account/domain/utils/pkce.dart';
 import 'package:weblibre/features/proxy/domain/services/routed_http_client.dart';
 
-// Re-export so call sites that already imported AccountAuthFlowException from
-// this repository keep compiling after the redeem client split.
 export 'package:weblibre/features/account/domain/services/handoff_redeem_client.dart'
     show AccountAuthFlowException;
 
 part 'account_auth.g.dart';
 
-/// Convert any thrown error into a message safe to show in the UI.
-/// Untrusted exception strings (e.g. `e.toString()` for arbitrary HTTP /
-/// platform errors) can include response bodies, headers, or auth tokens —
-/// log them in full but never put them in user-visible state.
 String _sanitizeAuthError(Object error, String fallback) {
   if (error is AccountAuthFlowException) {
     return error.userMessage;
@@ -63,16 +57,6 @@ class AccountAuthRepository extends _$AccountAuthRepository {
   StreamSubscription<AuthState>? _authSubscription;
   Timer? _signingInTimeout;
   Timer? _restoreRetryTimer;
-
-  /// Handoff code currently being redeemed, or `null` when idle. The OS can
-  /// deliver the `weblibre://account/callback` deep link more than once in
-  /// quick succession (observed ~12ms apart on some devices, see issue #460).
-  /// Without this guard each delivery starts a concurrent redeem of the same
-  /// single-use code; the server burns the code for the first request and
-  /// returns "already redeemed" for the rest, whose error then clobbers the
-  /// winner's signed-in state. Tracking the in-flight code lets us drop the
-  /// duplicate while still allowing a genuine retry once the first attempt
-  /// has settled (cleared in the `finally` below).
   String? _redeemingCode;
 
   AccountSecureStore get _store => ref.read(accountSecureStoreProvider);
@@ -126,14 +110,11 @@ class AccountAuthRepository extends _$AccountAuthRepository {
         return AccountAuthState();
       }
     } on AuthRetryableFetchException catch (e) {
-      // Transient network error — preserve session and retry shortly.
       return _transientRestoreFailure(data, e);
     } on AuthException {
-      // Definitive auth failure (expired/revoked token) — clear credentials.
       await _store.clear();
       return AccountAuthState();
     } catch (e) {
-      // Non-auth error (e.g. SocketException) — also transient, preserve.
       return _transientRestoreFailure(data, e);
     }
   }
@@ -165,25 +146,10 @@ class AccountAuthRepository extends _$AccountAuthRepository {
     });
   }
 
-  // -- Auth state listener ---------------------------------------------------
-
   SupabaseClient _createClient() {
     return SupabaseClient(
       SupabaseConfig.supabaseUrl,
       SupabaseConfig.supabaseAnonKey,
-      // Without this the client builds its own `http.Client`, and every call it
-      // makes — session restore and the token refreshes its own timer schedules,
-      // sync documents, subscription and credit lookups — opens a direct socket
-      // to the account backend past whatever the user's routing says. It is
-      // also the traffic that most identifies them, since it carries their
-      // account's tokens.
-      //
-      // The general container's route rather than the selected tab's: none of
-      // these requests describe what is being browsed, and the account is the
-      // same account whichever tab happens to be in front.
-      //
-      // Not closed by `SupabaseClient.dispose()` — it only closes the transport
-      // it created itself — which is what this shared, app-wide client needs.
       httpClient: ref.read(routedHttpClientProvider),
     );
   }
@@ -192,7 +158,6 @@ class AccountAuthRepository extends _$AccountAuthRepository {
     unawaited(_authSubscription?.cancel());
     _authSubscription = client.auth.onAuthStateChange.listen((data) {
       if (data.event == AuthChangeEvent.signedOut ||
-          // ignore: deprecated_member_use
           data.event == AuthChangeEvent.userDeleted) {
         unawaited(_handleSignedOut());
       } else if (data.event == AuthChangeEvent.tokenRefreshed &&
@@ -204,17 +169,11 @@ class AccountAuthRepository extends _$AccountAuthRepository {
 
   Future<void> _handleSignedOut() async {
     await _store.clear();
-    // Stashed Privacy Pass tokens survive sign-out: they are anonymous
-    // blobs already redeemed against the user's credit balance, and the
-    // backend cannot link them back to the issuing account. Clearing them
-    // here would destroy prepaid value with no refund path.
     await _authSubscription?.cancel();
     final client = state.value?.client;
     await client?.dispose();
     state = AsyncData(AccountAuthState());
   }
-
-  // -- Sign-in flow ----------------------------------------------------------
 
   Future<void> startSignIn() async {
     _signingInTimeout?.cancel();
@@ -240,20 +199,11 @@ class AccountAuthRepository extends _$AccountAuthRepository {
             '${packageInfoData.version}+${packageInfoData.buildNumber}';
       }
 
-      final deviceInfoData = ref.read(androidDeviceInfoProvider).value;
-      if (deviceInfoData != null) {
-        queryParams['device_name'] = deviceInfoData.deviceName;
-      }
-
       final baseUri = Uri.parse(SupabaseConfig.accountWebUrl);
       final uri = baseUri.replace(queryParameters: queryParams);
 
       await GeckoBrowserService().openInCustomTab(url: uri, private: false);
 
-      // Set the timer last so any earlier error path doesn't have to think
-      // about cancelling a timer it never started. Guard the body so that a
-      // timer fired after handleHandoffCode has reset _signingInTimeout to
-      // null does nothing.
       late final Timer timer;
       timer = Timer(const Duration(minutes: 5), () {
         if (!identical(_signingInTimeout, timer)) return;
@@ -286,7 +236,6 @@ class AccountAuthRepository extends _$AccountAuthRepository {
     _signingInTimeout?.cancel();
     _signingInTimeout = null;
 
-    // Clear the pending code verifier so a late browser callback is rejected.
     final data = await _store.read();
     await _store.write(data.copyWith(pendingCodeVerifier: null));
 
@@ -336,9 +285,6 @@ class AccountAuthRepository extends _$AccountAuthRepository {
       await previousClient?.dispose();
       _listenToAuthState(newClient);
 
-      // Persist session and clear the verifier in one write. Reuse the
-      // existing persisted record via copyWith so any unrelated fields
-      // (notably syncKey) survive a re-sign-in without being clobbered.
       final persistedSession = PersistedSession.fromJson(result.session);
       final user = result.session['user'] as Map<String, dynamic>?;
       await _store.write(
@@ -372,8 +318,6 @@ class AccountAuthRepository extends _$AccountAuthRepository {
         ),
       );
     } finally {
-      // Only clear if we still own the flag — a later, distinct redeem could
-      // have taken over while this one was awaiting.
       if (_redeemingCode == code) {
         _redeemingCode = null;
       }
@@ -383,13 +327,9 @@ class AccountAuthRepository extends _$AccountAuthRepository {
   Future<void> signOut() async {
     try {
       await state.value?.client?.auth.signOut();
-    } catch (_) {
-      // Sign out may fail if the session is already invalid
-    }
+    } catch (_) {}
     await _handleSignedOut();
   }
-
-  // -- Sync key management ---------------------------------------------------
 
   Future<void> setSyncKey(String key) async {
     final data = await _store.read();
@@ -402,8 +342,6 @@ class AccountAuthRepository extends _$AccountAuthRepository {
     await _store.write(data.copyWith(syncKey: null));
     state = AsyncData(_currentOrEmpty.copyWith(syncKey: null));
   }
-
-  // -- Session persistence helpers ------------------------------------------
 
   Future<void> _persistSession(
     Session session,
