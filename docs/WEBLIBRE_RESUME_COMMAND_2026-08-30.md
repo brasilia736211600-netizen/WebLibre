@@ -12,6 +12,7 @@ Canonical documents:
 - `docs/WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md`
 - `docs/WEBLIBRE_ANDROID_RUNTIME_VALIDATION_CHECKLIST_2026-08-30.md`
 - `docs/WEBLIBRE_UA_FINGERPRINT_PRODUCT_REQUIREMENTS_2026-08-31.md` for UA/profile/performance product scope
+- `docs/WEBLIBRE_PRIVACY_DATA_FLOW_AUDIT_2026-08-31.md` for privacy/data-flow and personal-product hardening
 
 ## Mandatory recovery sequence
 
@@ -22,6 +23,7 @@ READ
   -> read PERSONAL_AI_AGENT_SPEC when architecture/product scope is involved
   -> read ANDROID_RUNTIME_VALIDATION_CHECKLIST before device validation
   -> read UA_FINGERPRINT_PRODUCT_REQUIREMENTS when UA/profile/performance scope is involved
+  -> read PRIVACY_DATA_FLOW_AUDIT when privacy, attribution, telemetry, permissions, account, or network-data scope is involved
 
 VERIFY
   -> read actual branch ref and HEAD
@@ -39,6 +41,8 @@ RECONCILE
   -> never treat a successful build as proof that a later workflow revision ran
   -> never treat an artifact ZIP as equivalent to separately published release assets
   -> preserve user-observed runtime failures as evidence until explicitly revalidated
+  -> preserve upstream license/copyright notices required by the applicable license
+  -> distinguish silent app-level telemetry from user-directed browser/network traffic
 
 PLAN
   -> identify exactly one first next step
@@ -102,6 +106,26 @@ The final production/stable release must continue using the existing `v*` releas
 
 A validation artifact ZIP and direct Release assets may coexist; they are not equivalent evidence. Verify each requested distribution surface explicitly.
 
+## Privacy / personal-product rule
+
+The personal build must not silently collect, identify, profile, or transmit user/device data to the former upstream developer or another third party merely because the app is installed or running.
+
+Required rule:
+
+`NO SILENT TELEMETRY -> NO SILENT DEVICE IDENTIFIERS -> NO SILENT BACKGROUND USER-DATA UPLOAD -> EXPLICIT OPT-IN FOR OPTIONAL ONLINE SERVICES`
+
+User-directed browsing/search/feed/proxy/Tor/sharing traffic is not automatically telemetry. The audit must trace each application-level outbound path and classify it as:
+- user-directed;
+- explicitly opted-in;
+- required for a clearly enabled feature; or
+- silent/unrequested.
+
+Silent/unrequested paths are removal or explicit-opt-in targets.
+
+Do not delete AGPL/copyright notices merely to change product identity. User-facing branding and promotional links may be changed where legally permissible, but the project must not falsely claim original authorship of upstream code.
+
+Before removing permissions or online dependencies, map each one to a concrete feature and test the removal. Do not equate dependency presence with telemetry.
+
 ## Runtime product-observation rule
 
 User-observed behavior from real-device testing is evidence and must be recorded even when it does not yet establish root cause. In particular:
@@ -126,6 +150,8 @@ User-observed behavior from real-device testing is evidence and must be recorded
 12. When an asset/release step is requested, verify the actual asset/release object rather than inferring it from logs.
 13. Keep product requirements separate from implementation commitments; do not implement every benchmark feature without checking engine capability and YAGNI.
 14. Before removing features for size/performance reasons, measure actual APK contribution and runtime cost.
+15. Before removing upstream identity/legal material, verify whether the applicable license requires its retention.
+16. For privacy hardening, do not delete user-directed browser functionality merely because it causes network traffic; remove silent app-level collection/transmission instead.
 
 ## What every handoff must contain
 
@@ -146,6 +172,7 @@ FILES CHANGED AT LAST MILESTONE: <paths>
 LAST COMMIT: <sha + message>
 STATE DOCS UPDATED: <yes/no + commit>
 PRODUCT OBSERVATIONS: <measured/unmeasured observations and source>
+PRIVACY AUDIT: <status + exact document>
 ```
 
 ## Copy/paste resume command
@@ -154,7 +181,7 @@ Use this as the first message when starting a new chat or handing the project to
 
 ```text
 @GitHub @Thinking
-استأنف مشروع WebLibre من GitHub، ولا تعتمد على ذاكرة الدردشة.
+استأنف مشروع WebLibre من GitHub، ولا تعتمد على ذاكرة الدردشة السابقة.
 
 اقرأ بالترتيب:
 1. docs/WEBLIBRE_MASTER_PROJECT_MAP_2026-08-30.md
@@ -163,6 +190,7 @@ Use this as the first message when starting a new chat or handing the project to
 4. docs/WEBLIBRE_RESUME_COMMAND_2026-08-30.md
 5. docs/WEBLIBRE_ANDROID_RUNTIME_VALIDATION_CHECKLIST_2026-08-30.md قبل اختبار Android
 6. docs/WEBLIBRE_UA_FINGERPRINT_PRODUCT_REQUIREMENTS_2026-08-31.md عند مناقشة أو تنفيذ UA/profile/performance
+7. docs/WEBLIBRE_PRIVACY_DATA_FLOW_AUDIT_2026-08-31.md عند مناقشة أو تنفيذ الخصوصية أو نقل البيانات أو الهوية أو الصلاحيات
 
 ثم نفّذ:
 READ -> VERIFY -> RECONCILE -> PLAN -> EXECUTE -> TEST -> DIFF -> COMMIT -> SAVE STATE
@@ -205,6 +233,14 @@ commit SHA -> workflow revision -> run head_sha -> job SUCCESS -> required step 
 - حدّث الوثيقة المتخصصة المتأثرة إن وجدت
 - سجّل HEAD وCI/build/release والأدلة والاختبارات والـnext step
 - نفّذ commit واضح
+
+في الخصوصية:
+- لا تحذف حقوق/تراخيص upstream المطلوبة قانونيًا لمجرد تغيير الهوية.
+- أزل هوية وروابط الترويج الخاصة بالمطور السابق من واجهة المنتج حيث يجوز قانونيًا، وأدخل هوية المشروع الحالي.
+- افحص كل outbound app-level data flow داخل المستودع.
+- احذف أو عطّل أي telemetry أو device identifier أو background user-data upload صامت.
+- ميّز ذلك عن طلبات التصفح/البحث/الـfeed/proxy/Tor التي بدأها المستخدم.
+- لا تحذف dependency أو permission لمجرد اسمها؛ اربطها بميزة فعلية ثم اختبر أثر إزالتها.
 
 إذا كان المطلوب توزيع APKs مباشرة، تحقق من وجود:
 - app-stable-arm64-v8a-release.apk
