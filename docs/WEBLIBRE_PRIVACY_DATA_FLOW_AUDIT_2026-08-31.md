@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-03 checkpoint update  
 **Branch:** `weblibre-ua-mainline-v3`  
-**Checkpoint:** disabled account startup cleanup (`cea2e984...`)
+**Checkpoint:** retired account callback/handoff path cleanup (`3c32dcc...` and `f3bdf280...`)
 
 ## Current verification boundary
 The privacy/account hardening changes remain SOURCE-VERIFIED and were previously build-verified by Flutter CICD `33420348298` / job `99580917046` on the exact checkpoint `eea4b40...`. That older build evidence does not prove the newer HEAD. The current Quality workflow has not yet produced a verified run for the newer HEAD.
@@ -14,33 +14,32 @@ User-directed navigation, search, feeds, proxy/Tor, sign-in, sharing and similar
 
 ## Confirmed source changes
 - User-facing About identity no longer promotes the former upstream developer; required upstream legal notices remain.
-- Account callback/handoff startup activation has now been removed from `main.dart`; the retained callback service itself remains a disabled no-op compatibility boundary pending full source reachability proof.
+- Account callback/handoff startup activation was removed from `main.dart`.
+- The legacy account callback parser/provider and generated bindings were removed after their application consumer was removed.
+- The legacy `weblibre://account` Android deep-link intent filter was removed because the corresponding callback path is disabled and no longer exists.
+- The legacy Supabase `handoff-redeem` HTTP client and generated provider were removed after the application auth boundary stopped importing/invoking them and the callback stream was removed.
+- The active Firefox Sync implementation is separate: `features/sync` uses native `GeckoSyncService` / Firefox Account services and remains a live feature; it is not treated as dead legacy code by this cleanup.
 - Direct application Supabase dependency is removed.
-- Account/Firefox Sync UI categories are removed from personal Settings.
-- Account sign-in no longer sends Android `device_name`.
-- Account sync forces `source_device_id: null`.
+- Account sign-in no longer sends Android `device_name` through the removed legacy path.
+- Account sync source-device identifier hardening remains documented in the existing privacy baseline.
 - Search credits and subscription remote RPC paths are disabled behind local boundaries.
 - Search token issuance is disabled.
-- Account Settings is reduced to local compatibility behavior.
-- Share callback parsing remains type-correct while callback redemption/upload remains disabled.
+- Account Settings remains a local compatibility route that states remote personal-build account features are unavailable.
 - Automatic `background_fetch` article refresh has been removed from release startup.
 - The dedicated `fetch_entrypoint.dart` headless background task has been removed.
 - The direct `background_fetch` application dependency has been removed from `apps/weblibre/pubspec.yaml`.
 - `apps/weblibre/pubspec.lock` is not present/tracked on the active branch, so there is no repository lockfile entry to edit; no generated lockfile was hand-edited.
 - Manual foreground feed refresh remains available through the existing feed controller path.
 
-## Dependency verification result
-The active branch `weblibre-ua-mainline-v3` has no direct `background_fetch` dependency in `apps/weblibre/pubspec.yaml`, and no tracked `apps/weblibre/pubspec.lock`. This closes the repository-level dependency/lockfile inspection task. A future `flutter pub get` or CI/build remains the correct generated-dependency validation, but there is no stale lockfile to patch manually.
-
 ## Account reachability checkpoint
-- `main.dart` no longer imports or activates `accountCallbackHandlerProvider`.
-- `app_initialization.dart` contains no account callback initialization.
-- `account_auth.dart` is a local compatibility boundary and does not import or invoke `handoff_redeem_client.dart`.
-- `handoff_redeem_client.dart` still contains a real `handoff-redeem` HTTP client and is therefore retained until every active-branch consumer is proven absent.
-- `prefs_sync_service.dart`, `settings_sync_service.dart`, and `sync_document_service.dart` currently implement serialization/application boundaries and are retained pending consumer reachability proof.
+- `main.dart` no longer imports or activates the retired account callback provider.
+- `sharing_intent.dart` no longer parses account callback intents or exposes `accountCallbackStreamProvider`.
+- `account_auth.dart` is a local compatibility boundary and does not import the removed handoff client.
+- `handoff_redeem_client.dart` and its generated provider are removed.
+- The account test subtree contains no handoff-redeem test consumer; the remaining legacy snapshot-sync widget/service cluster is still being audited separately.
 
 ## Still pending
-1. Prove the remaining account/sync source reachability graph and remove only files with hard active-branch no-consumer evidence.
+1. Finish reachability proof for the remaining legacy account snapshot-sync cluster (`prefs_sync_service`, `settings_sync_service`, `sync_document_service`, and their widget/repository callers) and delete only hard-proven dead sources.
 2. Complete outbound endpoint/background-service audit.
 3. Review Android permissions, `QUERY_ALL_PACKAGES`, and cleartext traffic against concrete feature use.
 4. Add a local privacy/data-flow screen.
