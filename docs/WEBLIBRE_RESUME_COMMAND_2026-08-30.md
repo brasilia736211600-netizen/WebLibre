@@ -1,51 +1,44 @@
 # WebLibre — Durable Resume Protocol
 
-**Purpose:** allow any new chat, agent, or model to resume the project without relying on conversation memory.
+**Purpose:** allow any new ChatGPT/Codex/agent session to resume WebLibre from repository evidence without relying on conversation memory or repeated user explanation.
 
 ## Source of truth
 
-The repository itself is authoritative. Never infer project state from chat history when GitHub can verify it.
+Use this precedence:
 
-Canonical documents:
-- `docs/WEBLIBRE_MASTER_PROJECT_MAP_2026-08-30.md`
-- `docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`
-- `docs/WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md`
-- `docs/WEBLIBRE_ANDROID_RUNTIME_VALIDATION_CHECKLIST_2026-08-30.md`
-- `docs/WEBLIBRE_UA_FINGERPRINT_PRODUCT_REQUIREMENTS_2026-08-31.md` for UA/profile/performance product scope
-- `docs/WEBLIBRE_PRIVACY_DATA_FLOW_AUDIT_2026-08-31.md` for privacy/data-flow and personal-product hardening
+`CURRENT GITHUB REPO / CI / RUNTIME EVIDENCE`
+`>` `COMMITTED PROJECT-STATE DOCS`
+`>` `CHAT MEMORY`
+
+Never treat memory as stronger than current repository evidence.
 
 ## Mandatory recovery sequence
 
 ```text
 READ
-  -> read MASTER_PROJECT_MAP
-  -> read WORKFLOW_STATE
-  -> read PERSONAL_AI_AGENT_SPEC when architecture/product scope is involved
-  -> read ANDROID_RUNTIME_VALIDATION_CHECKLIST before device validation
-  -> read UA_FINGERPRINT_PRODUCT_REQUIREMENTS when UA/profile/performance scope is involved
-  -> read PRIVACY_DATA_FLOW_AUDIT when privacy, attribution, telemetry, permissions, account, or network-data scope is involved
+  -> continuity checkpoint
+  -> master project map
+  -> workflow state
+  -> AI specification when product/architecture scope matters
+  -> Android runtime checklist before device validation
+  -> UA requirements/forensics for UA/profile/restore scope
+  -> privacy audit for privacy/network/identity/permissions scope
 
 VERIFY
-  -> read actual branch ref and HEAD
-  -> inspect recent commits
-  -> inspect current PR
-  -> inspect latest relevant CI/build/release runs and their head_sha
-  -> compare current HEAD with the last saved checkpoint
-  -> verify artifacts/assets are attached to the exact intended run/checkpoint
+  -> actual branch + HEAD
+  -> recent commits
+  -> PR + live head_sha
+  -> relevant CI/build/release runs + exact head_sha
+  -> artifacts/release assets when applicable
+  -> compare against saved checkpoint
 
 RECONCILE
-  -> treat GitHub code as truth
-  -> identify documentation drift
-  -> distinguish source-verified, CI-verified, Android-runtime-verified, and documented claims
-  -> never treat [x] alone as runtime proof
-  -> never treat a successful build as proof that a later workflow revision ran
-  -> never treat an artifact ZIP as equivalent to separately published release assets
-  -> preserve user-observed runtime failures as evidence until explicitly revalidated
-  -> preserve upstream license/copyright notices required by the applicable license
-  -> distinguish silent app-level telemetry from user-directed browser/network traffic
+  -> GitHub code/refs are authoritative
+  -> classify claims as SOURCE-VERIFIED / CI-VERIFIED / ANDROID-RUNTIME-VERIFIED / ARTIFACT-VERIFIED / RELEASE-ASSET-VERIFIED / DOCUMENTED
+  -> update stale state before making decisions
 
 PLAN
-  -> identify exactly one first next step
+  -> identify exactly one first bounded NEXT step
   -> preserve dependency order and YAGNI
 
 EXECUTE
@@ -54,207 +47,201 @@ DIFF
 COMMIT
 SAVE STATE
 
-Then repeat the cycle at every material milestone.
+Repeat at every material milestone.
 ```
+
+## Anti-amnesia / anti-drift rules
+
+1. Never trust a remembered HEAD; re-read the branch ref.
+2. Never trust an old PR description's HEAD; re-read the PR.
+3. A CI result is valid only when its `head_sha` exactly matches the checkpoint being evaluated.
+4. Never repeat completed work merely because a new session cannot remember it.
+5. Never reapply a historical fix without reproducing the current defect.
+6. Never turn `[x]` or `DOCUMENTED` into runtime evidence.
+7. Never use an old successful build to prove a later workflow revision.
+8. Never treat an artifact ZIP as equivalent to individually published GitHub Release assets.
+9. Preserve real-device observations, including failures, until revalidated.
+10. Do not introduce new architecture unless focused evidence proves the current design insufficient.
+11. Do not broad-clean or erase unrelated user changes.
+12. Do not manually edit generated Pigeon/Drift outputs unless the repository generation workflow requires it.
 
 ## Evidence levels
 
-Use these labels precisely:
+- `SOURCE-VERIFIED`: repository code/path inspected.
+- `CI-VERIFIED`: relevant CI run succeeded with exact matching `head_sha`.
+- `ANDROID-RUNTIME-VERIFIED`: real Android device/runtime evidence.
+- `ARTIFACT-VERIFIED`: intended build artifact exists and is tied to exact run/head.
+- `RELEASE-ASSET-VERIFIED`: intended APK is individually attached to the intended GitHub Release and verified.
+- `DOCUMENTED`: recorded state only.
 
-- `SOURCE-VERIFIED`: code path inspected in the repository.
-- `CI-VERIFIED`: a relevant CI run completed successfully and its `head_sha` exactly matches the checkpoint being evaluated.
-- `ANDROID-RUNTIME-VERIFIED`: behavior was exercised on a real Android runtime/device.
-- `ARTIFACT-VERIFIED`: the intended build run completed successfully and the expected artifact exists and is tied to the exact run/head being evaluated.
-- `RELEASE-ASSET-VERIFIED`: the expected APK files are individually attached to the intended GitHub Release and their asset names/URLs have been verified.
-- `DOCUMENTED`: recorded in project state only; not evidence by itself.
+Never promote one level without the evidence required for the next.
 
-Never promote a lower evidence level to a higher one.
+## AI engineering stack — use automatically when relevant
 
-## CI / artifact / release anti-drift rule
+### Canonical/core
+- **GitHub:** always the repository/ref/PR/CI/release evidence source.
+- **get-fable:** lifecycle routing for discover/plan/execute/verify/recover/handoff/release when useful.
+- **fable-handoff:** compact durable session state at handoff/pause points.
 
-A build result is valid only for the exact workflow revision and `head_sha` captured by that run.
+### Autonomous execution and verification
+- **fable-cowork:** bounded multi-step autonomous execution for complex goals; never treat as unlimited background work.
+- **fable-loop:** bounded polling for CI/build/status with timeout/backoff; never infinite polling.
+- **fable-discover:** load-bearing repository/environment/runtime discovery before planning.
+- **fable-plan:** bounded testable work cards for multi-file/architectural tasks.
+- **fable-execute:** one accepted bounded implementation card.
+- **fable-verify:** fresh machine-checked acceptance evidence.
+- **fable-recover:** repeated failures, stale caches, branch drift, contradictory evidence.
 
-For any build/release step, verify this chain before marking it complete:
+### Engineering/review
+- **Codex Engineering Guardrails:** smallest reliable change, root-cause analysis, focused-to-broad verification.
+- **Codex Process Jobs:** long-running local builds/tests/benchmarks/downloads.
+- **Codex Coordinator:** only for genuinely independent parallel verticals, usually 2–3 maximum.
+- **CodeRabbit:** independent review after a meaningful code slice; not a replacement for tests/CI.
+- **Codex Advisor:** one-shot second opinion only for material unsettled architecture/interface/concurrency/security decisions.
+- **AI DevKit:** agent management/communication/orchestration, TDD, structured debugging, verification, review, and security when the task needs them.
+- **fable-review / fable-security:** independent code/review/security passes when materially relevant.
+- **PR-completion / review-triage skills:** use when shepherding a PR through CI/reviews/conflicts/readiness.
+
+### Memory and prompt handling
+- **Yaps Memory:** preferred durable knowledge layer for reusable verified facts and decisions.
+- **AI DevKit memory:** use only when a separate local memory layer is genuinely required; do not create competing canonical memories.
+- **Prompt Optimizer:** only for long/complex requests where an execution brief materially improves routing.
+
+### Plugin-only
+- **Plugin Autopilot:** do not use for normal WebLibre application work; use only when the task itself is plugin development/packaging/submission/publishing.
+
+## Capability boundary
+
+A documented skill is an operating rule, not proof that the current session exposes that tool or permission.
+
+When a needed capability is unavailable:
+1. do not invent the result;
+2. record the exact blocker;
+3. continue dependency-safe independent work;
+4. record the precise next manual action in durable state.
+
+For GitHub Actions, `workflow_dispatch` in YAML proves only that the workflow supports dispatch; it does not prove the current session has dispatch permission/tooling.
+
+## Parallelism
+
+Default to one task. Use 2–3 durable writers only when substantial verticals are truly independent. One owner per write surface. Shared interfaces/generated files/lockfiles/schemas/full gates are serialized at the real integration point.
+
+## WebLibre product gates
+
+### AI-1 browser tools
 
 ```text
-INTENDED CHANGE
-    -> commit SHA
-    -> workflow definition contains the change
-    -> run uses intended branch/ref
-    -> run.head_sha == intended SHA
-    -> required job succeeds
-    -> required step is SUCCESS, not SKIPPED
-    -> expected artifact/release asset exists
-    -> asset name/path/checksum matches expectation
+get_tabs
+get_current_tab
+create_tab
+switch_tab
+close_tab
+open_url
 ```
 
-If any link is missing, record the step as pending/partial and do not claim completion.
+Do not start AI-2 Agent Core, provider integration, memory architecture, remote gateway, or autonomous workflows until the AI-1/browser foundation gates are satisfied.
 
-A successful older run must never be used to prove a workflow change introduced later.
+### UA / restore
 
-## APK distribution rule
+Scenario 1 is the active Android runtime gate. Do not spend runtime effort on later scenarios until Scenario 1 passes.
 
-Validation builds must provide both ABI APKs as individually downloadable GitHub Release assets whenever the release-asset path is enabled:
-- `app-stable-arm64-v8a-release.apk`
-- `app-stable-armeabi-v7a-release.apk`
+Do not bypass the blocker with:
+- global Gecko UA
+- freshness heuristics
+- second persistence DB
+- new recovery Pigeon field
+- `RecoverableTab.userAgent`
+- Android Components fork
 
-Do not require the user to unpack an artifact ZIP when direct release assets are available.
+Do not equate `await syncEvents()` or `_freshSnapshotPending` with proof of a fresh snapshot.
 
-The current validation workflow should create a non-production GitHub prerelease containing these APK assets without publishing to Google Play.
+### Privacy
 
-The final production/stable release must continue using the existing `v*` release path and should publish both split-ABI APKs plus the App Bundle only after the browser foundation has passed Android runtime validation and release validation.
-
-A validation artifact ZIP and direct Release assets may coexist; they are not equivalent evidence. Verify each requested distribution surface explicitly.
-
-## Privacy / personal-product rule
-
-The personal build must not silently collect, identify, profile, or transmit user/device data to the former upstream developer or another third party merely because the app is installed or running.
-
-Required rule:
+Maintain:
 
 `NO SILENT TELEMETRY -> NO SILENT DEVICE IDENTIFIERS -> NO SILENT BACKGROUND USER-DATA UPLOAD -> EXPLICIT OPT-IN FOR OPTIONAL ONLINE SERVICES`
 
-User-directed browsing/search/feed/proxy/Tor/sharing traffic is not automatically telemetry. The audit must trace each application-level outbound path and classify it as:
-- user-directed;
-- explicitly opted-in;
-- required for a clearly enabled feature; or
-- silent/unrequested.
+Distinguish silent app-level collection/transmission from user-directed browsing/search/feed/proxy/Tor/sharing traffic.
 
-Silent/unrequested paths are removal or explicit-opt-in targets.
+### Release
 
-Do not delete AGPL/copyright notices merely to change product identity. User-facing branding and promotional links may be changed where legally permissible, but the project must not falsely claim original authorship of upstream code.
+For split-ABI distribution, verify the individually published APK assets:
+- `app-stable-arm64-v8a-release.apk`
+- `app-stable-armeabi-v7a-release.apk`
 
-Before removing permissions or online dependencies, map each one to a concrete feature and test the removal. Do not equate dependency presence with telemetry.
+A ZIP artifact is not a substitute for direct Release assets. Production/stable release remains gated by browser runtime and release validation.
 
-## Runtime product-observation rule
+## State-update contract
 
-User-observed behavior from real-device testing is evidence and must be recorded even when it does not yet establish root cause. In particular:
-- container/tab restoration and per-container UA correctness are separate assertions;
-- perceived performance/heaviness is an observation requiring measurement before optimization;
-- unnecessary page reloads require diagnosis of restore/session/cache/engine-session behavior before implementation changes;
-- desired UA/profile capabilities should be captured as requirements before implementation.
+At every material milestone update the Master Map, Workflow State, and affected specialized document with:
 
-## Anti-amnesia rules
+`PROJECT`
+`BRANCH`
+`HEAD`
+`PR + head_sha`
+`LAST VERIFIED CHECKPOINT`
+`LAST CI / BUILD / ARTIFACT`
+`LAST COMPLETED STEP`
+`UNFINISHED STEP`
+`FIRST NEXT STEP`
+`ANDROID RUNTIME STATUS`
+`FILES CHANGED`
+`LAST COMMIT`
+`STATE DOCS UPDATED`
+`PRODUCT OBSERVATIONS`
+`PRIVACY AUDIT STATUS`
+`BLOCKERS / RISKS`
 
-1. Never trust a remembered HEAD. Re-read the branch ref.
-2. Never trust a PR description's old HEAD. Re-read the PR/branch.
-3. Never use a CI result unless `head_sha` matches the checkpoint under evaluation.
-4. Never repeat work merely because a new conversation cannot remember it.
-5. Before changing anything, compare the current repository against the saved state.
-6. When a task is completed, save the exact result, tested SHA, CI/build run, and next step in the durable state document.
-7. When a task is partially completed, record the precise boundary and the remaining blocker.
-8. If new evidence contradicts the state document, update the state first, then continue.
-9. Do not introduce architecture changes without focused test/runtime evidence that the existing architecture is insufficient.
-10. At each material milestone, update both the master map and workflow state, then commit them.
-11. When a workflow definition is changed, do not use any run created before that workflow change as proof of the new behavior.
-12. When an asset/release step is requested, verify the actual asset/release object rather than inferring it from logs.
-13. Keep product requirements separate from implementation commitments; do not implement every benchmark feature without checking engine capability and YAGNI.
-14. Before removing features for size/performance reasons, measure actual APK contribution and runtime cost.
-15. Before removing upstream identity/legal material, verify whether the applicable license requires its retention.
-16. For privacy hardening, do not delete user-directed browser functionality merely because it causes network traffic; remove silent app-level collection/transmission instead.
+Keep state concise; never turn it into a transcript.
 
-## What every handoff must contain
-
-```text
-PROJECT: WebLibre
-BRANCH: <actual branch>
-HEAD: <actual HEAD>
-PR: <number/state/base>
-LAST VERIFIED PRODUCT CHECKPOINT: <sha>
-LAST CI: <run id/number + status + exact head_sha>
-LAST BUILD: <run id/number + status + exact head_sha>
-LAST ARTIFACT: <artifact/release id + asset status>
-LAST COMPLETED STEP: <one precise sentence>
-UNFINISHED STEP: <one precise sentence>
-FIRST NEXT STEP: <one precise sentence>
-ANDROID RUNTIME STATUS: <verified/pending + exact scenarios>
-FILES CHANGED AT LAST MILESTONE: <paths>
-LAST COMMIT: <sha + message>
-STATE DOCS UPDATED: <yes/no + commit>
-PRODUCT OBSERVATIONS: <measured/unmeasured observations and source>
-PRIVACY AUDIT: <status + exact document>
-```
-
-## Copy/paste resume command
-
-Use this as the first message when starting a new chat or handing the project to another agent:
+## Final copy/paste resume command
 
 ```text
 @GitHub @Thinking
-استأنف مشروع WebLibre من GitHub، ولا تعتمد على ذاكرة الدردشة السابقة.
 
-اقرأ بالترتيب:
-1. docs/WEBLIBRE_MASTER_PROJECT_MAP_2026-08-30.md
-2. docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md
-3. docs/WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md
+استأنف مشروع WebLibre من الحالة الفعلية للمستودع، ولا تعتمد على ذاكرة الدردشة السابقة.
+لا تطلب مني شرح ما سبق، ولا تسأل أين توقفنا. استنتج نقطة التوقف من GitHub وملفات الحالة ثم واصل التنفيذ.
+
+اقرأ أولًا:
+1. docs/WEBLIBRE_AI_COORDINATION_AND_CONTINUITY_2026-09-02.md
+2. docs/WEBLIBRE_MASTER_PROJECT_MAP_2026-08-30.md
+3. docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md
 4. docs/WEBLIBRE_RESUME_COMMAND_2026-08-30.md
-5. docs/WEBLIBRE_ANDROID_RUNTIME_VALIDATION_CHECKLIST_2026-08-30.md قبل اختبار Android
-6. docs/WEBLIBRE_UA_FINGERPRINT_PRODUCT_REQUIREMENTS_2026-08-31.md عند مناقشة أو تنفيذ UA/profile/performance
-7. docs/WEBLIBRE_PRIVACY_DATA_FLOW_AUDIT_2026-08-31.md عند مناقشة أو تنفيذ الخصوصية أو نقل البيانات أو الهوية أو الصلاحيات
+ثم اقرأ فقط الوثائق المتخصصة ذات الصلة بالمهمة التالية.
 
-ثم نفّذ:
+تحقق فعليًا من GitHub:
+- branch
+- exact HEAD
+- recent commits
+- PR + head_sha
+- أحدث CI/build/release runs + head_sha
+- artifacts/release assets عند الحاجة
+- أي تغييرات بعد آخر checkpoint
+
+طبّق:
 READ -> VERIFY -> RECONCILE -> PLAN -> EXECUTE -> TEST -> DIFF -> COMMIT -> SAVE STATE
 
-VERIFY فعليًا من GitHub:
-- branch وHEAD الحاليان
-- آخر commits
-- PR الحالي وحالته وhead_sha
-- آخر Quality/CI/build/release runs وhead_sha لكل run
-- أي commits أو تغييرات بعد آخر state/map
-- artifacts وGitHub Release assets المطلوبة، إن وجدت
+استخرج داخليًا:
+COMPLETED / VERIFIED
+IN PROGRESS
+BLOCKED
+NEXT
 
-لا تعتبر [x] أو source-verified أو CI success أو build success دليلًا على Android runtime.
-ولا تعتبر artifact ZIP دليلًا على وجود direct Release assets.
-ميّز دائمًا بين:
-SOURCE-VERIFIED
-CI-VERIFIED
-ANDROID-RUNTIME-VERIFIED
-ARTIFACT-VERIFIED
-RELEASE-ASSET-VERIFIED
-DOCUMENTED
+لا تعِد العمل المكتمل، ولا تعالج مشكلة قديمة دون دليل جديد، ولا تنشئ architecture لمجرد الاحتياط، ولا تنتظر Android إذا أمكن التقدم عبر source/CI.
 
-لكل CI/build/release خطوة، لا تعتبرها مكتملة إلا بعد التحقق من السلسلة:
-commit SHA -> workflow revision -> run head_sha -> job SUCCESS -> required step SUCCESS (وليس SKIPPED) -> expected artifact/release asset.
+استخدم منظومة الأدوات الموثقة تلقائيًا حسب الحاجة:
+GitHub, get-fable, fable-discover, fable-plan, fable-execute, fable-verify, fable-recover, fable-handoff, fable-cowork, fable-loop, Codex Engineering Guardrails, Codex Process Jobs, Codex Coordinator, CodeRabbit, Codex Advisor, AI DevKit, Yaps Memory, Prompt Optimizer, PR-completion/review/security skills.
+لا تستخدم Plugin Autopilot في WebLibre إلا إذا أصبحت المهمة نفسها تطوير Plugin.
+لا تستخدم كل الأدوات لمجرد وجودها؛ استخدم أصغر مجموعة مفيدة.
 
-استخرج فقط:
-- آخر خطوة مكتملة ومثبتة
-- آخر خطوة غير مكتملة
-- أول خطوة تالية فقط
+إذا كانت أداة أو صلاحية لازمة غير متاحة في الجلسة:
+لا تخترع النتيجة؛ وثّق blocker بدقة، وواصل كل عمل مستقل لا يخالف الاعتماديات، وسجّل الإجراء اليدوي التالي في الحالة.
 
-لا تعِد أي عمل سبق إثباته.
-لا تضف architecture جديدة إلا إذا أثبت test/runtime أن الحالية غير كافية.
-التزم بـYAGNI وبترتيب الاعتماديات.
-
-سجّل أدلة Android الحقيقية كما هي، بما فيها الفشل والملاحظات غير المقاسة؛ لا تحول الملاحظة إلى سبب جذري دون تحقق.
+لا تبدأ AI-2 قبل إغلاق AI-1 ومتطلبات browser foundation.
+Scenario 1 الخاص بـUA/restore هو بوابة Android الحالية؛ لا تنتقل إلى السيناريوهات اللاحقة قبل اجتيازه.
 
 عند كل milestone مادي:
-- حدّث MASTER_PROJECT_MAP
-- حدّث WORKFLOW_STATE
-- حدّث الوثيقة المتخصصة المتأثرة إن وجدت
-- سجّل HEAD وCI/build/release والأدلة والاختبارات والـnext step
-- نفّذ commit واضح
+حدّث MASTER_PROJECT_MAP وWORKFLOW_STATE والوثيقة المتخصصة المتأثرة، وسجّل exact HEAD وCI/build/runtime evidence والـNEXT التالي ثم commit.
 
-في الخصوصية:
-- لا تحذف حقوق/تراخيص upstream المطلوبة قانونيًا لمجرد تغيير الهوية.
-- أزل هوية وروابط الترويج الخاصة بالمطور السابق من واجهة المنتج حيث يجوز قانونيًا، وأدخل هوية المشروع الحالي.
-- افحص كل outbound app-level data flow داخل المستودع.
-- احذف أو عطّل أي telemetry أو device identifier أو background user-data upload صامت.
-- ميّز ذلك عن طلبات التصفح/البحث/الـfeed/proxy/Tor التي بدأها المستخدم.
-- لا تحذف dependency أو permission لمجرد اسمها؛ اربطها بميزة فعلية ثم اختبر أثر إزالتها.
-
-إذا كان المطلوب توزيع APKs مباشرة، تحقق من وجود:
-- app-stable-arm64-v8a-release.apk
-- app-stable-armeabi-v7a-release.apk
-كـGitHub Release assets منفصلة، ولا تكتفِ بوجود ZIP artifact.
-
-في النسخ الإنتاجية المستقرة مستقبلًا، استخدم مسار v* الموجود للنشر الفعلي بعد اكتمال Android runtime + release validation، مع APKs للـABIs وAAB.
-
-عند تقييم UA/profile، لا تكتفِ بتغيير raw UA string: افحص اتساق OS/browser/version/display/locale/network والحقول التي يستطيع المحرك فعليًا التحكم بها. اقرأ وثيقة UA_FINGERPRINT_PRODUCT_REQUIREMENTS قبل التصميم.
-
-إذا كان الادعاء متعلقًا بالأداء أو إعادة تحميل الصفحات، قِس أولًا cold start/memory/reload/session/cache/engine-session behavior وAPK composition قبل إزالة أي ميزة.
-
-إذا وجدت تعارضًا بين الذاكرة/الرسائل والـrepository، فالـrepository هو الحقيقة.
-إذا كانت نتيجة CI/build/release لا تطابق HEAD المقصود، لا تستخدمها كدليل للـHEAD الحالي.
-
-ابدأ بالتحقق من الحالة الفعلية، ثم نفّذ أول خطوة تالية فقط.
+واصل العمل إلى أقصى حد ممكن دون تدخلي، وانتقل تلقائيًا إلى NEXT التالي عندما يصبح مبررًا، بدل التوقف لطلب إذن.
 ```
