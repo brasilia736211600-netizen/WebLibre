@@ -38,7 +38,10 @@ Removed as unreachable/retired:
 The active Firefox Sync feature was not removed or redirected; it remains under `features/sync` with native Mozilla Android Components services.
 
 ## Legacy account UI cleanup — completed
-The retained account route no longer exposes controls that imply a working remote account or legacy encrypted snapshot service. The account status widget is now informational only and explicitly distinguishes Firefox Sync as a separate browser feature.
+The retained account route no longer exposes controls that imply a working remote account or the retired encrypted snapshot/sync-key service. The account status widget is informational only and explicitly distinguishes Firefox Sync as a separate browser feature.
+
+## Supabase configuration cleanup — completed
+`apps/weblibre/lib/features/account/data/supabase_config.dart` remains only as the compatibility configuration for the account portal URL used by the subscription UI. The retired `SUPABASE_URL` and `SUPABASE_ANON_KEY` build-time constants, including the embedded anon credential, were removed.
 
 ## Android permission / transport checkpoint
 - `QUERY_ALL_PACKAGES` is removed.
@@ -57,19 +60,15 @@ The retained account route no longer exposes controls that imply a working remot
 ### Native fetch bridge
 `GeckoFetchApiImpl` exposes a Pigeon fetch API backed by `components.core.client`. It constructs Android Components `Request` objects and forwards URL/method/headers/body/redirect/cookie/cache/OHTTP/referrer options to the native client. This is an active browser/network bridge, not a dead compatibility shell. Therefore `INTERNET` remains justified; global `usesCleartextTraffic` still requires broader transport evidence before changing it.
 
-### Legacy Supabase configuration
-`apps/weblibre/lib/features/account/data/supabase_config.dart` is retained only for the account portal URL used by the subscription UI. The retired `SUPABASE_URL` and `SUPABASE_ANON_KEY` build-time constants were removed; no Supabase credentials remain in this configuration file.
-
 ## Permission minimization finding
 `ACCESS_WIFI_STATE` has a source comment saying it is a Fenix debug-manifest capability, and GitHub's code-search endpoint returned zero concrete `WifiManager` hits, but that search response reported `incomplete_results=true`. No deletion is therefore justified solely from that incomplete index.
 
 ## Still pending
-1. Finish branch-scoped consumer proof for any remaining account/config artifacts and other app-level HTTP client usages.
-2. Complete direct consumer mapping for remaining Android permissions.
-3. Decide whether `usesCleartextTraffic` can be removed/narrowed without breaking browser or user-directed flows.
-4. Add a local privacy/data-flow screen.
-5. Measure APK/runtime cost before unrelated performance removals.
-6. Re-run consolidated Android validation later, including UA Scenario 1.
+1. Finish branch-scoped consumer proof for remaining Android permissions and any remaining app-level HTTP/configuration consumers.
+2. Decide whether `usesCleartextTraffic` can be removed/narrowed without breaking browser or user-directed flows.
+3. Add a local privacy/data-flow screen.
+4. Measure APK/runtime cost before unrelated performance removals.
+5. Re-run consolidated Android validation later, including UA Scenario 1.
 
 ## Evidence rule
 Source inspection, even with a successful historical build, does not equal current-head CI or Android runtime verification. Every material privacy change follows:
