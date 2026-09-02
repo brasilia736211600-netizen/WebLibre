@@ -1,15 +1,15 @@
 # WebLibre — Durable Workflow State
 
-**Last synchronized:** 2026-09-02
+**Last synchronized:** 2026-09-03
 **Branch:** `weblibre-ua-mainline-v3`
-**Current live HEAD:** `e2dad37f165ab9e931b66656c3f7b10b4f21949f`
+**Current live HEAD:** `03dcedff5e78bd4cc1c3504d2fe56c7a38183239`
 
 ## Source of truth
 GitHub code, refs, commits, PRs, CI/build/release runs, artifacts and release assets are authoritative. Chat memory and `[x]` markers are not evidence.
 
 ## Verified current checkpoint
 - PR #3 remains OPEN and DRAFT, base `main`.
-- Live branch ref currently resolves to `e2dad37f165ab9e931b66656c3f7b10b4f21949f`.
+- Live branch ref currently resolves to `03dcedff5e78bd4cc1c3504d2fe56c7a38183239`.
 - The current Quality workflow contains AI-1 registry/executor tests and targeted container/native tests.
 - Current HEAD has **no verified matching Quality run**.
 - The GitHub connector exposes no workflow-dispatch action in this session, so a `workflow_dispatch` definition is not evidence that a current run can be started here.
@@ -34,6 +34,9 @@ Contracts, registry, executor, source mappings and focused tests are SOURCE-VERI
 The existing privacy/account source boundary remains SOURCE-VERIFIED with Flutter build verification on exact checkpoint `eea4b40...`. Documentation commits after that source checkpoint do not extend build evidence to the newer HEAD.
 
 Still pending: automatic background feed fetch removal, dead-source/reachability audit, outbound endpoint/background-service audit, permission/cleartext minimization review, local privacy/data-flow screen, and Android UA Scenario 1 root-cause fix/revalidation.
+
+## UA source checkpoint
+The current UA restore path now captures `GlobalComponents.components?.profileApplicationContext` at `HistoryDelegateBindingMiddleware` construction instead of looking it up again for every restore action. This is a SOURCE-VERIFIED lifecycle stabilization only; the Android Scenario 1 result is not promoted until fresh runtime evidence confirms the behavior.
 
 ## Device-build policy
 Physical Android installation/testing is intentionally deferred until the highest-value source/CI/review work is complete. Do **not** generate/install an APK merely to re-run an already-unverified source question. The intended device phase is one consolidated validation pass near release readiness; regressions discovered there will be fixed then and revalidated with focused evidence rather than repeated APK cycles.
@@ -69,13 +72,13 @@ For repeated failure:
 A documented skill is an operating rule, not proof that the current ChatGPT/Codex session has that tool or permission. When a required capability is unavailable: do not invent a result; record the exact blocker; continue independent work when dependency-safe; preserve the exact next manual action in state.
 
 ## Last completed step
-**Reconciled durable state with the live GitHub branch/PR refs:** `e2dad37f165ab9e931b66656c3f7b10b4f21949f`.
+**Hardened the UA middleware's profile-context lifecycle:** `03dcedff5e78bd4cc1c3504d2fe56c7a38183239`.
 
 ## Current unfinished step
-**AI-1/current Quality CI verification remains incomplete on the live branch HEAD; no run with matching `head_sha` is presently verified.**
+**Fresh verification of the UA Scenario 1 fix and current-head Quality CI remain incomplete; no matching current-head Quality run is presently verified.**
 
 ## FIRST NEXT STEP — exactly one
-**Continue with source-level verification and independent privacy/reachability audit while preserving the one-pass Android validation gate; do not install/build a device APK solely to obtain missing CI evidence.**
+**Continue source-level privacy/reachability work and verification, while preserving the one-pass Android validation gate; do not install/build a device APK until the remaining source/CI/review gates justify the consolidated final validation.**
 
 ## Mandatory loop
 `READ -> VERIFY -> RECONCILE -> PLAN -> EXECUTE -> TEST -> DIFF -> COMMIT -> SAVE STATE`
