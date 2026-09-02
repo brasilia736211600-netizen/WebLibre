@@ -2,7 +2,7 @@
 
 **Last synchronized:** 2026-09-03
 **Branch:** `weblibre-ua-mainline-v3`
-**Source HEAD before this documentation commit:** `bc928e2d6e21062acb324493d8637ac970935b7c`
+**Source HEAD before this documentation commit:** `b838003af89a22b9ada87dba8cdd53e5184bde0c`
 
 ## Source of truth
 GitHub code, refs, commits, PRs, CI/build/release runs, artifacts and release assets are authoritative. Chat memory is not evidence.
@@ -12,10 +12,11 @@ GitHub code, refs, commits, PRs, CI/build/release runs, artifacts and release as
 - Retired account callback/handoff cleanup is complete.
 - Legacy snapshot-sync cluster is removed after reachability review.
 - Orphaned generated `account_sync_repository.g.dart` was removed.
-- Active Firefox Sync remains live through `features/sync` + native Mozilla Android Components; it was not touched by cleanup.
+- Retired Supabase URL/anon-key constants were removed; only the account portal URL remains in the compatibility config because the subscription UI still links to that portal.
+- Retired remote-account UI actions were removed from `AccountAuthStatusCard`; the account route is informational and explicitly distinguishes Firefox Sync as separate.
+- Active Firefox Sync remains live through `features/sync` + native Mozilla Android Components; it was not touched by the cleanup.
 - Android `QUERY_ALL_PACKAGES` remains removed.
-- Push background delivery and native fetch paths were mapped as active, intentional browser functionality.
-- Current-head CI remains NOT VERIFIED.
+- Current-head Actions query for `084f0b102e8173b64665c8b512a7ba14fa81caa7` returned zero workflow runs; therefore CI is NOT VERIFIED.
 
 ## Browser / Android runtime
 Scenario 1 remains **FAIL / runtime revalidation pending**:
@@ -37,23 +38,23 @@ Contracts, registry, executor, source mappings and focused tests remain SOURCE-V
 - Orphaned legacy generated sync provider artifact removed.
 - Active Firefox Sync retained.
 - Automatic background feed fetch/headless entrypoint/direct dependency removed; manual foreground refresh retained.
-- `QUERY_ALL_PACKAGES` removed; remaining permissions and `usesCleartextTraffic` require concrete branch-specific proof before changes.
+- `QUERY_ALL_PACKAGES` removed.
+- Supabase credentials and obsolete URL configuration removed from the retained account compatibility config; account portal URL retained because it has a live UI consumer.
+- Legacy account sign-in/sync-key UI actions removed; account route remains a local compatibility boundary.
 
-## Outbound endpoint / background audit — current state
-- Firefox Sync is delegated to Mozilla Android Components (`FxaAccountManager`, account-auth feature, `syncNow`, device constellation, native remote-tabs storage); no parallel hard-coded WebLibre Sync transport exists.
-- UnifiedPush is an intentional background integration: receiver -> durable push store -> WorkManager worker -> Gecko web-push delivery. It must remain.
-- `GeckoFetchApiImpl` is an active Pigeon bridge to the native Android Components fetch client, not a dead compatibility shell.
-- `INTERNET` remains justified while these browser/network capabilities remain.
-- `android:usesCleartextTraffic="true"` remains unchanged; current source evidence does not establish a safe global removal/narrowing.
+## Outbound endpoint audit
+- Active Firefox Sync delegates to Mozilla Android Components `FxaAccountManager`, account-auth features, explicit `syncNow(SyncReason.User)`, device constellation, and native remote-tabs storage.
+- `FxaServer` selects the Android Components release server by default and permits explicit server/token overrides.
+- UnifiedPush is a concrete user-enabled background delivery path and remains retained.
+- `GeckoFetchApiImpl` is an active browser/native fetch bridge backed by `components.core.client`.
+- `DownloadService` uses the shared Android Components HTTP client.
+- `android:usesCleartextTraffic="true"` remains unchanged because browser HTTP support and app-level HTTP transports have not yet been fully separated by evidence.
 
-## Permission audit
-- `QUERY_ALL_PACKAGES`: removed and source-verified.
-- `ACCESS_WIFI_STATE`: source comment identifies it as a Fenix debug-manifest capability; GitHub code search returned zero `WifiManager` hits but reported incomplete results, so deletion is not yet evidence-complete.
-- Camera, microphone, location, media/storage, notifications and foreground-service permissions remain pending direct consumer mapping.
-- No additional permission was removed in this checkpoint.
-
-## Supabase configuration
-`supabase_config.dart` remains because a known active subscription UI consumer uses its account portal URL, while repository-wide branch-scoped proof for the legacy Supabase constants is incomplete. Do not delete or rename it from incomplete search evidence alone.
+## Android permission audit boundary
+- `INTERNET` and `ACCESS_NETWORK_STATE` remain justified by active browser/network features.
+- Foreground-service declarations remain justified by concrete download, private-tab notification, and media-session integrations.
+- `ACCESS_WIFI_STATE` remains unchanged because the only current evidence is an incomplete code-search result plus a source comment identifying it as a Fenix debug-manifest capability.
+- Camera, microphone, location, media/storage and notification permissions still require direct branch-specific consumer proof before removal.
 
 ## Release
 Validation release `validation-stable-5-3aa06cf6ee090e42c9b7bff6abbf17f737b1fef5` remains RELEASE-ASSET-VERIFIED for separate ARM64 and armeabi-v7a APKs. Production `v*` releases remain blocked on runtime/release validation.
@@ -62,7 +63,7 @@ Validation release `validation-stable-5-3aa06cf6ee090e42c9b7bff6abbf17f737b1fef5
 `SOURCE-VERIFIED -> CI-VERIFIED -> ANDROID-RUNTIME-VERIFIED -> ARTIFACT-VERIFIED -> RELEASE-ASSET-VERIFIED` are separate states.
 
 ## FIRST NEXT STEP — exactly one
-**Finish branch-scoped consumer proof for `supabase_config.dart`, remaining app-level HTTP clients, and each Android permission; then apply only evidence-backed manifest/transport reductions.**
+**Finish branch-scoped direct consumer proof for the remaining Android permissions and any remaining app-level HTTP/configuration consumers; then make only evidence-backed manifest/transport reductions.**
 
 ## Mandatory loop
 `READ -> VERIFY -> RECONCILE -> PLAN -> EXECUTE -> TEST -> DIFF -> COMMIT -> SAVE STATE`
