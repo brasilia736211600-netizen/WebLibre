@@ -2,7 +2,7 @@
 
 **Canonical source of truth:** GitHub repository, refs, commits, PRs, CI/build/release runs, artifacts and release assets.
 **Branch:** `weblibre-ua-mainline-v3`
-**Source HEAD before this documentation commit:** `cada5b555c5c93a78732f644f77d704dc9f43720`
+**Source HEAD before this documentation commit:** `87a1011ebb3aa0d8ae86f2100c37855b135068fd`
 
 ## Current product position
 ```text
@@ -18,12 +18,12 @@ AI-1 Browser Tool
 Privacy / Personal Product Hardening
     Account callback/handoff legacy path        REMOVED / SOURCE-VERIFIED
     Legacy snapshot-sync cluster                REMOVED / SOURCE-VERIFIED after reachability review
-    Orphaned legacy generated sync artifact     REMOVED / SOURCE-VERIFIED
+    Orphaned legacy generated sync artifacts    REMOVED / SOURCE-VERIFIED
     Active Firefox Sync feature                 RETAINED / source-verified native FxaAccountManager path
     Legacy Supabase handoff client              REMOVED / SOURCE-VERIFIED
     Legacy Supabase URL/anon-key config         REMOVED / SOURCE-VERIFIED
     Account portal URL config                   RETAINED / live UI consumer
-    Legacy remote-account UI actions            REMOVED / SOURCE-VERIFIED
+    Legacy remote-account auth repository/UI    REMOVED / SOURCE-VERIFIED
     Automatic background feed fetch             REMOVED FROM STARTUP
     Background headless feed entrypoint         REMOVED
     Direct background_fetch dependency          REMOVED FROM APP PUBSPEC
@@ -36,7 +36,7 @@ Privacy / Personal Product Hardening
 ```
 
 ## Latest completed cleanup
-The legacy account compatibility surface is now informational-only. `AccountAuthStatusCard` no longer exposes remote sign-in, snapshot/sync-key, or other non-functional actions. `supabase_config.dart` retains only the account portal origin consumed by the subscription UI; the retired Supabase project URL and anon key were removed. An orphaned generated legacy account-sync provider file was also removed.
+The legacy account compatibility route is now informational-only. The retired `AccountAuthRepository`, generated provider, `AccountAuthState`, generated state file, and legacy `AccountAuthStatusCard` were removed after the active account screen was reduced to a local informational route and no remaining known consumer was found. The retained account portal origin remains only for the existing subscription UI.
 
 Active Firefox Sync remains separate and intact through Mozilla Android Components. UnifiedPush remains an intentional user-enabled background delivery path. Native fetch/download paths remain active browser functionality, so no speculative global `usesCleartextTraffic` removal was made.
 
