@@ -2,7 +2,7 @@
 
 **Canonical source of truth:** GitHub repository, refs, commits, PRs, CI/build/release runs, artifacts and release assets.
 **Branch:** `weblibre-ua-mainline-v3`
-**Current live HEAD:** `fc270a4560dd8112c43f31bf55a975afb22b428a`
+**Current live HEAD:** `1382ea531a08a3954682b3c594f32842e354f88b`
 
 ## Durable documents
 - `docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`
@@ -19,7 +19,7 @@
 ```text
 Browser / Container / UA foundation
     source + focused CI                         DONE / CI-VERIFIED for tested paths
-    Android runtime restore UA                  FAIL — Scenario 1
+    Android runtime restore UA                  FAIL — Scenario 1; source lifecycle stabilization added, runtime revalidation pending
 
 AI-1 Browser Tool
     specification / inventory / contracts       DONE / SOURCE-VERIFIED
@@ -49,6 +49,8 @@ The first real Android validation of the ARM64 validation Release proved:
 - Before process death the tab sent configured Chrome/120 UA.
 - After relaunch restored navigation sent Gecko/Firefox 152 UA instead.
 - No `Resume last tab` control was present in that post-relaunch state.
+
+A source-only UA lifecycle stabilization was then committed: `HistoryDelegateBindingMiddleware` now captures the profile context when the middleware is constructed, instead of resolving the global active profile separately for each restore action. This remains unverified on-device.
 
 Do not run Scenarios 2–6 until Scenario 1 passes.
 
@@ -87,7 +89,7 @@ The current privacy/account source changes were Flutter-build verified at `eea4b
 - Native gomobile runtime build: SUCCESS.
 - Validation Release creation: SUCCESS.
 - Quality #60 `33334955774` is SUCCESS on older `4771404...` and predates the AI-1 test-step addition.
-- Live HEAD `fc270a...` has no verified matching Quality run.
+- Live HEAD `1382ea...` has no verified matching Quality run.
 - The current Quality workflow has `workflow_dispatch`, but the current GitHub connector session exposes no workflow-dispatch action; do not claim a run was started from this session.
 
 ## Evidence rule
@@ -102,9 +104,9 @@ A successful older run does not prove a later HEAD. `[x]` is not runtime proof. 
 At every material milestone update this map, Workflow State and the affected specialized document with exact HEAD, evidence, tests/run IDs, blocker and exactly one first next step.
 
 ## Current checkpoint
-**Current live HEAD:** `fc270a4560dd8112c43f31bf55a975afb22b428a`.
+**Current live HEAD:** `1382ea531a08a3954682b3c594f32842e354f88b`.
 **AI-1 Quality CI:** pending.
-**Android:** Scenario 1 FAIL; UA restore remains runtime blocker.
+**Android:** Scenario 1 FAIL; source lifecycle stabilization committed, runtime verification still pending.
 **Privacy:** source hardening largely complete but background feed, reachability, outbound, permission/cleartext, and local privacy screen audits remain pending.
 **Device policy:** APK installation/testing remains deferred until the consolidated final validation gate.
 **First next step:** continue independent source-level/reachability work and verification; keep physical APK installation deferred until the consolidated final validation gate.
