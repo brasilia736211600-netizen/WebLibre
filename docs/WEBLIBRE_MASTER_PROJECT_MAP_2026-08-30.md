@@ -2,7 +2,7 @@
 
 **Canonical source of truth:** GitHub repository, refs, commits, PRs, CI/build/release runs, artifacts and release assets.
 **Branch:** `weblibre-ua-mainline-v3`
-**Source HEAD before this documentation commit:** `5c5e905ed563fd0419dc9b36894f4b205f4ecbb9`
+**Source HEAD before this documentation commit:** `db22e218fc4955ac9217af488c577500b928d8d0`
 
 ## Durable documents
 - `docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`
@@ -39,24 +39,24 @@ Privacy / Personal Product Hardening
     Tracked pubspec.lock                        NOT PRESENT ON ACTIVE BRANCH
     Manual foreground feed refresh              RETAINED
     QUERY_ALL_PACKAGES permission               REMOVED / SOURCE-VERIFIED
-    outbound app endpoint audit                 IN PROGRESS / Firefox Sync mapped; Push path mapped
-    remaining permission/cleartext audit        PENDING concrete branch-specific consumer proof
+    outbound app endpoint audit                 IN PROGRESS / Firefox Sync, Push and native fetch mapped
+    remaining permission/cleartext audit        PENDING complete branch-scoped consumer proof
     local privacy/data-flow screen             PENDING
 ```
 
 ## Outbound endpoint/background audit checkpoint
 Active Firefox Sync is implemented through Mozilla Android Components. The WebLibre bridge calls `FxaAccountManager` for account/sync state, account-auth features for sign-in, `syncNow(SyncReason.User)`, device constellation operations, and native remote-tabs storage. `FxaServer` selects the Android Components release server by default and permits explicit server/token overrides. There is no separate hard-coded WebLibre Firefox Sync HTTP transport in `GeckoSyncApiImpl`.
 
-UnifiedPush is an intentional background network integration: `UnifiedPushReceiver` receives distributor callbacks, persists decrypted messages, and schedules `PushMessageWorker`; the worker rehydrates profile-scoped components and calls the WebLibre Push integration to deliver the message into Gecko. This is a concrete user-enabled web-push path, not silent telemetry, and is retained.
+UnifiedPush is an intentional background network integration: `UnifiedPushReceiver` receives distributor callbacks, persists decrypted messages, and schedules `PushMessageWorker`; the worker rehydrates profile-scoped components and calls the WebLibre Push integration to deliver the message into Gecko. This is a concrete user-enabled web-push path and is retained.
 
-`GeckoFetchApiImpl` is a native fetch bridge backed by `components.core.client`; it exposes the browser/Android Components fetch stack rather than a parallel raw Dart HTTP transport. Because browser requests can legitimately target HTTP URLs, this evidence is not enough by itself to disable `android:usesCleartextTraffic` globally.
+`GeckoFetchApiImpl` is a native fetch bridge backed by `components.core.client`; it exposes the browser/Android Components fetch stack rather than a parallel raw Dart HTTP transport. This keeps `INTERNET` justified, while it does not by itself justify disabling global `usesCleartextTraffic`.
 
-The separate `SupabaseConfig` file still contains HTTPS build-time defaults for the retired account backend and remains an unresolved legacy configuration artifact because branch-scoped consumer proof is incomplete. Do not remove or rename it solely from default-branch search results.
+The `SupabaseConfig` file remains because a known active subscription UI consumer uses its account portal URL. The legacy Supabase URL/anon-key fields remain under review until repository-wide branch-scoped proof is complete; no speculative rename/deletion was performed.
 
 ## Android manifest safety boundary
 Keep `INTERNET` and `ACCESS_NETWORK_STATE` while active browser/network features remain. Keep foreground service declarations for concrete DownloadService, PrivateTabsNotificationService, and MediaSessionService paths. Camera, microphone, location, media/storage, notification and `usesCleartextTraffic` remain pending direct consumer proof.
 
-`ACCESS_WIFI_STATE` is currently declared with a source comment saying it is a Fenix debug-manifest capability. Branch code search did not return a concrete WebLibre `WifiManager` consumer, but the search endpoint reports incomplete indexing, so no manifest deletion was made from that search alone.
+`ACCESS_WIFI_STATE` remains unchanged. Its source comment says it is a Fenix debug-manifest capability, but GitHub's code-search endpoint reported incomplete results, so deletion is not yet evidence-complete.
 
 ## Runtime blocker
 The first real Android validation of the ARM64 validation Release proved:
@@ -66,7 +66,7 @@ The first real Android validation of the ARM64 validation Release proved:
 - After relaunch restored navigation sent Gecko/Firefox 152 UA instead.
 - No `Resume last tab` control was present in that post-relaunch state.
 
-A source-only UA lifecycle stabilization is in the branch: `HistoryDelegateBindingMiddleware` receives the owning `ProfileContext` at construction and uses it during restore instead of resolving the global active profile per action. Do not run Scenarios 2–6 until Scenario 1 passes.
+A source-only UA lifecycle stabilization is in the branch: `HistoryDelegateBindingMiddleware` receives the owning `ProfileContext` and uses it during restore. Do not run Scenarios 2–6 until Scenario 1 passes.
 
 ## AI engineering orchestration
 Use the agreed add-ons only where they add leverage: GitHub as source-of-truth, Codex Engineering Guardrails for scoped implementation/verification, Coordinator/AI DevKit for parallel task boundaries when actual agent execution is available, Advisor for material architecture decisions, CodeRabbit for review, and Process Jobs for durable local processes. Do not create competing canonical state stores or invoke every skill unnecessarily.
@@ -77,7 +77,7 @@ Validation Release `validation-stable-5-3aa06cf6ee090e42c9b7bff6abbf17f737b1fef5
 ## CI evidence
 - Historical Flutter CICD run `33420348298` / job `99580917046`: SUCCESS on exact older checkpoint `eea4b40...`.
 - Historical Quality #60 `33334955774` succeeded on older `4771404...` and predates AI-1 test-step addition.
-- Current source-head Actions queries made during this cycle returned zero runs for the latest cleanup commit; current-head CI remains NOT VERIFIED.
+- Current source-head Actions queries made during this cycle returned zero runs for the latest cleanup checkpoints; current-head CI remains NOT VERIFIED.
 - The connector session exposes no workflow-dispatch action.
 
 ## Evidence rule
@@ -85,7 +85,7 @@ Never promote:
 `SOURCE-VERIFIED -> CI-VERIFIED -> ANDROID-RUNTIME-VERIFIED -> ARTIFACT-VERIFIED -> RELEASE-ASSET-VERIFIED`.
 
 ## FIRST NEXT STEP — exactly one
-**Finish branch-scoped consumer proof for `supabase_config.dart`, remaining app-level HTTP clients, Push/background paths, and each remaining Android permission; then apply only evidence-backed manifest/transport reductions.**
+**Finish branch-scoped consumer proof for `supabase_config.dart`, remaining app-level HTTP clients, and each Android permission; then apply only evidence-backed manifest/transport reductions.**
 
 ## Mandatory loop
 `READ -> VERIFY -> RECONCILE -> PLAN -> EXECUTE -> TEST -> DIFF -> COMMIT -> SAVE STATE`
