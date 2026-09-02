@@ -21,7 +21,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 
-import 'package:background_fetch/background_fetch.dart';
 import 'package:country_codes/country_codes.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/foundation.dart';
@@ -63,8 +62,6 @@ import 'package:weblibre/features/proxy/domain/repositories/singbox_proxy_logs.d
 import 'package:weblibre/features/proxy/domain/services/proxy_autostart.dart';
 import 'package:weblibre/features/user/domain/repositories/engine_settings.dart';
 import 'package:weblibre/features/user/domain/repositories/general_settings.dart';
-import 'package:weblibre/features/web_feed/presentation/controllers/fetch_articles.dart';
-import 'package:weblibre/features/web_feed/utils/fetch_entrypoint.dart';
 import 'package:weblibre/features/web_search/domain/controllers/sandbox_capture_controller.dart';
 import 'package:weblibre/presentation/hooks/on_initialization.dart';
 import 'package:weblibre/presentation/main_app.dart';
@@ -153,15 +150,8 @@ class _MainWidget extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Keep the sandbox capture controller alive for the lifetime of the app
-    // so it can react to pigeon events even when no UI subscribes to it.
     ref.watch(sandboxCaptureControllerProvider);
-    // Keep proxy/Tor log subscriptions active from app start so startup
-    // messages reach the ring buffer before the browser view (or logs
-    // screen) mounts and would otherwise drop them.
     ref.watch(singboxProxyLogsProvider.select((_) => null));
-    // Apply the configured display refresh rate from app start and keep it in
-    // sync with the setting (Flutter defaults to 60Hz otherwise).
     ref.watch(displayModeApplierProvider);
 
     final rootKey = ref.watch(appStateKeyProvider);
@@ -179,10 +169,8 @@ class _MainWidget extends HookConsumerWidget {
                 ?.routerDelegate
                 .currentConfiguration;
 
-            //Rebuild widget tree after long time of inactivity
             ref.read(appStateKeyProvider.notifier).reset();
 
-            //Wait for the new router to start
             await Future.delayed(
               const Duration(milliseconds: 250),
             ).whenComplete(() {
@@ -243,11 +231,6 @@ class _MainWidget extends HookConsumerWidget {
       final clearStartupUBlockFilterListsPref =
           !engineSettings.ublockFilterListSettings.enabled;
 
-      // Push the hard exclude-from-history snapshot to native BEFORE the engine
-      // starts — it records visits as soon as restored tabs load, so an excluded
-      // ("incognito") container could otherwise leak to Places during the
-      // startup window. Best-effort: on failure the keepAlive provider still
-      // pushes once the databases are readable.
       try {
         final snapshot = await readHistoryExclusionSnapshot(
           ref.read(tabDatabaseProvider),
@@ -266,13 +249,6 @@ class _MainWidget extends HookConsumerWidget {
         );
       }
 
-      // Keep that snapshot current for the rest of the session. Activated here,
-      // at app scope, and never from a screen: the setting is edited from the
-      // container editor and the tab set changes from everywhere, so a
-      // replication tied to the browser view would stop pushing whenever that
-      // view is gone — leaking visits after the toggle is enabled, or suppressing
-      // them after it is disabled. keepAlive, so this single activation holds for
-      // the whole session.
       ref.listenManual(
         fireImmediately: true,
         historyExclusionReplicationProvider,
@@ -286,19 +262,7 @@ class _MainWidget extends HookConsumerWidget {
         },
       );
 
-      // Register the visit→container recorder BEFORE the engine starts. It only
-      // installs a Dart-side GeckoHistoryEvents handler (no native dependency),
-      // while native visit events can already fire as restored tabs load during
-      // initialize — Pigeon FlutterApi messages aren't buffered, so a recorder
-      // registered afterwards would silently drop those early visits' container
-      // relations.
       ref.read(visitContainerRecorderProvider);
-
-      // Start assembling the container routing snapshot BEFORE the engine, so
-      // the push is already queued when the proxy extension comes up. The
-      // extension blocks every request until it has one, so the sooner this is
-      // installed the shorter the window in which protected containers cannot
-      // load — and it is a barrier, never a leak, if it is late.
       ref.read(proxySettingsReplicationProvider);
 
       try {
@@ -329,8 +293,6 @@ class _MainWidget extends HookConsumerWidget {
         rethrow;
       }
 
-      // Mirror the startup uBO pref into the fixator so later pref changes are
-      // still observed and enforced after native startup initialization.
       try {
         await syncUBlockFilterLists(
           ref.read(preferenceFixatorProvider.notifier),
@@ -364,49 +326,11 @@ class _MainWidget extends HookConsumerWidget {
 
       unawaited(preloadUrlCleanerCatalog());
 
-      // Wire settings → local_index_setting (tab.db) so the trigger gate
-      // is in sync from the moment tabs start writing.
       ref.read(localIndexSettingsSyncProvider);
-
-      // Cold-start prune of the local search index — drops rows the engine
-      // has forgotten (Places retention, user-initiated clears). Cheap and
-      // background; failures are logged and ignored.
       unawaited(ref.read(localIndexPrunerProvider.notifier).prune());
 
-      // Activate account callback deep link handler
       ref.read(accountCallbackHandlerProvider);
-
-      // Bring up the proxy connections flagged for autostart. Their SOCKS
-      // endpoints reach Gecko through the routing snapshot mounted above, and
-      // this is left unawaited so a slow Tor bootstrap can't stall startup —
-      // tabs that need one of these connections wait on the pending start
-      // instead of prompting, and stay blocked until it resolves.
       unawaited(ref.read(proxyAutostartServiceProvider.notifier).run());
-
-      if (!kDebugMode) {
-        await BackgroundFetch.configure(
-          BackgroundFetchConfig(
-            minimumFetchInterval: 15,
-            enableHeadless: true,
-            stopOnTerminate: false,
-            requiredNetworkType: NetworkType.ANY,
-            startOnBoot: true,
-          ),
-          (String taskId) async {
-            try {
-              await ref
-                  .read(fetchArticlesControllerProvider.notifier)
-                  .fetchAllArticles();
-
-              logger.i('Fetched articles in foreground');
-            } catch (e, s) {
-              logger.e('Failed fetching articles', error: e, stackTrace: s);
-            } finally {
-              await BackgroundFetch.finish(taskId);
-            }
-          },
-        );
-      }
     });
 
     final corePaletteSnapshot = useFuture(
@@ -421,14 +345,9 @@ class _MainWidget extends HookConsumerWidget {
         if (lightDynamic != null && darkDynamic != null) {
           final corePalette = corePaletteSnapshot.data;
 
-          // On Android S+ devices, use the provided dynamic color scheme.
-          // (Recommended) Harmonize the dynamic color scheme' built-in semantic colors.
           final harmonizedLight = lightDynamic.harmonized();
           final harmonizedDark = darkDynamic.harmonized();
 
-          // Workaround for https://github.com/material-foundation/flutter-packages/issues/649
-          // dynamic_color package returns broken surfaceContainer* colors.
-          // Fix them using the neutral tonal palette from CorePalette.
           if (corePalette != null) {
             lightColorScheme = _hasBrokenSurfaceContainerColors(harmonizedLight)
                 ? _fixSurfaceContainerColors(
@@ -449,7 +368,6 @@ class _MainWidget extends HookConsumerWidget {
             darkColorScheme = harmonizedDark;
           }
         } else {
-          // Otherwise, use fallback schemes.
           lightColorScheme = ColorScheme.fromSeed(
             seedColor: ref.read(lightSeedColorFallbackProvider),
           );
@@ -520,16 +438,11 @@ void main() async {
 
   await RustLib.init();
 
-  if (!kDebugMode) {
-    await BackgroundFetch.registerHeadlessTask(backgroundFetch);
-  }
-
   if (kDebugMode) {
     final serviceProtocolInfo = await Service.getInfo();
     logger.d('VM: ${serviceProtocolInfo.serverUri}');
   }
 
-  //Ensure everything is ready
   await Future.delayed(Duration.zero);
 
   GeckoLoggingService.setUp((level, message) {
