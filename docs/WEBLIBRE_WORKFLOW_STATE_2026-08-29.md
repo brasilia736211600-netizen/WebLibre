@@ -2,14 +2,14 @@
 
 **Last synchronized:** 2026-09-03
 **Branch:** `weblibre-ua-mainline-v3`
-**Current live HEAD:** `506e1501b49134fcb16177b504123f36908f0a9a`
+**Current live HEAD:** `dbc24a011dd203a98ce50968eb2431c00797284f`
 
 ## Source of truth
 GitHub code, refs, commits, PRs, CI/build/release runs, artifacts and release assets are authoritative. Chat memory and `[x]` markers are not evidence.
 
 ## Verified current checkpoint
 - PR #3 remains OPEN and DRAFT, base `main`.
-- Live branch ref currently resolves to `506e1501b49134fcb16177b504123f36908f0a9a`.
+- Live branch ref currently resolves to `dbc24a011dd203a98ce50968eb2431c00797284f`.
 - The current Quality workflow contains AI-1 registry/executor tests and targeted container/native tests.
 - Current HEAD has no verified matching Quality run and no commit status checks.
 - The GitHub connector exposes no workflow-dispatch action in this session, so a `workflow_dispatch` definition is not evidence that a current run can be started here.
@@ -74,13 +74,13 @@ For repeated failure:
 A documented skill is an operating rule, not proof that the current ChatGPT/Codex session has that tool or permission. When a required capability is unavailable: do not invent a result; record the exact blocker; continue independent work when dependency-safe; preserve the exact next manual action in state.
 
 ## Last completed step
-**Removed automatic background feed refresh and its dedicated headless plumbing, then synchronized privacy audit and master map:** `506e1501b49134fcb16177b504123f36908f0a9a`.
+**Removed automatic background feed refresh and its dedicated headless plumbing, then synchronized the privacy audit and Master Map:** `dbc24a011dd203a98ce50968eb2431c00797284f`.
 
 ## Current unfinished step
-**Build/pub dependency verification for the background-fetch removal, followed by independent account/sync reachability and outbound/permission source audits; current-head Quality CI and Android Scenario 1 verification also remain incomplete.**
+**Pub/lockfile verification and source reachability proof for the background-fetch removal remain incomplete; current-head Quality CI and Android Scenario 1 runtime verification also remain incomplete.**
 
 ## FIRST NEXT STEP — exactly one
-**Verify the dependency/lockfile state and source reachability of the background-fetch removal before making any additional privacy edits; preserve the one-pass Android validation gate.**
+**Perform dependency/lockfile verification for the background-fetch removal, then use the resulting evidence to determine the next smallest privacy/reachability edit; preserve the one-pass Android validation gate.**
 
 ## Mandatory loop
 `READ -> VERIFY -> RECONCILE -> PLAN -> EXECUTE -> TEST -> DIFF -> COMMIT -> SAVE STATE`
