@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-03 checkpoint update
 **Branch:** `weblibre-ua-mainline-v3`
-**Source HEAD before this documentation commit:** `87a1011ebb3aa0d8ae86f2100c37855b135068fd`
+**Source HEAD before this documentation commit:** `1156f1b37877fef56ca2a78777153cd0b2104d88`
 
 ## Current verification boundary
 Privacy/account hardening changes are SOURCE-VERIFIED. Historical Flutter CICD `33420348298` / job `99580917046` proves only its exact older checkpoint; it does not prove the current HEAD. Current-head Actions queries have returned zero runs for the latest cleanup checkpoints, so CI remains NOT VERIFIED.
@@ -34,13 +34,18 @@ Removed as unreachable/retired:
 
 The active Firefox Sync feature was not removed or redirected; it remains under `features/sync` with native Mozilla Android Components services.
 
+## Legacy account-auth cleanup — completed
+The account compatibility route was reduced to an informational screen, making the old account-auth state/repository/UI cluster unreachable from the retained route. The obsolete repository, generated provider, state model/generated file, and auth card were removed. This does not affect browser Firefox Sync.
+
 ## Supabase configuration cleanup — completed
 `apps/weblibre/lib/features/account/data/supabase_config.dart` retains only the account portal origin used by the existing subscription UI. The retired `SUPABASE_URL` and `SUPABASE_ANON_KEY` build-time constants, including the embedded anon credential, were removed.
 
 ## Android permission / transport checkpoint
 - `QUERY_ALL_PACKAGES` is removed.
 - `INTERNET` and `ACCESS_NETWORK_STATE` remain required browser/network capabilities.
-- Camera, microphone, location, media/storage, notification and foreground-service declarations remain pending concrete feature-by-feature minimization rather than speculative removal.
+- `CAMERA` is positively justified: the QR scanner explicitly calls `Permission.camera.request()` before opening the camera-backed QR view. fileciteturn168file0
+- Camera hardware remains optional in the manifest, so devices without camera hardware are not excluded.
+- Microphone, location, media/storage, notification and foreground-service declarations remain pending concrete feature-by-feature minimization rather than speculative removal.
 - `android:usesCleartextTraffic="true"` remains unchanged pending stronger evidence about all app-level HTTP consumers versus user-directed browser HTTP traffic.
 - Custom Tabs, downloads, private-tab notifications, and media session services remain declared and are not treated as dead without reachability proof.
 
@@ -55,9 +60,9 @@ The active Firefox Sync feature was not removed or redirected; it remains under 
 `GeckoFetchApiImpl` exposes a Pigeon fetch API backed by `components.core.client`. It constructs Android Components `Request` objects and forwards URL/method/headers/body/redirect/cookie/cache/OHTTP/referrer options to the native client. This is an active browser/network bridge, not a dead compatibility shell. Therefore `INTERNET` remains justified; global `usesCleartextTraffic` still requires broader transport evidence before changing it.
 
 ## Permission minimization finding
-`ACCESS_WIFI_STATE` has a source comment saying it is a Fenix debug-manifest capability, and GitHub's code-search endpoint returned zero concrete `WifiManager` hits, but that search response reported `incomplete_results=true`. No deletion is therefore justified solely from that incomplete index.
+`ACCESS_WIFI_STATE` has a source comment saying it is a Fenix debug-manifest capability. Available GitHub code-search evidence is incomplete, so no deletion is justified solely from that search result. The current manifest is therefore intentionally unchanged for this permission.
 
-## Still pending
+## Remaining opportunities
 1. Finish branch-scoped consumer proof for remaining Android permissions and any remaining app-level HTTP/configuration consumers.
 2. Decide whether `usesCleartextTraffic` can be removed/narrowed without breaking browser or user-directed flows.
 3. Add a local privacy/data-flow screen.
