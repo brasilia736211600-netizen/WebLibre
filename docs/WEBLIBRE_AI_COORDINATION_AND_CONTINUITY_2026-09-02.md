@@ -8,14 +8,11 @@ This file is the durable cross-chat / cross-agent continuity checkpoint for the 
 
 - Repository: `brasilia736211600-netizen/WebLibre`
 - Working branch: `weblibre-ua-mainline-v3`
-- HEAD at checkpoint: `54434b795844d5b915fc72fa9f4e793577cf6202`
-- HEAD short: `54434b7`
-- Parent: `eea4b40baef357136d38e057f708106aeb112da0`
+- HEAD at prior checkpoint: `54434b795844d5b915fc72fa9f4e793577cf6202`
 - Open PR: `#3`
 - PR title: `feat(containers): complete per-container User-Agent vertical slice`
 - PR base: `main`
-- PR current head: `54434b795844d5b915fc72fa9f4e793577cf6202`
-- `main` and `weblibre-ua-mainline-v3` are substantially divergent; do not merge/rebase blindly.
+- Current refs must always be re-read; this section is historical checkpoint context, not a trusted live ref.
 
 ## Required resume procedure
 
@@ -60,8 +57,8 @@ At the start of every new WebLibre chat, Codex task, or agent session:
   - `switch_tab`
   - `close_tab`
   - `open_url`
-- A historical Quality run failed on an older merge commit, not on the current `54434b7` source. Failure was a missing non-null return in `browser_tool_executor.dart` during `execute()` compilation.
-- Current source must be checked against the exact current HEAD before making any executor fix. The current file appeared to contain an explicit failure fallback after the tool switch, so do not blindly reapply the old patch.
+- The current `browser_tool_executor.dart` contains an explicit terminal failure return after the dispatch switch; do not reapply the historical missing-return patch without fresh evidence.
+- Current Quality CI must still be proven against the exact live HEAD before AI-1 is promoted to `CI-VERIFIED`.
 
 ### Agent Core
 
@@ -72,62 +69,92 @@ At the start of every new WebLibre chat, Codex task, or agent session:
 - Privacy hardening has substantial source work but outstanding cleanup/audit items remain. Do not declare privacy complete without current source/CI evidence.
 - Re-check background-feed fetching, dead account-sync paths, and outbound endpoint/data-flow coverage before release claims.
 
-## Verified CI/build evidence retained from prior checkpoints
-
-- Flutter CI run: `33420348298`
-- Job: `99580917046`
-- Verified commit at that time: `eea4b40baef357136d38e057f708106aeb112da0`
-- Result: SUCCESS.
-- Stable APK build/validation release was previously successful at that checkpoint.
-- Historical Quality run: `33335697412`, job `99322082446`, based on an older merge path involving `c557c914c3493c1eeafbe15de6fb757f1016ab8f` and merge commit `896283...`.
-- Historical failure root cause: `browser_tool_executor.dart` lacked a return for `BrowserToolExecutionResult`; asset-path warnings were not the root cause.
-- Current docs-only `54434b7` does not by itself prove a new product CI result. Re-run/inspect exact-head CI when source changes or a CI-triggering commit is created.
-
 ## Engineering invariants / non-negotiables
 
 - YAGNI: do the smallest change that closes the current verified gap.
 - Evidence precedence: current repository/CI/runtime evidence > stale documents > conversation memory.
 - Maintain the evidence chain:
   `SOURCE-VERIFIED → CI-VERIFIED → ANDROID-RUNTIME-VERIFIED → ARTIFACT-VERIFIED → RELEASE-ASSET-VERIFIED`.
-- Never equate `await syncEvents()` with proof that a fresh snapshot was consumed.
+- Never equate `await syncEvents()` with proof a fresh snapshot was consumed.
 - Never use `_freshSnapshotPending` as a freshness proof; stale debounced events and separate RPC/event timing make arrival order insufficient.
 - Do not modify generated Pigeon/Drift artifacts manually unless the repository's generation workflow explicitly requires it.
 - Do not erase unrelated user work or broad-clean the checkout.
 - Do not claim tests/builds/runtime behavior from reasoning or old logs; use fresh evidence.
 
-## AI engineering stack and role boundaries
+## AI engineering tool stack and role boundaries
 
-- **Codex Coordinator:** goal-scoped ownership, visible work boundaries, collision avoidance, and integration of 2–3 substantial independent verticals only when they are truly independent.
-- **Engineering Guardrails:** smallest reliable implementation slices, root-cause analysis, focused-to-broad verification, and adaptive parallelism.
-- **Process Jobs:** long-running builds/tests/benchmarks so the primary work session is not consumed by waiting.
-- **get-fable:** lifecycle routing and durable handoff/discovery/planning/execution/verification flow.
-- **AI DevKit:** specialized agent management, communication, TDD, debugging, verification, review, and lifecycle support.
-- **CodeRabbit:** independent review after a meaningful code slice/PR; it is not a substitute for local verification.
-- **Advisor:** one-shot read-only consultation for material architecture/interface/concurrency/security decisions only.
-- **Yaps / durable memory:** reusable project knowledge and architectural decisions; never store transcripts or volatile command logs as memory.
-- **Prompt Optimizer:** use only for long/complex user requests when converting them into an execution brief materially helps.
-- **Plugin Autopilot:** unrelated to normal WebLibre browser implementation; use for Plugin development itself.
+Use the smallest useful set. Tool availability never overrides repository evidence or required approvals.
 
-## Preferred parallel execution shape
+### Core execution / continuity
+
+- **GitHub:** canonical repo/ref/PR/CI/release evidence; always use for resume verification.
+- **get-fable:** route lifecycle work, discover, plan, execute, verify, recover, handoff, and release tasks when its deterministic routing adds value.
+- **fable-cowork:** autonomous multi-step tool chaining for complex bounded goals; never treat it as an unlimited background worker.
+- **fable-loop:** bounded polling/watch loops for async CI/build/test status; use with explicit timeout/backoff, never infinite polling.
+- **fable-discover:** gather the smallest repository/environment/runtime evidence before planning when load-bearing facts are unknown.
+- **fable-plan:** convert discovery into bounded, testable work cards for complex multi-file or architectural tasks.
+- **fable-execute:** execute one accepted bounded work card with immediate verification.
+- **fable-verify:** obtain fresh machine-checked acceptance evidence before completion claims.
+- **fable-recover:** diagnose repeated failures, stale caches, branch drift, or contradictory evidence before further edits.
+- **fable-handoff:** create compact durable continuation state at session boundaries.
+- **fable-review:** independent diff/spec review before merge when useful.
+- **fable-security:** threat modeling and security review for trust boundaries, auth, AI, network, or sensitive data work.
+- **fable-release:** release/merge readiness only after fresh verification.
+
+### Parallelism / long-running work
+
+- **Codex Coordinator:** goal-scoped coordination and collision avoidance for genuinely independent verticals.
+- **Codex Process Jobs:** durable detached local builds/tests/benchmarks/downloads when the underlying work may run long.
+- **AI DevKit agent-management / communication / orchestration:** only when there are real multi-agent dependencies; do not create workers for trivial commands.
+
+### Engineering verification / quality
+
+- **Codex Engineering Guardrails:** smallest reliable implementation, root-cause analysis, focused-to-broad verification.
+- **AI DevKit TDD / structured-debug / verify / security-review / simplify:** use only for the relevant engineering need.
+- **CodeRabbit:** independent review after a meaningful code slice; not a replacement for local tests or GitHub CI.
+- **Codex Advisor:** one-shot second opinion for material architecture/interface/concurrency/security decisions; skip settled/mechanical edits.
+
+### Memory / prompt handling
+
+- **Yaps Memory:** preferred durable project knowledge layer for reusable facts/decisions; never store transcripts, secrets, or volatile command logs.
+- **AI DevKit memory:** use only if a separate local memory layer is needed by the active task; avoid creating two competing canonical memory stores.
+- **Prompt Optimizer:** use only for long/complex user requests when converting them into an execution brief materially improves routing.
+
+### Plugin-only tooling
+
+- **Plugin Autopilot:** outside normal WebLibre application implementation. Use only when the task itself is Plugin development, packaging, validation, submission, or publishing.
+
+## Parallel execution rules
 
 Use no more workers than the work justifies. Typical maximum active durable writers: 2–3.
 
 Example independent verticals:
-
 1. Android/Gecko/Pigeon-facing implementation and focused tests.
 2. Flutter/state/UI implementation and focused tests.
-3. Independent verification/CI analysis or a genuinely separate product surface.
+3. Independent verification/CI/security analysis or a genuinely separate product surface.
 
 One owner per write surface. Shared interfaces, generated files, lockfiles, schemas, and full gates are serialized at the actual write/integration point.
 
 ## Coordination operating rules
 
 - Reuse an existing suitable task before creating another.
-- All coordinated writers use the same primary checkout/current branch; do not create/switch branches or worktrees merely for Coordinator parallelism unless the surrounding task explicitly authorizes that isolation.
-- Path overlap is an advisory warning; stop only for a real same-file/hunk/write collision.
-- Exclusive actions are narrow and exact; do not use broad integration locks.
-- The Coordinator is not a background daemon, scheduler, heartbeat, or transcript store.
+- All coordinated writers use the same primary checkout/current branch; do not create/switch branches or worktrees merely for Coordinator parallelism unless explicitly authorized.
+- Path overlap is advisory; stop only for a real same-file/hunk/write collision.
+- Exclusive actions are narrow and exact.
+- Coordinator is not a background daemon, scheduler, heartbeat, or transcript store.
+- Process Jobs are not a reason to claim a result before retrieving and checking the result.
 - Completion is accepted only after fresh integrated verification.
+
+## Capability/permission boundary
+
+A skill documented here describes the intended operating role, not an entitlement to unavailable tools or permissions. If a needed capability is unavailable in the current ChatGPT/Codex session:
+
+1. do not invent the result;
+2. record the blocker precisely;
+3. continue with independent work that does not violate dependencies;
+4. leave the exact manual/next action in durable state.
+
+For GitHub Actions, a workflow definition containing `workflow_dispatch` does not prove the current session can dispatch it. Never substitute an old CI run for a missing current-head run.
 
 ## Immediate next engineering action
 
@@ -136,7 +163,7 @@ One owner per write surface. Shared interfaces, generated files, lockfiles, sche
 Decision rule:
 
 - If current source compiles and focused AI-1 tests pass: do not patch the executor; advance to the next verified product/runtime gate, with Android Scenario 1 remaining the active blocker for the UA vertical.
-- If current source still reproduces the executor compile error: make the smallest return-path fix, add/retain focused regression coverage, run focused verification, inspect the diff, and commit.
+- If current source still reproduces an executor compile error: make the smallest return-path fix, add/retain focused regression coverage, run focused verification, inspect the diff, and commit.
 - Do not revive the historical fix solely because the old run failed.
 
 ## State-update contract
@@ -144,8 +171,7 @@ Decision rule:
 After each real milestone, update the appropriate project-state document with:
 
 - project/repository
-- branch
-- exact HEAD
+- exact branch and HEAD
 - PR and exact current head SHA
 - last verified product checkpoint
 - latest relevant CI/build/artifact
@@ -161,7 +187,3 @@ After each real milestone, update the appropriate project-state document with:
 - material blockers/risks
 
 Keep this file as a concise continuity contract; do not turn it into a transcript.
-
-## Current checkpoint note
-
-This file is a durable checkpoint created after reconciling the actual repository/branch state. The next agent must verify the refs again rather than assuming this SHA remains current after any later commit.
