@@ -7,7 +7,7 @@
 package eu.weblibre.flutter_mozilla_components.middleware
 
 import android.os.SystemClock
-import eu.weblibre.flutter_mozilla_components.GlobalComponents
+import eu.weblibre.flutter_mozilla_components.ProfileContext
 import eu.weblibre.flutter_mozilla_components.feature.ContainerUserAgentStore
 import eu.weblibre.flutter_mozilla_components.history.HistoryExclusions
 import eu.weblibre.flutter_mozilla_components.history.TabScopedHistoryDelegate
@@ -37,13 +37,11 @@ import mozilla.components.support.base.log.logger.Logger
  * first navigation.
  */
 class HistoryDelegateBindingMiddleware(
+    private val profileContext: ProfileContext,
     private val storageDelegate: HistoryTrackingDelegate,
 ) : Middleware<BrowserState, BrowserAction> {
 
     private val logger = Logger("HistoryDelegateBindingMiddleware")
-
-    private val profileContext =
-        GlobalComponents.components?.profileApplicationContext
 
     override fun invoke(
         store: Store<BrowserState, BrowserAction>,
@@ -121,16 +119,10 @@ class HistoryDelegateBindingMiddleware(
         val startedAt = SystemClock.elapsedRealtime()
         logger.debug(
             "UA restore bind start tabId=$tabId contextId=$contextId profile=" +
-                (profileContext?.relativePath ?: "<none>")
+                profileContext.relativePath
         )
 
-        val currentProfileContext = profileContext
-        if (currentProfileContext == null) {
-            logger.warn("UA restore bind skipped: no active profile context tabId=$tabId contextId=$contextId")
-            return
-        }
-
-        val userAgent = ContainerUserAgentStore.get(currentProfileContext, contextId)
+        val userAgent = ContainerUserAgentStore.get(profileContext, contextId)
         logger.debug(
             "UA restore lookup tabId=$tabId contextId=$contextId found=${userAgent != null} " +
                 "elapsedMs=${SystemClock.elapsedRealtime() - startedAt}"
