@@ -2,7 +2,7 @@
 
 **Canonical source of truth:** GitHub repository, refs, commits, PRs, CI/build/release runs, artifacts and release assets.
 **Branch:** `weblibre-ua-mainline-v3`
-**Current source HEAD:** `eea4b40baef357136d38e057f708106aeb112da0`
+**Current source HEAD:** `bc84f5cd0690fb6aa24eb4d8b7d348bab8bee375`
 
 ## Durable documents
 - `docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`
@@ -13,6 +13,7 @@
 - `docs/WEBLIBRE_RUNTIME_UA_RESTORE_FORENSICS_2026-08-31.md`
 - `docs/WEBLIBRE_PRIVACY_DATA_FLOW_AUDIT_2026-08-31.md`
 - `docs/WEBLIBRE_PERSONAL_PRODUCT_IDENTITY_2026-08-31.md`
+- `docs/WEBLIBRE_AI_COORDINATION_AND_CONTINUITY_2026-09-02.md`
 
 ## Current product position
 ```text
@@ -32,9 +33,9 @@ Privacy / Personal Product Hardening
     Account sign-in device_name                 REMOVED
     Sync source_device_id                      NULL-ENFORCED
     Direct Supabase application dependency     REMOVED
-    Account auth/sync boundary                 SOURCE-VERIFIED + current Flutter CI green
-    Search credits remote boundary             SOURCE-VERIFIED + current Flutter CI green
-    Subscription remote boundary               SOURCE-VERIFIED + current Flutter CI green
+    Account auth/sync boundary                 SOURCE-VERIFIED + Flutter build verified on eea4b40...
+    Search credits remote boundary             SOURCE-VERIFIED + Flutter build verified on eea4b40...
+    Subscription remote boundary               SOURCE-VERIFIED + Flutter build verified on eea4b40...
     Search token issuance                      DISABLED
     Automatic background feed fetch             PENDING
     Full dead account/sync source cleanup       PENDING reachability audit
@@ -55,7 +56,25 @@ Do not run Scenarios 2–6 until Scenario 1 passes.
 The model-independent first slice is:
 `get_tabs`, `get_current_tab`, `create_tab`, `switch_tab`, `close_tab`, `open_url`.
 
-Contracts, registry, executor and focused tests are source-verified. The Quality workflow contains the AI-1 registry/executor tests, but no current Quality run has been verified against the current checkpoint. Do not expand AI-1 before the browser runtime milestone is closed.
+Contracts, registry, executor and focused tests are source-verified. The Quality workflow contains the AI-1 registry/executor tests, but no Quality run has yet been verified against the exact live HEAD `bc84f5c...`.
+
+## AI engineering orchestration
+The durable continuity layer records role boundaries for:
+- GitHub
+- get-fable and selected fable lifecycle skills
+- Codex Coordinator
+- Codex Process Jobs
+- Codex Engineering Guardrails
+- CodeRabbit
+- Codex Advisor
+- AI DevKit
+- Yaps Memory
+- Prompt Optimizer
+- security/review/verify/recover capabilities where relevant
+
+Recommended high-value additions over the original stack are `fable-cowork` for complex bounded multi-step execution, `fable-loop` for bounded CI/status polling, `fable-verify` for fresh acceptance evidence, `fable-recover` for repeated/contradictory failures, `fable-handoff` for compact durable session state, and PR-completion/review skills when shepherding a PR through reviews and CI.
+
+Do not invoke all skills on every task. Select the smallest useful set; keep YAGNI and avoid competing canonical memory stores.
 
 ## Release / APK
 Validation Release `validation-stable-5-3aa06cf6ee090e42c9b7bff6abbf17f737b1fef5` is RELEASE-ASSET-VERIFIED for:
@@ -70,19 +89,20 @@ Non-negotiable:
 
 User-directed browsing/search/feed/proxy/Tor/sharing is not automatically telemetry. App-level outbound paths must be classified as user-directed, explicitly opted-in, required for an enabled feature, or silent/unrequested.
 
-The current privacy/account source changes are now covered by a successful Flutter CICD run on the exact pre-documentation checkpoint `eea4b40baef357136d38e057f708106aeb112da0`; that run is build verification, not Android runtime proof and not Quality test proof.
+The current privacy/account source changes were Flutter-build verified at `eea4b40...`; later documentation-only commits do not extend that verification to later source HEADs.
 
 ## CI evidence
-- Flutter CICD run `33420348298` / job `99580917046`: SUCCESS on exact HEAD `eea4b40baef357136d38e057f708106aeb112da0`.
+- Flutter CICD run `33420348298` / job `99580917046`: SUCCESS on exact source checkpoint `eea4b40...`.
 - Required stable APK build step: SUCCESS.
 - Native gomobile runtime build: SUCCESS.
 - Validation Release creation: SUCCESS.
-- Quality #60 `33334955774` is SUCCESS on older `477140419642d1170b241dd39f143900b9b98909` and predates the AI-1 test-step addition; it is not current AI-1 CI proof.
-- No current Quality run has been verified for `eea4b40...`.
+- Quality #60 `33334955774` is SUCCESS on older `4771404...` and predates the AI-1 test-step addition.
+- No current Quality run has been verified for `bc84f5c...`.
+- Exact current HEAD status currently has zero published commit statuses / no associated PR-triggered workflow run, so it remains pending CI proof.
 
 ## Evidence rule
 Never promote:
-`SOURCE-VERIFIED` -> `CI-VERIFIED` -> `ANDROID-RUNTIME-VERIFIED` -> `ARTIFACT-VERIFIED` -> `RELEASE-ASSET-VERIFIED`.
+`SOURCE-VERIFIED -> CI-VERIFIED -> ANDROID-RUNTIME-VERIFIED -> ARTIFACT-VERIFIED -> RELEASE-ASSET-VERIFIED`.
 
 A successful older run does not prove a later HEAD. `[x]` is not runtime proof. A ZIP artifact is not a direct Release asset.
 
@@ -92,8 +112,8 @@ A successful older run does not prove a later HEAD. `[x]` is not runtime proof. 
 At every material milestone update this map, Workflow State and the affected specialized document with exact HEAD, evidence, tests/run IDs, blocker and exactly one first next step.
 
 ## Current checkpoint
-**Current source HEAD:** `eea4b40baef357136d38e057f708106aeb112da0`.
-**Last verified Flutter CI:** `33420348298 / 99580917046`, SUCCESS, exact head `eea4b40...`.
+**Current source HEAD:** `bc84f5cd0690fb6aa24eb4d8b7d348bab8bee375`.
+**Last known current-head CI:** none verified.
 **Android:** Scenario 1 FAIL; UA restore remains runtime blocker.
 **AI-1 Quality CI:** pending on current checkpoint.
-**First next step:** run/verify the Quality workflow against the current branch HEAD so the AI-1 registry/executor tests are proven on the exact checkpoint; do not install an APK or start AI-2 until that result is green and the browser runtime dependency remains satisfied.
+**First next step:** obtain a current Quality run for the exact branch HEAD and verify AI-1 registry/executor plus targeted container/native tests; do not install an APK or start AI-2 until the browser foundation gates are satisfied.
