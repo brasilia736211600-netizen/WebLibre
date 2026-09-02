@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-03 checkpoint update
 **Branch:** `weblibre-ua-mainline-v3`
-**Source HEAD before this documentation commit:** `b838003af89a22b9ada87dba8cdd53e5184bde0c`
+**Source HEAD before this documentation commit:** `87a1011ebb3aa0d8ae86f2100c37855b135068fd`
 
 ## Current verification boundary
 Privacy/account hardening changes are SOURCE-VERIFIED. Historical Flutter CICD `33420348298` / job `99580917046` proves only its exact older checkpoint; it does not prove the current HEAD. Current-head Actions queries have returned zero runs for the latest cleanup checkpoints, so CI remains NOT VERIFIED.
@@ -15,33 +15,27 @@ User-directed navigation, search, feeds, proxy/Tor, sign-in, sharing and similar
 ## Confirmed source changes
 - User-facing About identity no longer promotes the former upstream developer; required upstream legal notices remain.
 - Account callback/handoff startup activation, parser/provider, stream, Android callback deep link, legacy handoff client and generated provider were removed.
-- `account_auth.dart` remains a local compatibility boundary with no remote account network I/O.
+- The retained Account route is informational-only; the retired account-auth repository, generated provider, account-auth state model/generated file, and legacy auth card were removed after the active route no longer referenced them.
 - The active Firefox Sync implementation is separate: `features/sync` delegates to native Mozilla Android Components account/sync services and remains live.
 - Direct application Supabase dependency is removed; legacy handoff transport is gone.
 - Search credits/subscription remote RPC paths and search token issuance remain disabled behind local boundaries.
-- Account Settings remains a local compatibility route that explicitly states remote personal-build account features are unavailable.
+- Account Settings explicitly states remote personal-build account features are unavailable.
 - Automatic `background_fetch` article refresh, dedicated headless entrypoint, and direct application dependency were removed; manual foreground feed refresh remains.
 - `apps/weblibre/pubspec.lock` is not present/tracked on the active branch.
 - Android `QUERY_ALL_PACKAGES` permission was removed; the narrower intent-query declaration remains for browser/open-with resolution.
 
 ## Legacy snapshot-sync cleanup — completed
-The current account compatibility screen contains no import of the retired snapshot-sync UI.
-
 Removed as unreachable/retired:
 - Snapshot-sync UI widgets
-- `AccountSyncRepository` source
+- `AccountSyncRepository` source and generated provider artifact
 - `SyncDocumentService`, `PrefsSyncService`, `SettingsSyncService`
 - generated providers for the two sync services
 - `SettingsSyncEnvelope` model and generated serialization file
-- orphaned `account_sync_repository.g.dart` generated provider artifact discovered after the initial cleanup
 
 The active Firefox Sync feature was not removed or redirected; it remains under `features/sync` with native Mozilla Android Components services.
 
-## Legacy account UI cleanup — completed
-The retained account route no longer exposes controls that imply a working remote account or the retired encrypted snapshot/sync-key service. The account status widget is informational only and explicitly distinguishes Firefox Sync as a separate browser feature.
-
 ## Supabase configuration cleanup — completed
-`apps/weblibre/lib/features/account/data/supabase_config.dart` remains only as the compatibility configuration for the account portal URL used by the subscription UI. The retired `SUPABASE_URL` and `SUPABASE_ANON_KEY` build-time constants, including the embedded anon credential, were removed.
+`apps/weblibre/lib/features/account/data/supabase_config.dart` retains only the account portal origin used by the existing subscription UI. The retired `SUPABASE_URL` and `SUPABASE_ANON_KEY` build-time constants, including the embedded anon credential, were removed.
 
 ## Android permission / transport checkpoint
 - `QUERY_ALL_PACKAGES` is removed.
