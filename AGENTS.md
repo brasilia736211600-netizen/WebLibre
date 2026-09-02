@@ -1,4 +1,4 @@
-# WebLibre Agent Operating Manual
+# WebLibre — Agent Operating Manual
 
 ## PURPOSE
 This is an active engineering project. Continue the existing WebLibre implementation; do not rebuild it. The current execution memory is `docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`.
@@ -9,6 +9,7 @@ This is an active engineering project. Continue the existing WebLibre implementa
 3. Read the older handoff/playbook documents only when historical detail is needed; the 2026-08-29 workflow state supersedes stale claims.
 4. Verify actual branch, HEAD, PR, CI, and current diff before editing.
 5. Inspect exact source files and tests relevant to the task.
+6. Read `docs/WEBLIBRE_USER_OPERATING_RULES_2026-09-02.md`; its execution cadence and reporting rules are mandatory.
 
 ## REPOSITORY SAFETY
 Reference repository: `https://github.com/brasilia736211600-netizen/WebLibre`
@@ -205,4 +206,12 @@ Every meaningful report/checkpoint must include:
 - blocker;
 - exact next action.
 
-Never claim runtime completion from a data model alone.
+## USER EXECUTION CADENCE — MANDATORY
+- Continue productive work for as long as the session can execute it; when blocked, move to the highest-priority independent work that is safe under the dependency graph.
+- Parallelize genuinely independent work when useful; prevent write collisions and serialize shared interfaces, generated files, lockfiles, schemas, and final gates.
+- Treat physical Android installation/testing as the last practical validation step whenever source/CI/review/reachability work can advance first. Do not repeatedly download/install APKs.
+- Do not interrupt productive execution with progress messages merely to report discoveries/problems. Analyze, fix, reprioritize, and continue internally.
+- Do not send a user update before a substantial work cycle; prefer approximately 10 minutes of productive work when the session permits, without fabricating elapsed time or activity.
+- Each update must be concise: completed now; new blocker/problem if any; project-wide position; single next step.
+- Do not ask for confirmation when repository evidence already justifies the next action, unless explicit permission or a safety boundary requires it.
+- If a higher-priority dependency appears, replan and act automatically. Use YAGNI and the shortest reliable path.
