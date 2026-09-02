@@ -2,7 +2,7 @@
 
 **Canonical source of truth:** GitHub repository, refs, commits, PRs, CI/build/release runs, artifacts and release assets.
 **Branch:** `weblibre-ua-mainline-v3`
-**Current live HEAD:** `022a9b60f594f4bc070a28dfa72f826cead6d849`
+**Current live HEAD:** `c226b009954d12ee6ae4f92fbfbd394281e42ba8`
 
 ## Durable documents
 - `docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`
@@ -37,9 +37,14 @@ Privacy / Personal Product Hardening
     Search credits remote boundary             SOURCE-VERIFIED + Flutter build verified on eea4b40...
     Subscription remote boundary               SOURCE-VERIFIED + Flutter build verified on eea4b40...
     Search token issuance                      DISABLED
-    Automatic background feed fetch             PENDING source edit
+    Automatic background feed fetch             REMOVED FROM STARTUP
+    Background headless feed entrypoint         REMOVED
+    Direct background_fetch dependency          REMOVED FROM APP PUBSPEC
+    Manual foreground feed refresh             RETAINED
     Full dead account/sync source cleanup       PENDING reachability audit
     outbound endpoint audit                    PENDING
+    permission/cleartext audit                 PENDING
+    local privacy/data-flow screen             PENDING
 ```
 
 ## Runtime blocker
@@ -82,7 +87,7 @@ The existing privacy/account source boundary is verified only through the docume
 ## CI evidence
 - Flutter CICD run `33420348298` / job `99580917046`: SUCCESS on exact source checkpoint `eea4b40...`.
 - Historical Quality #60 `33334955774` succeeded on older `4771404...` and predates the AI-1 test-step addition.
-- Live HEAD `022a9b60...` has no verified matching Quality run or commit status checks.
+- Live HEAD has no verified matching Quality run or commit status checks.
 - The current GitHub connector session exposes no workflow-dispatch action; do not claim a current run was started here.
 
 ## Evidence rule
@@ -97,9 +102,9 @@ A successful older run does not prove a later HEAD.
 At every material milestone update this map, Workflow State and the affected specialized document with exact HEAD, evidence, tests/run IDs, blocker and exactly one first next step.
 
 ## Current checkpoint
-**Current live HEAD:** `022a9b60f594f4bc070a28dfa72f826cead6d849`.
+**Current live HEAD:** `c226b009954d12ee6ae4f92fbfbd394281e42ba8`.
 **AI-1 Quality CI:** pending.
 **Android:** Scenario 1 FAIL; lifecycle stabilization committed and Core diff reconciled; runtime verification still pending.
-**Privacy:** source hardening largely complete but automatic background feed, reachability, outbound, permission/cleartext, and local privacy screen audits remain pending.
+**Privacy:** automatic background feed refresh source path removed; dependency/lockfile consistency still needs build/pub verification; reachability, outbound, permission/cleartext, and local privacy screen audits remain pending.
 **Device policy:** APK installation/testing remains deferred until the consolidated final validation gate.
-**First next step:** continue independent source-level/reachability work and verification, while preserving the one-pass Android validation gate.
+**First next step:** complete dependency/lockfile and static reachability verification for the privacy change, then continue the outbound/permission audit without starting device validation early.
