@@ -2,7 +2,7 @@
 
 **Canonical source of truth:** GitHub repository, refs, commits, PRs, CI/build/release runs, artifacts and release assets.
 **Branch:** `weblibre-ua-mainline-v3`
-**Source HEAD before this documentation commit:** `db22e218fc4955ac9217af488c577500b928d8d0`
+**Source HEAD before this documentation commit:** `7124f1fc1625fa6292064e7c3d01e52ac3ce7bfe`
 
 ## Durable documents
 - `docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`
@@ -33,6 +33,9 @@ Privacy / Personal Product Hardening
     Orphaned legacy generated sync artifact     REMOVED / SOURCE-VERIFIED
     Active Firefox Sync feature                 RETAINED / source-verified native FxaAccountManager path
     Legacy Supabase handoff client              REMOVED / SOURCE-VERIFIED
+    Legacy Supabase URL/anon-key config         REMOVED / SOURCE-VERIFIED
+    Account portal URL config                   RETAINED / live UI consumer
+    Legacy remote-account UI actions            REMOVED / SOURCE-VERIFIED
     Automatic background feed fetch             REMOVED FROM STARTUP
     Background headless feed entrypoint         REMOVED
     Direct background_fetch dependency          REMOVED FROM APP PUBSPEC
@@ -51,7 +54,7 @@ UnifiedPush is an intentional background network integration: `UnifiedPushReceiv
 
 `GeckoFetchApiImpl` is a native fetch bridge backed by `components.core.client`; it exposes the browser/Android Components fetch stack rather than a parallel raw Dart HTTP transport. This keeps `INTERNET` justified, while it does not by itself justify disabling global `usesCleartextTraffic`.
 
-The `SupabaseConfig` file remains because a known active subscription UI consumer uses its account portal URL. The legacy Supabase URL/anon-key fields remain under review until repository-wide branch-scoped proof is complete; no speculative rename/deletion was performed.
+The retained `SupabaseConfig` now contains only `ACCOUNT_BACKEND_ORIGIN`, because the retired Supabase URL and anon key are no longer needed by the active account path. The account portal URL remains consumed by the subscription UI.
 
 ## Android manifest safety boundary
 Keep `INTERNET` and `ACCESS_NETWORK_STATE` while active browser/network features remain. Keep foreground service declarations for concrete DownloadService, PrivateTabsNotificationService, and MediaSessionService paths. Camera, microphone, location, media/storage, notification and `usesCleartextTraffic` remain pending direct consumer proof.
@@ -77,7 +80,7 @@ Validation Release `validation-stable-5-3aa06cf6ee090e42c9b7bff6abbf17f737b1fef5
 ## CI evidence
 - Historical Flutter CICD run `33420348298` / job `99580917046`: SUCCESS on exact older checkpoint `eea4b40...`.
 - Historical Quality #60 `33334955774` succeeded on older `4771404...` and predates AI-1 test-step addition.
-- Current source-head Actions queries made during this cycle returned zero runs for the latest cleanup checkpoints; current-head CI remains NOT VERIFIED.
+- Current source-head Actions query for `084f0b102e8173b64665c8b512a7ba14fa81caa7` returned `total_count=0`; current-head CI remains NOT VERIFIED.
 - The connector session exposes no workflow-dispatch action.
 
 ## Evidence rule
@@ -85,7 +88,7 @@ Never promote:
 `SOURCE-VERIFIED -> CI-VERIFIED -> ANDROID-RUNTIME-VERIFIED -> ARTIFACT-VERIFIED -> RELEASE-ASSET-VERIFIED`.
 
 ## FIRST NEXT STEP — exactly one
-**Finish branch-scoped consumer proof for `supabase_config.dart`, remaining app-level HTTP clients, and each Android permission; then apply only evidence-backed manifest/transport reductions.**
+**Finish branch-scoped direct consumer proof for the remaining Android permissions and any remaining app-level HTTP/configuration consumers; then make only evidence-backed manifest/transport reductions.**
 
 ## Mandatory loop
 `READ -> VERIFY -> RECONCILE -> PLAN -> EXECUTE -> TEST -> DIFF -> COMMIT -> SAVE STATE`
