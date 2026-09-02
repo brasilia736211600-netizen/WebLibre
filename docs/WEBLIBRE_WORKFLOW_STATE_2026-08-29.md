@@ -2,7 +2,7 @@
 
 **Last synchronized:** 2026-09-03
 **Branch:** `weblibre-ua-mainline-v3`
-**Source HEAD before this documentation commit:** `b838003af89a22b9ada87dba8cdd53e5184bde0c`
+**Source HEAD before this documentation commit:** `9eb9a02a07fecfece6d0b0433e7aec8427e9b7d9`
 
 ## Source of truth
 GitHub code, refs, commits, PRs, CI/build/release runs, artifacts and release assets are authoritative. Chat memory is not evidence.
@@ -16,7 +16,7 @@ GitHub code, refs, commits, PRs, CI/build/release runs, artifacts and release as
 - Retired remote-account UI actions were removed from `AccountAuthStatusCard`; the account route is informational and explicitly distinguishes Firefox Sync as separate.
 - Active Firefox Sync remains live through `features/sync` + native Mozilla Android Components; it was not touched by the cleanup.
 - Android `QUERY_ALL_PACKAGES` remains removed.
-- Current-head Actions query for `084f0b102e8173b64665c8b512a7ba14fa81caa7` returned zero workflow runs; therefore CI is NOT VERIFIED.
+- Current-head Actions query for the pre-documentation code checkpoint returned zero workflow runs; therefore CI is NOT VERIFIED.
 
 ## Browser / Android runtime
 Scenario 1 remains **FAIL / runtime revalidation pending**:
