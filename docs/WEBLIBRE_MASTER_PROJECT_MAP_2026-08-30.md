@@ -56,6 +56,8 @@ UnifiedPush is an intentional background network integration: `UnifiedPushReceiv
 
 The retained `SupabaseConfig` now contains only `ACCOUNT_BACKEND_ORIGIN`, because the retired Supabase URL and anon key are no longer needed by the active account path. The account portal URL remains consumed by the subscription UI.
 
+The retained account compatibility UI is informational only: the former remote sign-in, snapshot/sync-key and related actions are no longer exposed. Firefox Sync remains a separate browser feature.
+
 ## Android manifest safety boundary
 Keep `INTERNET` and `ACCESS_NETWORK_STATE` while active browser/network features remain. Keep foreground service declarations for concrete DownloadService, PrivateTabsNotificationService, and MediaSessionService paths. Camera, microphone, location, media/storage, notification and `usesCleartextTraffic` remain pending direct consumer proof.
 
@@ -75,7 +77,7 @@ A source-only UA lifecycle stabilization is in the branch: `HistoryDelegateBindi
 Use the agreed add-ons only where they add leverage: GitHub as source-of-truth, Codex Engineering Guardrails for scoped implementation/verification, Coordinator/AI DevKit for parallel task boundaries when actual agent execution is available, Advisor for material architecture decisions, CodeRabbit for review, and Process Jobs for durable local processes. Do not create competing canonical state stores or invoke every skill unnecessarily.
 
 ## Release / APK
-Validation Release `validation-stable-5-3aa06cf6ee090e42c9b7bff6abbf17f737b1fef5` remains RELEASE-ASSET-VERIFIED for separate ARM64 and armeabi-v7a APKs. Production `v*` releases remain blocked on browser runtime + release validation.
+Validation Release `validation-stable-5-3aa06cf6ee090e42c9b7bff6abbf17f737b1fef5` remains RELEASE-ASSET-VERIFIED for separate ARM64 and armeabi-v7a APKs. Production `v*` releases remain blocked on runtime/release validation.
 
 ## CI evidence
 - Historical Flutter CICD run `33420348298` / job `99580917046`: SUCCESS on exact older checkpoint `eea4b40...`.
