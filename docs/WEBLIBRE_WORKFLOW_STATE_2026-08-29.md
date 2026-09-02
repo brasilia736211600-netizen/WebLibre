@@ -2,7 +2,7 @@
 
 **Last synchronized:** 2026-09-03
 **Branch:** `weblibre-ua-mainline-v3`
-**Source HEAD before this documentation commit:** `314ecc001427a45533e046365d5e973be2709d93`
+**Source HEAD before this documentation commit:** `c463b8d5bfda401c21267a3707919a409bdee748`
 
 ## Source of truth
 GitHub code, refs, commits, PRs, CI/build/release runs, artifacts and release assets are authoritative. Chat memory is not evidence.
@@ -16,7 +16,7 @@ GitHub code, refs, commits, PRs, CI/build/release runs, artifacts and release as
 - The legacy account route is informational-only; the obsolete account-auth repository, generated provider, state model/generated file, and auth card were removed.
 - Active Firefox Sync remains live through `features/sync` + native Mozilla Android Components; it was not touched by the cleanup.
 - Android `QUERY_ALL_PACKAGES` remains removed.
-- `CAMERA` is positively justified by the QR scanner's direct runtime permission request and camera-backed view.
+- `CAMERA` is positively justified by the QR scanner's direct runtime permission request and camera-backed view. Native site-permission handling also retains microphone and location runtime permission request paths.
 - Current-head CI remains NOT VERIFIED.
 
 ## Browser / Android runtime
@@ -42,7 +42,7 @@ Contracts, registry, executor, source mappings and focused tests remain SOURCE-V
 - `QUERY_ALL_PACKAGES` removed.
 - Supabase credentials and obsolete URL configuration removed from the retained account compatibility config; account portal URL retained because it has a live UI consumer.
 - Legacy account-auth repository/state/UI cluster removed; account route remains a local compatibility boundary.
-- `CAMERA` retained because the active QR scanner requests it explicitly. fileciteturn168file0
+- `CAMERA` retained because the active QR scanner requests it explicitly. Microphone/location remain retained because native `SitePermissionsFeature` requests corresponding platform permissions when a site asks for them.
 
 ## Outbound endpoint / background audit
 - Active Firefox Sync delegates to Mozilla Android Components `FxaAccountManager`, account-auth features, explicit `syncNow(SyncReason.User)`, device constellation, and native remote-tabs storage.
@@ -56,7 +56,7 @@ Contracts, registry, executor, source mappings and focused tests remain SOURCE-V
 - Foreground-service declarations remain justified by concrete download, private-tab notification, and media-session integrations.
 - `CAMERA` is source-verified as required by QR scanning.
 - `ACCESS_WIFI_STATE` remains unchanged because available negative search evidence is incomplete.
-- Microphone, location, media/storage and notification permissions remain pending direct branch-scoped consumer proof.
+- Microphone and location now have positive native request-path evidence; media/storage and notification permissions remain pending finer direct consumer attribution.
 
 ## Release
 Validation release `validation-stable-5-3aa06cf6ee090e42c9b7bff6abbf17f737b1fef5` remains RELEASE-ASSET-VERIFIED for separate ARM64 and armeabi-v7a APKs. Production `v*` releases remain blocked on runtime/release validation.
@@ -65,7 +65,7 @@ Validation release `validation-stable-5-3aa06cf6ee090e42c9b7bff6abbf17f737b1fef5
 `SOURCE-VERIFIED -> CI-VERIFIED -> ANDROID-RUNTIME-VERIFIED -> ARTIFACT-VERIFIED -> RELEASE-ASSET-VERIFIED` are separate states.
 
 ## FIRST NEXT STEP — exactly one
-**Finish branch-scoped direct consumer proof for the remaining Android permissions and any remaining app-level HTTP/configuration consumers; then make only evidence-backed manifest/transport reductions.**
+**Finish branch-scoped direct consumer proof for `ACCESS_WIFI_STATE`, notification, media/storage, and any remaining app-level HTTP/configuration consumers; then make only evidence-backed manifest/transport reductions.**
 
 ## Mandatory loop
 `READ -> VERIFY -> RECONCILE -> PLAN -> EXECUTE -> TEST -> DIFF -> COMMIT -> SAVE STATE`
