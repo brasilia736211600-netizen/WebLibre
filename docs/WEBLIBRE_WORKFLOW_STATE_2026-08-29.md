@@ -2,21 +2,21 @@
 
 **Last synchronized:** 2026-09-03
 **Branch:** `weblibre-ua-mainline-v3`
-**Source HEAD before this documentation commit:** `c7308fcc0c47ba522b95192826f3a155e600b9e1`
+**Source HEAD before this documentation commit:** `314ecc001427a45533e046365d5e973be2709d93`
 
 ## Source of truth
 GitHub code, refs, commits, PRs, CI/build/release runs, artifacts and release assets are authoritative. Chat memory is not evidence.
 
 ## Current checkpoint
-- PR #3 remains OPEN and DRAFT, base `main`.
+- PR #3 remains OPEN and DRAFT, base `main`; its metadata head is current, but its body still needs a later refresh because the PR update path was rejected by the connector security layer in this session.
 - Retired account callback/handoff cleanup is complete.
 - Legacy snapshot-sync cluster is removed after reachability review.
 - Orphaned generated `account_sync_repository.g.dart` was removed.
 - Retired Supabase URL/anon-key constants were removed; only the account portal URL remains in the compatibility config because the subscription UI still links to that portal.
-- The legacy account route is now informational-only; the obsolete account-auth repository, generated provider, state model/generated file, and auth card were removed.
+- The legacy account route is informational-only; the obsolete account-auth repository, generated provider, state model/generated file, and auth card were removed.
 - Active Firefox Sync remains live through `features/sync` + native Mozilla Android Components; it was not touched by the cleanup.
 - Android `QUERY_ALL_PACKAGES` remains removed.
-- Push background delivery and native fetch paths are mapped as active, intentional browser functionality.
+- `CAMERA` is positively justified by the QR scanner's direct runtime permission request and camera-backed view.
 - Current-head CI remains NOT VERIFIED.
 
 ## Browser / Android runtime
@@ -40,21 +40,23 @@ Contracts, registry, executor, source mappings and focused tests remain SOURCE-V
 - Active Firefox Sync retained.
 - Automatic background feed fetch/headless entrypoint/direct dependency removed; manual foreground refresh retained.
 - `QUERY_ALL_PACKAGES` removed.
-- Retired Supabase credential/config fields removed; account portal origin retained for its live UI consumer.
-- Retired account auth UI/repository/state cluster removed after the account route was reduced to informational-only behavior.
+- Supabase credentials and obsolete URL configuration removed from the retained account compatibility config; account portal URL retained because it has a live UI consumer.
+- Legacy account-auth repository/state/UI cluster removed; account route remains a local compatibility boundary.
+- `CAMERA` retained because the active QR scanner requests it explicitly. fileciteturn168file0
 
 ## Outbound endpoint / background audit
-- Firefox Sync delegates to Mozilla Android Components `FxaAccountManager`, account-auth features, explicit `syncNow(SyncReason.User)`, device constellation, and native remote-tabs storage.
-- UnifiedPush is an intentional user-enabled background delivery path: distributor receiver -> durable push store -> WorkManager worker -> Gecko delivery.
-- `GeckoFetchApiImpl` is an active Pigeon bridge to the native Android Components fetch client.
+- Active Firefox Sync delegates to Mozilla Android Components `FxaAccountManager`, account-auth features, explicit `syncNow(SyncReason.User)`, device constellation, and native remote-tabs storage.
+- UnifiedPush is a concrete user-enabled background delivery path and remains retained.
+- `GeckoFetchApiImpl` is an active browser/native fetch bridge backed by `components.core.client`.
 - `DownloadService` uses the shared Android Components HTTP client.
 - `android:usesCleartextTraffic="true"` remains unchanged because browser HTTP support and app-level HTTP transports have not yet been fully separated by evidence.
 
 ## Android permission audit boundary
 - `INTERNET` and `ACCESS_NETWORK_STATE` remain justified by active browser/network features.
 - Foreground-service declarations remain justified by concrete download, private-tab notification, and media-session integrations.
-- `ACCESS_WIFI_STATE` remains unchanged because the available code-search response is incomplete despite returning no concrete `WifiManager` hit.
-- Camera, microphone, location, media/storage and notification permissions remain pending direct branch-specific consumer proof.
+- `CAMERA` is source-verified as required by QR scanning.
+- `ACCESS_WIFI_STATE` remains unchanged because available negative search evidence is incomplete.
+- Microphone, location, media/storage and notification permissions remain pending direct branch-scoped consumer proof.
 
 ## Release
 Validation release `validation-stable-5-3aa06cf6ee090e42c9b7bff6abbf17f737b1fef5` remains RELEASE-ASSET-VERIFIED for separate ARM64 and armeabi-v7a APKs. Production `v*` releases remain blocked on runtime/release validation.
