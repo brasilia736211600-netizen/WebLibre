@@ -2,14 +2,14 @@
 
 **Last synchronized:** 2026-09-03
 **Branch:** `weblibre-ua-mainline-v3`
-**Current live HEAD:** `03dcedff5e78bd4cc1c3504d2fe56c7a38183239`
+**Current live HEAD:** `df1aa8bde70164ec6f0fad8c27549c8f315e07a1`
 
 ## Source of truth
 GitHub code, refs, commits, PRs, CI/build/release runs, artifacts and release assets are authoritative. Chat memory and `[x]` markers are not evidence.
 
 ## Verified current checkpoint
 - PR #3 remains OPEN and DRAFT, base `main`.
-- Live branch ref currently resolves to `03dcedff5e78bd4cc1c3504d2fe56c7a38183239`.
+- Live branch ref currently resolves to `df1aa8bde70164ec6f0fad8c27549c8f315e07a1`.
 - The current Quality workflow contains AI-1 registry/executor tests and targeted container/native tests.
 - Current HEAD has **no verified matching Quality run**.
 - The GitHub connector exposes no workflow-dispatch action in this session, so a `workflow_dispatch` definition is not evidence that a current run can be started here.
@@ -72,7 +72,7 @@ For repeated failure:
 A documented skill is an operating rule, not proof that the current ChatGPT/Codex session has that tool or permission. When a required capability is unavailable: do not invent a result; record the exact blocker; continue independent work when dependency-safe; preserve the exact next manual action in state.
 
 ## Last completed step
-**Hardened the UA middleware's profile-context lifecycle:** `03dcedff5e78bd4cc1c3504d2fe56c7a38183239`.
+**Hardened the UA middleware's profile-context lifecycle and reconciled the durable map/state:** `df1aa8bde70164ec6f0fad8c27549c8f315e07a1`.
 
 ## Current unfinished step
 **Fresh verification of the UA Scenario 1 fix and current-head Quality CI remain incomplete; no matching current-head Quality run is presently verified.**
