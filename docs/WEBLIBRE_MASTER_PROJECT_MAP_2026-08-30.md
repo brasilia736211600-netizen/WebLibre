@@ -2,7 +2,7 @@
 
 **Canonical source of truth:** GitHub repository, refs, commits, PRs, CI/build/release runs, artifacts and release assets.
 **Branch:** `weblibre-ua-mainline-v3`
-**Current live HEAD:** `c226b009954d12ee6ae4f92fbfbd394281e42ba8`
+**Current live HEAD:** `e0cb3447d1ff7aec6bd327c6a358ebe207abc2d5`
 
 ## Durable documents
 - `docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`
@@ -102,9 +102,9 @@ A successful older run does not prove a later HEAD.
 At every material milestone update this map, Workflow State and the affected specialized document with exact HEAD, evidence, tests/run IDs, blocker and exactly one first next step.
 
 ## Current checkpoint
-**Current live HEAD:** `c226b009954d12ee6ae4f92fbfbd394281e42ba8`.
+**Current live HEAD:** `e0cb3447d1ff7aec6bd327c6a358ebe207abc2d5`.
 **AI-1 Quality CI:** pending.
 **Android:** Scenario 1 FAIL; lifecycle stabilization committed and Core diff reconciled; runtime verification still pending.
-**Privacy:** automatic background feed refresh source path removed; dependency/lockfile consistency still needs build/pub verification; reachability, outbound, permission/cleartext, and local privacy screen audits remain pending.
+**Privacy:** automatic background feed refresh source path removed; dependency/lockfile consistency still needs pub/build verification; reachability, outbound, permission/cleartext, and local privacy screen audits remain pending.
 **Device policy:** APK installation/testing remains deferred until the consolidated final validation gate.
-**First next step:** complete dependency/lockfile and static reachability verification for the privacy change, then continue the outbound/permission audit without starting device validation early.
+**First next step:** verify the dependency/lockfile state for the background-fetch removal, then continue account/sync reachability and outbound/permission audits without starting device validation early.
