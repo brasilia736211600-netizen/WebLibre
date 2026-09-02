@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-03 checkpoint update
 **Branch:** `weblibre-ua-mainline-v3`
-**Source HEAD before this documentation commit:** `1156f1b37877fef56ca2a78777153cd0b2104d88`
+**Source HEAD before this documentation commit:** `24227982c8ef73a6edab6d136729dba3e3a95333`
 
 ## Current verification boundary
 Privacy/account hardening changes are SOURCE-VERIFIED. Historical Flutter CICD `33420348298` / job `99580917046` proves only its exact older checkpoint; it does not prove the current HEAD. Current-head Actions queries have returned zero runs for the latest cleanup checkpoints, so CI remains NOT VERIFIED.
@@ -44,8 +44,10 @@ The account compatibility route was reduced to an informational screen, making t
 - `QUERY_ALL_PACKAGES` is removed.
 - `INTERNET` and `ACCESS_NETWORK_STATE` remain required browser/network capabilities.
 - `CAMERA` is positively justified: the QR scanner explicitly calls `Permission.camera.request()` before opening the camera-backed QR view. fileciteturn168file0
+- The native browser fragment also installs an Android `RequestMultiplePermissions` launcher for site-permission requests and configures camera, microphone, and location site permissions to `ASK_TO_ALLOW`; this is direct evidence that microphone and location runtime permission paths remain active. fileciteturn201file0L2-L2
+- The same fragment registers a separate permission launcher for downloads and another for prompt-driven permissions, so download/media and web-content permission paths are intentionally retained pending finer per-permission attribution. fileciteturn201file0L2-L2
 - Camera hardware remains optional in the manifest, so devices without camera hardware are not excluded.
-- Microphone, location, media/storage, notification and foreground-service declarations remain pending concrete feature-by-feature minimization rather than speculative removal.
+- Notification, media/storage and foreground-service declarations remain pending concrete feature-by-feature minimization rather than speculative removal.
 - `android:usesCleartextTraffic="true"` remains unchanged pending stronger evidence about all app-level HTTP consumers versus user-directed browser HTTP traffic.
 - Custom Tabs, downloads, private-tab notifications, and media session services remain declared and are not treated as dead without reachability proof.
 
@@ -63,7 +65,7 @@ The account compatibility route was reduced to an informational screen, making t
 `ACCESS_WIFI_STATE` has a source comment saying it is a Fenix debug-manifest capability. Available GitHub code-search evidence is incomplete, so no deletion is justified solely from that search result. The current manifest is therefore intentionally unchanged for this permission.
 
 ## Remaining opportunities
-1. Finish branch-scoped consumer proof for remaining Android permissions and any remaining app-level HTTP/configuration consumers.
+1. Finish branch-scoped consumer proof for `ACCESS_WIFI_STATE`, notification, media/storage and any remaining app-level HTTP/configuration consumers.
 2. Decide whether `usesCleartextTraffic` can be removed/narrowed without breaking browser or user-directed flows.
 3. Add a local privacy/data-flow screen.
 4. Measure APK/runtime cost before unrelated performance removals.
