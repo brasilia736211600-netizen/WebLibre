@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-03 checkpoint update  
 **Branch:** `weblibre-ua-mainline-v3`  
-**Checkpoint:** background-feed automatic refresh removal
+**Checkpoint:** background-fetch dependency/lockfile verification
 
 ## Current verification boundary
 The privacy/account hardening changes remain SOURCE-VERIFIED and were previously build-verified by Flutter CICD `33420348298` / job `99580917046` on the exact checkpoint `eea4b40...`. That older build evidence does not prove the newer HEAD. The current Quality workflow has not yet produced a verified run for the newer HEAD.
@@ -26,17 +26,20 @@ User-directed navigation, search, feeds, proxy/Tor, sign-in, sharing and similar
 - Automatic `background_fetch` article refresh has been removed from release startup.
 - The dedicated `fetch_entrypoint.dart` headless background task has been removed.
 - The direct `background_fetch` application dependency has been removed from `apps/weblibre/pubspec.yaml`.
+- `apps/weblibre/pubspec.lock` is not present/tracked on the active branch, so there is no repository lockfile entry to edit; no generated lockfile was hand-edited.
 - Manual foreground feed refresh remains available through the existing feed controller path.
 
+## Dependency verification result
+The active branch `weblibre-ua-mainline-v3` has no direct `background_fetch` dependency in `apps/weblibre/pubspec.yaml`, and no tracked `apps/weblibre/pubspec.lock`. This closes the repository-level dependency/lockfile inspection task. A future `flutter pub get` or CI/build remains the correct generated-dependency validation, but there is no stale lockfile to patch manually.
+
 ## Still pending
-1. Prove the remaining dependency graph/lockfile resolves cleanly after removing `background_fetch`.
-2. Prove no hidden account/sync initializer remains.
-3. Remove dead account/sync source files only after reachability is proven.
-4. Complete outbound endpoint/background-service audit.
-5. Review Android permissions, `QUERY_ALL_PACKAGES`, and cleartext traffic against concrete feature use.
-6. Add a local privacy/data-flow screen.
-7. Measure APK/runtime cost before unrelated performance removals.
-8. Re-run the consolidated Android validation later, including UA Scenario 1.
+1. Prove the remaining account/sync source reachability graph and identify any hidden initializer.
+2. Remove dead account/sync source files only after active-branch reachability is proven.
+3. Complete outbound endpoint/background-service audit.
+4. Review Android permissions, `QUERY_ALL_PACKAGES`, and cleartext traffic against concrete feature use.
+5. Add a local privacy/data-flow screen.
+6. Measure APK/runtime cost before unrelated performance removals.
+7. Re-run the consolidated Android validation later, including UA Scenario 1.
 
 ## Evidence rule
 Source inspection and a successful older Flutter build do not equal current-head CI or Android runtime verification. Every material privacy change follows:
