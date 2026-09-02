@@ -2,7 +2,7 @@
 
 **Canonical source of truth:** GitHub repository, refs, commits, PRs, CI/build/release runs, artifacts and release assets.
 **Branch:** `weblibre-ua-mainline-v3`
-**Current source HEAD:** `bc84f5cd0690fb6aa24eb4d8b7d348bab8bee375`
+**Current live HEAD:** `b81f050cc15b95e898989acb2d56b616941e9369`
 
 ## Durable documents
 - `docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`
@@ -23,7 +23,7 @@ Browser / Container / UA foundation
 
 AI-1 Browser Tool
     specification / inventory / contracts       DONE / SOURCE-VERIFIED
-    registry / executor / focused tests         SOURCE-VERIFIED; current Quality CI still pending
+    registry / executor / focused tests         SOURCE-VERIFIED; current Quality CI pending
     Agent Core                                  NOT STARTED
 
 Privacy / Personal Product Hardening
@@ -52,29 +52,19 @@ The first real Android validation of the ARM64 validation Release proved:
 
 Do not run Scenarios 2–6 until Scenario 1 passes.
 
+## Android testing policy
+Physical Android installation is a late-stage validation gate, not a development loop. Continue source inspection, focused tests, CI, static/reachability analysis, and review without waiting for the phone. Once the source/CI/review gates are sufficiently complete, perform one consolidated device validation pass; fix any issues found there and repeat only the affected final validation, rather than rebuilding/installing for every intermediate question.
+
 ## AI-1
 The model-independent first slice is:
 `get_tabs`, `get_current_tab`, `create_tab`, `switch_tab`, `close_tab`, `open_url`.
 
-Contracts, registry, executor and focused tests are source-verified. The Quality workflow contains the AI-1 registry/executor tests, but no Quality run has yet been verified against the exact live HEAD `bc84f5c...`.
+Contracts, registry, executor and focused tests are source-verified. The current executor has an explicit terminal fallback return. Do not reapply the historical missing-return patch without fresh evidence. The Quality workflow contains AI-1 registry/executor tests, but no Quality run is currently verified against the live HEAD.
 
 ## AI engineering orchestration
-The durable continuity layer records role boundaries for:
-- GitHub
-- get-fable and selected fable lifecycle skills
-- Codex Coordinator
-- Codex Process Jobs
-- Codex Engineering Guardrails
-- CodeRabbit
-- Codex Advisor
-- AI DevKit
-- Yaps Memory
-- Prompt Optimizer
-- security/review/verify/recover capabilities where relevant
+The durable continuity layer records role boundaries for GitHub, get-fable, Codex Coordinator, Codex Process Jobs, Codex Engineering Guardrails, CodeRabbit, Codex Advisor, AI DevKit, Yaps Memory, Prompt Optimizer, and security/review/verify/recover capabilities where relevant.
 
-Recommended high-value additions over the original stack are `fable-cowork` for complex bounded multi-step execution, `fable-loop` for bounded CI/status polling, `fable-verify` for fresh acceptance evidence, `fable-recover` for repeated/contradictory failures, `fable-handoff` for compact durable session state, and PR-completion/review skills when shepherding a PR through reviews and CI.
-
-Do not invoke all skills on every task. Select the smallest useful set; keep YAGNI and avoid competing canonical memory stores.
+Use only the smallest useful set. `fable-cowork` is for complex bounded autonomous chaining; `fable-loop` for bounded CI/status polling; `fable-verify` for fresh acceptance evidence; `fable-recover` for repeated/contradictory failures; `fable-handoff` for compact durable state. Do not create competing canonical memory stores or invoke every skill on every task.
 
 ## Release / APK
 Validation Release `validation-stable-5-3aa06cf6ee090e42c9b7bff6abbf17f737b1fef5` is RELEASE-ASSET-VERIFIED for:
@@ -89,7 +79,7 @@ Non-negotiable:
 
 User-directed browsing/search/feed/proxy/Tor/sharing is not automatically telemetry. App-level outbound paths must be classified as user-directed, explicitly opted-in, required for an enabled feature, or silent/unrequested.
 
-The current privacy/account source changes were Flutter-build verified at `eea4b40...`; later documentation-only commits do not extend that verification to later source HEADs.
+The current privacy/account source changes were Flutter-build verified at `eea4b40...`; later documentation commits do not extend that verification to later source HEADs.
 
 ## CI evidence
 - Flutter CICD run `33420348298` / job `99580917046`: SUCCESS on exact source checkpoint `eea4b40...`.
@@ -97,8 +87,8 @@ The current privacy/account source changes were Flutter-build verified at `eea4b
 - Native gomobile runtime build: SUCCESS.
 - Validation Release creation: SUCCESS.
 - Quality #60 `33334955774` is SUCCESS on older `4771404...` and predates the AI-1 test-step addition.
-- No current Quality run has been verified for `bc84f5c...`.
-- Exact current HEAD status currently has zero published commit statuses / no associated PR-triggered workflow run, so it remains pending CI proof.
+- Live HEAD `b81f050...` has no published commit statuses and no verified matching Quality run.
+- The current Quality workflow has `workflow_dispatch`, but the current GitHub connector session exposes no workflow-dispatch action; do not claim a run was started from this session.
 
 ## Evidence rule
 Never promote:
@@ -112,8 +102,8 @@ A successful older run does not prove a later HEAD. `[x]` is not runtime proof. 
 At every material milestone update this map, Workflow State and the affected specialized document with exact HEAD, evidence, tests/run IDs, blocker and exactly one first next step.
 
 ## Current checkpoint
-**Current source HEAD:** `bc84f5cd0690fb6aa24eb4d8b7d348bab8bee375`.
-**Last known current-head CI:** none verified.
+**Current live HEAD:** `b81f050cc15b95e898989acb2d56b616941e9369`.
+**AI-1 Quality CI:** pending.
 **Android:** Scenario 1 FAIL; UA restore remains runtime blocker.
-**AI-1 Quality CI:** pending on current checkpoint.
-**First next step:** obtain a current Quality run for the exact branch HEAD and verify AI-1 registry/executor plus targeted container/native tests; do not install an APK or start AI-2 until the browser foundation gates are satisfied.
+**Privacy:** source hardening largely complete but background feed, reachability, outbound, permission/cleartext, and local privacy screen audits remain pending.
+**First next step:** continue independent source-level/reachability work and verification; keep physical APK installation deferred until the consolidated final validation gate.
