@@ -1,22 +1,23 @@
 # WebLibre — Durable Workflow State
 
-**Last synchronized:** 2026-09-03  
-**Branch:** `weblibre-ua-mainline-v3`  
-**Current HEAD:** `5c811022f46e92280cd52e4f99c66dd760aa001d` (`docs: record Android permission minimization checkpoint`)
+**Last synchronized:** 2026-09-03
+**Branch:** `weblibre-ua-mainline-v3`
+**Source HEAD before this documentation commit:** `478bc6ad4c8fb3b008e44e1c8de20e2527e1fac7`
 
 ## Source of truth
-GitHub code, refs, commits, PRs, CI/build/release runs, artifacts and release assets are authoritative. Chat memory and `[x]` markers are not evidence. The GitHub branch ref is the final authority for the current HEAD because documentation commits necessarily advance the branch ref after they are written.
+GitHub code, refs, commits, PRs, CI/build/release runs, artifacts and release assets are authoritative. Chat memory is not evidence.
 
 ## Current checkpoint
 - PR #3 remains OPEN and DRAFT, base `main`.
-- Retired account callback/handoff cleanup is complete: callback parser/provider, callback stream, Android callback deep link, and legacy Supabase handoff client/provider are deleted.
-- Active Firefox Sync remains separate and live through `features/sync` + `GeckoSyncService`.
-- Android `QUERY_ALL_PACKAGES` permission has been removed from the main app manifest; narrower intent-query declarations remain.
-- No verified current-head Quality run or commit status checks are available for this checkpoint.
-- The GitHub connector session exposes no workflow-dispatch action.
+- Retired account callback/handoff cleanup is complete.
+- Legacy snapshot-sync cluster is now removed after reachability review: snapshot UI widgets, `AccountSyncRepository`, `SyncDocumentService`, `PrefsSyncService`, `SettingsSyncService`, their generated providers, and `SettingsSyncEnvelope` model/generated file.
+- The current account compatibility screen imports `account_auth` and `AccountAuthStatusCard` only; it does not import the removed snapshot-sync path.
+- Active Firefox Sync remains live through `features/sync` + `GeckoSyncService`; it was not touched by this cleanup.
+- Android `QUERY_ALL_PACKAGES` remains removed.
+- Current-head GitHub Actions query for the post-cleanup source head returned zero workflow runs; therefore CI is NOT VERIFIED.
 
 ## Browser / Android runtime
-Scenario 1 remains **FAIL**:
+Scenario 1 remains **FAIL / runtime revalidation pending**:
 - Container A restored.
 - Tab restored.
 - Before process death: configured Chrome/120 UA observed.
@@ -26,25 +27,24 @@ Scenario 1 remains **FAIL**:
 Do not run Scenarios 2–6 until Scenario 1 passes.
 
 ## AI-1
-Six-tool model-independent Browser Tool slice:
-`get_tabs`, `get_current_tab`, `create_tab`, `switch_tab`, `close_tab`, `open_url`.
-
-Contracts, registry, executor, source mappings and focused tests are SOURCE-VERIFIED. Current Quality CI proof remains pending; AI-2 remains blocked on current AI-1 CI plus browser runtime foundation validation.
+Six-tool model-independent Browser Tool slice: `get_tabs`, `get_current_tab`, `create_tab`, `switch_tab`, `close_tab`, `open_url`.
+Contracts, registry, executor, source mappings and focused tests remain SOURCE-VERIFIED. Current-head Quality CI remains pending; AI-2 remains blocked.
 
 ## Privacy / personal-product hardening
-Background-fetch cleanup is complete at source level: release startup configuration, headless task registration, dedicated headless entrypoint, and direct app dependency are removed. Manual foreground feed refresh remains retained.
+- Legacy account callback/handoff path removed.
+- Legacy snapshot-sync path removed after source reachability review.
+- Active Firefox Sync retained.
+- Automatic background feed fetch/headless entrypoint/direct dependency removed; manual foreground refresh retained.
+- `QUERY_ALL_PACKAGES` removed; remaining permissions and `usesCleartextTraffic` require concrete feature/endpoint proof before changes.
 
-Account callback/handoff cleanup is complete for the retired path. The remaining account snapshot-sync cluster is still under reachability audit.
+## Release
+Validation release `validation-stable-5-3aa06cf6ee090e42c9b7bff6abbf17f737b1fef5` remains RELEASE-ASSET-VERIFIED for separate ARM64 and armeabi-v7a APKs. Production `v*` releases remain blocked on runtime/release validation.
 
-Android package-visibility minimization has started: `QUERY_ALL_PACKAGES` is removed. Other permissions and cleartext traffic remain unchanged pending concrete feature/endpoint proof.
-
-## Current unfinished step
-**Finish reachability proof for the remaining legacy account snapshot-sync cluster, then complete outbound endpoint/background-service auditing.**
+## Evidence rule
+`SOURCE-VERIFIED -> CI-VERIFIED -> ANDROID-RUNTIME-VERIFIED -> ARTIFACT-VERIFIED -> RELEASE-ASSET-VERIFIED` are separate states.
 
 ## FIRST NEXT STEP — exactly one
-**Prove whether `prefs_sync_service`, `settings_sync_service`, `sync_document_service`, `SyncDocumentListSection`, and their legacy repository/widgets have any active-branch consumers; delete only the hard-proven dead cluster, then audit outbound endpoints before further Android permission/cleartext changes.**
+**Complete the outbound endpoint/background-service audit, then use its concrete evidence to minimize remaining Android permissions/cleartext settings without speculative removals.**
 
 ## Mandatory loop
 `READ -> VERIFY -> RECONCILE -> PLAN -> EXECUTE -> TEST -> DIFF -> COMMIT -> SAVE STATE`
-
-At every material milestone update this state, the Master Map, and the affected specialized document with exact checkpoint, evidence, tests/run IDs, blocker and one first next step.
