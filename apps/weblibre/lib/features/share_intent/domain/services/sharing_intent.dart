@@ -13,7 +13,6 @@ import 'package:simple_intent_receiver/simple_intent_receiver.dart';
 import 'package:uri_to_file/uri_to_file.dart' as uri_to_file;
 import 'package:weblibre/core/logger.dart';
 import 'package:weblibre/data/models/received_intent_parameter.dart';
-import 'package:weblibre/features/account/domain/services/account_callback_handler.dart';
 import 'package:weblibre/features/intent_gatekeeper/domain/entities/intent_source_policy.dart';
 import 'package:weblibre/features/intent_gatekeeper/domain/services/intent_gatekeeper.dart';
 import 'package:weblibre/features/share_intent/domain/entities/intent_container_mode.dart';
@@ -30,8 +29,6 @@ _buildSharingIntentTransformer(
   GeneralSettingsRepository settingsRepository,
 ) => StreamTransformer<Intent, ReceivedIntentParameter>.fromHandlers(
   handleData: (intent, sink) async {
-    if (_extractAccountCallback(intent) != null) return;
-
     final alwaysAllowPackage =
         intent.extra[_alwaysAllowPackageExtra] as String?;
     if (alwaysAllowPackage != null) {
@@ -179,25 +176,4 @@ Raw<Stream<ReceivedIntentParameter>> sharingIntentStream(Ref ref) {
     receiver,
     _buildSharingIntentTransformer(gatekeeper, settingsRepository),
   );
-}
-
-@Riverpod(keepAlive: true)
-Raw<Stream<String>> accountCallbackStream(Ref ref) {
-  final receiver = ref.watch(intentReceiverProvider);
-  return _consumeIntents(ref, receiver, _accountCallbackTransformer);
-}
-
-final _accountCallbackTransformer =
-    StreamTransformer<Intent, String>.fromHandlers(
-      handleData: (intent, sink) {
-        final callback = _extractAccountCallback(intent);
-        if (callback != null) sink.add(callback.handoffCode);
-      },
-    );
-
-AccountCallback? _extractAccountCallback(Intent intent) {
-  if (intent.action != 'android.intent.action.VIEW' || intent.data == null) {
-    return null;
-  }
-  return tryParseAccountCallback(Uri.parse(intent.data!));
 }
