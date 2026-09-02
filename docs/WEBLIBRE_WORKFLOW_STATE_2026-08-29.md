@@ -2,16 +2,16 @@
 
 **Last synchronized:** 2026-09-02
 **Branch:** `weblibre-ua-mainline-v3`
-**Current live HEAD:** `4fddf669176a88b01b1b4e3cf846c01665653377`
+**Current live HEAD:** `e2dad37f165ab9e931b66656c3f7b10b4f21949f`
 
 ## Source of truth
 GitHub code, refs, commits, PRs, CI/build/release runs, artifacts and release assets are authoritative. Chat memory and `[x]` markers are not evidence.
 
 ## Verified current checkpoint
 - PR #3 remains OPEN and DRAFT, base `main`.
-- Live branch ref and PR `head_sha` both resolve to `4fddf669176a88b01b1b4e3cf846c01665653377`.
+- Live branch ref currently resolves to `e2dad37f165ab9e931b66656c3f7b10b4f21949f`.
 - The current Quality workflow contains AI-1 registry/executor tests and targeted container/native tests.
-- Current HEAD has **no published commit statuses and no verified matching Quality run**.
+- Current HEAD has **no verified matching Quality run**.
 - The GitHub connector exposes no workflow-dispatch action in this session, so a `workflow_dispatch` definition is not evidence that a current run can be started here.
 
 ## Browser / Android runtime
@@ -69,7 +69,7 @@ For repeated failure:
 A documented skill is an operating rule, not proof that the current ChatGPT/Codex session has that tool or permission. When a required capability is unavailable: do not invent a result; record the exact blocker; continue independent work when dependency-safe; preserve the exact next manual action in state.
 
 ## Last completed step
-**Reconciled durable state with the live GitHub branch/PR refs:** `4fddf669176a88b01b1b4e3cf846c01665653377`.
+**Reconciled durable state with the live GitHub branch/PR refs:** `e2dad37f165ab9e931b66656c3f7b10b4f21949f`.
 
 ## Current unfinished step
 **AI-1/current Quality CI verification remains incomplete on the live branch HEAD; no run with matching `head_sha` is presently verified.**
