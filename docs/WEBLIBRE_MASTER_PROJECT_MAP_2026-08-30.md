@@ -2,7 +2,7 @@
 
 **Canonical source of truth:** GitHub repository, refs, commits, PRs, CI/build/release runs, artifacts and release assets.
 **Branch:** `weblibre-ua-mainline-v3`
-**Current live HEAD:** `e0cb3447d1ff7aec6bd327c6a358ebe207abc2d5`
+**Current live HEAD:** `b65c67d1a1b0b7a96ff0e181fcc5f6a3b03f73b3`
 
 ## Durable documents
 - `docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`
@@ -102,7 +102,7 @@ A successful older run does not prove a later HEAD.
 At every material milestone update this map, Workflow State and the affected specialized document with exact HEAD, evidence, tests/run IDs, blocker and exactly one first next step.
 
 ## Current checkpoint
-**Current live HEAD:** `e0cb3447d1ff7aec6bd327c6a358ebe207abc2d5`.
+**Current live HEAD:** `b65c67d1a1b0b7a96ff0e181fcc5f6a3b03f73b3`.
 **AI-1 Quality CI:** pending.
 **Android:** Scenario 1 FAIL; lifecycle stabilization committed and Core diff reconciled; runtime verification still pending.
 **Privacy:** automatic background feed refresh source path removed; dependency/lockfile consistency still needs pub/build verification; reachability, outbound, permission/cleartext, and local privacy screen audits remain pending.
