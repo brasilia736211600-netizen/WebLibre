@@ -2,7 +2,7 @@
 
 **Last synchronized:** 2026-09-03
 **Branch:** `weblibre-ua-mainline-v3`
-**Source HEAD before this documentation commit:** `9eb9a02a07fecfece6d0b0433e7aec8427e9b7d9`
+**Source HEAD before this documentation commit:** `c7308fcc0c47ba522b95192826f3a155e600b9e1`
 
 ## Source of truth
 GitHub code, refs, commits, PRs, CI/build/release runs, artifacts and release assets are authoritative. Chat memory is not evidence.
@@ -13,10 +13,11 @@ GitHub code, refs, commits, PRs, CI/build/release runs, artifacts and release as
 - Legacy snapshot-sync cluster is removed after reachability review.
 - Orphaned generated `account_sync_repository.g.dart` was removed.
 - Retired Supabase URL/anon-key constants were removed; only the account portal URL remains in the compatibility config because the subscription UI still links to that portal.
-- Retired remote-account UI actions were removed from `AccountAuthStatusCard`; the account route is informational and explicitly distinguishes Firefox Sync as separate.
+- The legacy account route is now informational-only; the obsolete account-auth repository, generated provider, state model/generated file, and auth card were removed.
 - Active Firefox Sync remains live through `features/sync` + native Mozilla Android Components; it was not touched by the cleanup.
 - Android `QUERY_ALL_PACKAGES` remains removed.
-- Current-head Actions query for the pre-documentation code checkpoint returned zero workflow runs; therefore CI is NOT VERIFIED.
+- Push background delivery and native fetch paths are mapped as active, intentional browser functionality.
+- Current-head CI remains NOT VERIFIED.
 
 ## Browser / Android runtime
 Scenario 1 remains **FAIL / runtime revalidation pending**:
@@ -39,22 +40,21 @@ Contracts, registry, executor, source mappings and focused tests remain SOURCE-V
 - Active Firefox Sync retained.
 - Automatic background feed fetch/headless entrypoint/direct dependency removed; manual foreground refresh retained.
 - `QUERY_ALL_PACKAGES` removed.
-- Supabase credentials and obsolete URL configuration removed from the retained account compatibility config; account portal URL retained because it has a live UI consumer.
-- Legacy account sign-in/sync-key UI actions removed; account route remains a local compatibility boundary.
+- Retired Supabase credential/config fields removed; account portal origin retained for its live UI consumer.
+- Retired account auth UI/repository/state cluster removed after the account route was reduced to informational-only behavior.
 
-## Outbound endpoint audit
-- Active Firefox Sync delegates to Mozilla Android Components `FxaAccountManager`, account-auth features, explicit `syncNow(SyncReason.User)`, device constellation, and native remote-tabs storage.
-- `FxaServer` selects the Android Components release server by default and permits explicit server/token overrides.
-- UnifiedPush is a concrete user-enabled background delivery path and remains retained.
-- `GeckoFetchApiImpl` is an active browser/native fetch bridge backed by `components.core.client`.
+## Outbound endpoint / background audit
+- Firefox Sync delegates to Mozilla Android Components `FxaAccountManager`, account-auth features, explicit `syncNow(SyncReason.User)`, device constellation, and native remote-tabs storage.
+- UnifiedPush is an intentional user-enabled background delivery path: distributor receiver -> durable push store -> WorkManager worker -> Gecko delivery.
+- `GeckoFetchApiImpl` is an active Pigeon bridge to the native Android Components fetch client.
 - `DownloadService` uses the shared Android Components HTTP client.
 - `android:usesCleartextTraffic="true"` remains unchanged because browser HTTP support and app-level HTTP transports have not yet been fully separated by evidence.
 
 ## Android permission audit boundary
 - `INTERNET` and `ACCESS_NETWORK_STATE` remain justified by active browser/network features.
 - Foreground-service declarations remain justified by concrete download, private-tab notification, and media-session integrations.
-- `ACCESS_WIFI_STATE` remains unchanged because the only current evidence is an incomplete code-search result plus a source comment identifying it as a Fenix debug-manifest capability.
-- Camera, microphone, location, media/storage and notification permissions still require direct branch-specific consumer proof before removal.
+- `ACCESS_WIFI_STATE` remains unchanged because the available code-search response is incomplete despite returning no concrete `WifiManager` hit.
+- Camera, microphone, location, media/storage and notification permissions remain pending direct branch-specific consumer proof.
 
 ## Release
 Validation release `validation-stable-5-3aa06cf6ee090e42c9b7bff6abbf17f737b1fef5` remains RELEASE-ASSET-VERIFIED for separate ARM64 and armeabi-v7a APKs. Production `v*` releases remain blocked on runtime/release validation.
