@@ -42,6 +42,10 @@ class HistoryDelegateBindingMiddleware(
 
     private val logger = Logger("HistoryDelegateBindingMiddleware")
 
+    private val profileContext by lazy(LazyThreadSafetyMode.NONE) {
+        GlobalComponents.components?.profileApplicationContext
+    }
+
     override fun invoke(
         store: Store<BrowserState, BrowserAction>,
         next: (BrowserAction) -> Unit,
@@ -118,16 +122,16 @@ class HistoryDelegateBindingMiddleware(
         val startedAt = SystemClock.elapsedRealtime()
         logger.debug(
             "UA restore bind start tabId=$tabId contextId=$contextId profile=" +
-                (GlobalComponents.components?.profileApplicationContext?.relativePath ?: "<none>")
+                (profileContext?.relativePath ?: "<none>")
         )
 
-        val profileContext = GlobalComponents.components?.profileApplicationContext
-        if (profileContext == null) {
+        val currentProfileContext = profileContext
+        if (currentProfileContext == null) {
             logger.warn("UA restore bind skipped: no active profile context tabId=$tabId contextId=$contextId")
             return
         }
 
-        val userAgent = ContainerUserAgentStore.get(profileContext, contextId)
+        val userAgent = ContainerUserAgentStore.get(currentProfileContext, contextId)
         logger.debug(
             "UA restore lookup tabId=$tabId contextId=$contextId found=${userAgent != null} " +
                 "elapsedMs=${SystemClock.elapsedRealtime() - startedAt}"
