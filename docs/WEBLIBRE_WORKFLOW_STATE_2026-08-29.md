@@ -2,20 +2,17 @@
 
 **Last synchronized:** 2026-09-03  
 **Branch:** `weblibre-ua-mainline-v3`  
-**Current HEAD:** `0ef1bcf638a06daccd697465404c702e0d099df3` (`docs: record retired account callback and handoff cleanup checkpoint`)
+**Current HEAD:** `5c811022f46e92280cd52e4f99c66dd760aa001d` (`docs: record Android permission minimization checkpoint`)
 
 ## Source of truth
-GitHub code, refs, commits, PRs, CI/build/release runs, artifacts and release assets are authoritative. Chat memory and `[x]` markers are not evidence. The GitHub branch ref is the final authority for the current HEAD because documentation commits necessarily advance the ref after they are written.
+GitHub code, refs, commits, PRs, CI/build/release runs, artifacts and release assets are authoritative. Chat memory and `[x]` markers are not evidence. The GitHub branch ref is the final authority for the current HEAD because documentation commits necessarily advance the branch ref after they are written.
 
 ## Current checkpoint
 - PR #3 remains OPEN and DRAFT, base `main`.
-- The current branch contains the retired account callback/handoff cleanup through `0ef1bcf...`.
-- `sharing_intent.dart` no longer parses account callbacks or exposes `accountCallbackStreamProvider`.
-- The legacy callback handler and generated bindings are deleted.
-- The `weblibre://account` Android deep link is deleted.
-- The obsolete Supabase `handoff-redeem` client and generated provider are deleted.
-- The active native Firefox Sync feature remains separate and live through `features/sync` + `GeckoSyncService`; it is not part of the deleted legacy handoff path.
-- No verified current-head Quality run or commit status checks are available for `0ef1bcf...`.
+- Retired account callback/handoff cleanup is complete: callback parser/provider, callback stream, Android callback deep link, and legacy Supabase handoff client/provider are deleted.
+- Active Firefox Sync remains separate and live through `features/sync` + `GeckoSyncService`.
+- Android `QUERY_ALL_PACKAGES` permission has been removed from the main app manifest; narrower intent-query declarations remain.
+- No verified current-head Quality run or commit status checks are available for this checkpoint.
 - The GitHub connector session exposes no workflow-dispatch action.
 
 ## Browser / Android runtime
@@ -32,20 +29,20 @@ Do not run Scenarios 2–6 until Scenario 1 passes.
 Six-tool model-independent Browser Tool slice:
 `get_tabs`, `get_current_tab`, `create_tab`, `switch_tab`, `close_tab`, `open_url`.
 
-Contracts, registry, executor, source mappings and focused tests are SOURCE-VERIFIED. The current `browser_tool_executor.dart` has an explicit terminal fallback return after dispatch. Current Quality CI proof remains pending; AI-2 remains blocked on current AI-1 CI plus browser runtime foundation validation.
+Contracts, registry, executor, source mappings and focused tests are SOURCE-VERIFIED. Current Quality CI proof remains pending; AI-2 remains blocked on current AI-1 CI plus browser runtime foundation validation.
 
 ## Privacy / personal-product hardening
-The privacy/account source boundary remains SOURCE-VERIFIED with Flutter build verification on exact historical checkpoint `eea4b40...`. That older build does not verify the newer HEAD.
+Background-fetch cleanup is complete at source level: release startup configuration, headless task registration, dedicated headless entrypoint, and direct app dependency are removed. Manual foreground feed refresh remains retained.
 
-Background-fetch cleanup is complete at source level: release startup configuration, headless task registration, dedicated headless entrypoint, and direct app dependency are removed. Manual foreground feed refresh remains intentionally retained.
+Account callback/handoff cleanup is complete for the retired path. The remaining account snapshot-sync cluster is still under reachability audit.
 
-Account callback/handoff cleanup is now complete for the retired path: startup activation, callback parser/provider, callback stream, Android callback deep link, and legacy Supabase handoff client/provider are removed. The remaining account snapshot-sync cluster is still under reachability audit.
+Android package-visibility minimization has started: `QUERY_ALL_PACKAGES` is removed. Other permissions and cleartext traffic remain unchanged pending concrete feature/endpoint proof.
 
 ## Current unfinished step
 **Finish reachability proof for the remaining legacy account snapshot-sync cluster, then complete outbound endpoint/background-service auditing.**
 
 ## FIRST NEXT STEP — exactly one
-**Prove whether `prefs_sync_service`, `settings_sync_service`, `sync_document_service`, `SyncDocumentListSection`, and their legacy repository/widgets have any active-branch consumers; delete only the hard-proven dead cluster, then audit outbound endpoints before touching Android permissions.**
+**Prove whether `prefs_sync_service`, `settings_sync_service`, `sync_document_service`, `SyncDocumentListSection`, and their legacy repository/widgets have any active-branch consumers; delete only the hard-proven dead cluster, then audit outbound endpoints before further Android permission/cleartext changes.**
 
 ## Mandatory loop
 `READ -> VERIFY -> RECONCILE -> PLAN -> EXECUTE -> TEST -> DIFF -> COMMIT -> SAVE STATE`
