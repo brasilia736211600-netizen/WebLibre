@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-03 checkpoint update  
 **Branch:** `weblibre-ua-mainline-v3`  
-**Checkpoint:** retired account callback/handoff path cleanup (`3c32dcc...` and `f3bdf280...`)
+**Checkpoint:** legacy account callback/handoff cleanup + Android package-visibility minimization
 
 ## Current verification boundary
 The privacy/account hardening changes remain SOURCE-VERIFIED and were previously build-verified by Flutter CICD `33420348298` / job `99580917046` on the exact checkpoint `eea4b40...`. That older build evidence does not prove the newer HEAD. The current Quality workflow has not yet produced a verified run for the newer HEAD.
@@ -30,18 +30,27 @@ User-directed navigation, search, feeds, proxy/Tor, sign-in, sharing and similar
 - The direct `background_fetch` application dependency has been removed from `apps/weblibre/pubspec.yaml`.
 - `apps/weblibre/pubspec.lock` is not present/tracked on the active branch, so there is no repository lockfile entry to edit; no generated lockfile was hand-edited.
 - Manual foreground feed refresh remains available through the existing feed controller path.
+- Android `QUERY_ALL_PACKAGES` permission was removed from the app manifest. The manifest retains the narrower intent-query declaration needed for browser/open-with resolution; this is SOURCE-VERIFIED and still requires current-head build/runtime confirmation.
 
 ## Account reachability checkpoint
 - `main.dart` no longer imports or activates the retired account callback provider.
 - `sharing_intent.dart` no longer parses account callback intents or exposes `accountCallbackStreamProvider`.
 - `account_auth.dart` is a local compatibility boundary and does not import the removed handoff client.
 - `handoff_redeem_client.dart` and its generated provider are removed.
-- The account test subtree contains no handoff-redeem test consumer; the remaining legacy snapshot-sync widget/service cluster is still being audited separately.
+- The account test subtree contains no handoff-redeem test consumer.
+- The remaining legacy snapshot-sync widget/service cluster is still being audited separately; it must not be removed merely because the remote account path is disabled.
+
+## Android permission / transport checkpoint
+- `QUERY_ALL_PACKAGES` is removed from `apps/weblibre/android/app/src/main/AndroidManifest.xml`.
+- `INTERNET` and `ACCESS_NETWORK_STATE` remain required browser/network capabilities.
+- Camera, microphone, location, media/storage, notification and foreground-service declarations remain pending concrete feature-by-feature minimization rather than speculative removal.
+- `android:usesCleartextTraffic="true"` remains pending endpoint/transport audit. It is not changed without proving that HTTP browser behavior and/or a concrete app service does not depend on it.
+- Custom Tabs, downloads, private-tab notifications, and media session services remain declared and are not treated as dead without reachability proof.
 
 ## Still pending
 1. Finish reachability proof for the remaining legacy account snapshot-sync cluster (`prefs_sync_service`, `settings_sync_service`, `sync_document_service`, and their widget/repository callers) and delete only hard-proven dead sources.
 2. Complete outbound endpoint/background-service audit.
-3. Review Android permissions, `QUERY_ALL_PACKAGES`, and cleartext traffic against concrete feature use.
+3. Finish Android permission and cleartext review against concrete feature use.
 4. Add a local privacy/data-flow screen.
 5. Measure APK/runtime cost before unrelated performance removals.
 6. Re-run the consolidated Android validation later, including UA Scenario 1.
