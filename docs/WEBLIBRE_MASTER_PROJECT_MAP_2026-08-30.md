@@ -2,7 +2,7 @@
 
 **Canonical source of truth:** GitHub repository, refs, commits, PRs, CI/build/release runs, artifacts and release assets.
 **Branch:** `weblibre-ua-mainline-v3`
-**Current live HEAD:** `b81f050cc15b95e898989acb2d56b616941e9369`
+**Current live HEAD:** `fc270a4560dd8112c43f31bf55a975afb22b428a`
 
 ## Durable documents
 - `docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`
@@ -37,7 +37,7 @@ Privacy / Personal Product Hardening
     Search credits remote boundary             SOURCE-VERIFIED + Flutter build verified on eea4b40...
     Subscription remote boundary               SOURCE-VERIFIED + Flutter build verified on eea4b40...
     Search token issuance                      DISABLED
-    Automatic background feed fetch             PENDING
+    Automatic background feed fetch             PENDING source edit
     Full dead account/sync source cleanup       PENDING reachability audit
     outbound endpoint audit                    PENDING
 ```
@@ -87,7 +87,7 @@ The current privacy/account source changes were Flutter-build verified at `eea4b
 - Native gomobile runtime build: SUCCESS.
 - Validation Release creation: SUCCESS.
 - Quality #60 `33334955774` is SUCCESS on older `4771404...` and predates the AI-1 test-step addition.
-- Live HEAD `b81f050...` has no published commit statuses and no verified matching Quality run.
+- Live HEAD `fc270a...` has no verified matching Quality run.
 - The current Quality workflow has `workflow_dispatch`, but the current GitHub connector session exposes no workflow-dispatch action; do not claim a run was started from this session.
 
 ## Evidence rule
@@ -102,8 +102,9 @@ A successful older run does not prove a later HEAD. `[x]` is not runtime proof. 
 At every material milestone update this map, Workflow State and the affected specialized document with exact HEAD, evidence, tests/run IDs, blocker and exactly one first next step.
 
 ## Current checkpoint
-**Current live HEAD:** `b81f050cc15b95e898989acb2d56b616941e9369`.
+**Current live HEAD:** `fc270a4560dd8112c43f31bf55a975afb22b428a`.
 **AI-1 Quality CI:** pending.
 **Android:** Scenario 1 FAIL; UA restore remains runtime blocker.
 **Privacy:** source hardening largely complete but background feed, reachability, outbound, permission/cleartext, and local privacy screen audits remain pending.
+**Device policy:** APK installation/testing remains deferred until the consolidated final validation gate.
 **First next step:** continue independent source-level/reachability work and verification; keep physical APK installation deferred until the consolidated final validation gate.
