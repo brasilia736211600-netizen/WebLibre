@@ -2,7 +2,7 @@
 
 **Canonical source of truth:** GitHub repository, refs, commits, PRs, CI/build/release runs, artifacts and release assets.
 **Branch:** `weblibre-ua-mainline-v3`
-**Source HEAD before this documentation commit:** `87a1011ebb3aa0d8ae86f2100c37855b135068fd`
+**Source HEAD before this documentation commit:** `bf3ed17ab9af6b921986aa83112e39b722a7e874`
 
 ## Current product position
 ```text
@@ -30,18 +30,21 @@ Privacy / Personal Product Hardening
     Tracked pubspec.lock                        NOT PRESENT ON ACTIVE BRANCH
     Manual foreground feed refresh              RETAINED
     QUERY_ALL_PACKAGES permission               REMOVED / SOURCE-VERIFIED
+    Camera permission                            RETAINED / DIRECTLY JUSTIFIED BY QR SCANNER
     outbound app endpoint audit                 PARTIAL / Firefox Sync, Push, native fetch mapped
     remaining permission/cleartext audit        PENDING direct branch-scoped proof
     local privacy/data-flow screen             PENDING
 ```
 
 ## Latest completed cleanup
-The legacy account compatibility route is now informational-only. The retired `AccountAuthRepository`, generated provider, `AccountAuthState`, generated state file, and legacy `AccountAuthStatusCard` were removed after the active account screen was reduced to a local informational route and no remaining known consumer was found. The retained account portal origin remains only for the existing subscription UI.
+The legacy account compatibility route is informational-only. The retired `AccountAuthRepository`, generated provider, `AccountAuthState`, generated state file, and legacy `AccountAuthStatusCard` were removed after the active account screen was reduced to a local informational route and no remaining known consumer was found. The retained account portal origin remains only for the existing subscription UI.
+
+The QR scanner directly requests `Permission.camera` before opening its camera-backed view, so `CAMERA` is a positively justified Android permission and is not a removal candidate. fileciteturn168file0
 
 Active Firefox Sync remains separate and intact through Mozilla Android Components. UnifiedPush remains an intentional user-enabled background delivery path. Native fetch/download paths remain active browser functionality, so no speculative global `usesCleartextTraffic` removal was made.
 
 ## Android permission boundary
-`INTERNET` and `ACCESS_NETWORK_STATE` remain justified. Foreground services remain backed by concrete DownloadService, PrivateTabsNotificationService, and MediaSessionService integrations. `ACCESS_WIFI_STATE` is still pending because the available code-search response is explicitly incomplete. Camera, microphone, location, media/storage and notifications still require direct consumer proof.
+`INTERNET` and `ACCESS_NETWORK_STATE` remain justified. Foreground services remain backed by concrete DownloadService, PrivateTabsNotificationService, and MediaSessionService integrations. `CAMERA` is directly justified by the QR scanner. `ACCESS_WIFI_STATE` is still pending because the available code-search response is explicitly incomplete. Microphone, location, media/storage and notifications still require direct consumer proof.
 
 ## Runtime blocker
 Scenario 1 remains FAIL: restored Container A/tab used Gecko/Firefox 152 instead of the configured Chrome/120 UA after relaunch. Do not run Scenarios 2–6 until Scenario 1 passes.
