@@ -1,19 +1,18 @@
 # WebLibre — Durable Workflow State
 
-**Last synchronized:** 2026-09-01
+**Last synchronized:** 2026-09-02
 **Branch:** `weblibre-ua-mainline-v3`
-**Current HEAD:** `eea4b40baef357136d38e057f708106aeb112da0`
+**Current HEAD at this documentation milestone:** `d781abc958cd4b5c4cdc729326fdba055c4e8820`
 
 ## Source of truth
 GitHub code, refs, commits, PRs, CI/build/release runs, artifacts and release assets are authoritative. Chat memory and `[x]` markers are not evidence.
 
 ## Verified current checkpoint
-- PR #3 is OPEN and DRAFT, base `main`, current `head_sha` `eea4b40baef357136d38e057f708106aeb112da0`.
-- Current branch ref `weblibre-ua-mainline-v3` points to the same `eea4b40...` HEAD.
-- Flutter CICD `33420348298`, job `99580917046`: SUCCESS on exact `eea4b40...`.
-- Stable APK build succeeded; native gomobile runtime build succeeded; validation-release creation step succeeded.
-- Quality #60 `33334955774` is SUCCESS but is on older `477140419642d1170b241dd39f143900b9b98909` and predates the AI-1 test-step addition, so it is not current AI-1 CI proof.
-- The Quality workflow on the current branch contains the AI-1 registry/executor tests and targeted container/native tests, but a current run for `eea4b40...` has not been verified.
+- PR #3 remains OPEN and DRAFT, base `main`; its live `head_sha` must be re-read on every resume.
+- The branch advanced through documentation-only continuity commits after the prior `eea4b40...` source checkpoint.
+- Flutter CICD `33420348298`, job `99580917046`: SUCCESS on exact source checkpoint `eea4b40...`.
+- No Quality run has been verified for the newer documentation HEAD `d781abc...`.
+- The current Quality workflow contains AI-1 registry/executor tests and targeted container/native tests.
 
 ## Browser / Android runtime
 Scenario 1 remains **FAIL**:
@@ -29,39 +28,51 @@ Do not run Scenarios 2–6 until Scenario 1 passes.
 Six-tool model-independent Browser Tool slice:
 `get_tabs`, `get_current_tab`, `create_tab`, `switch_tab`, `close_tab`, `open_url`.
 
-Contracts, registry, executor, source mappings and focused tests are implemented and SOURCE-VERIFIED. Current Quality CI verification remains pending.
+Contracts, registry, executor, source mappings and focused tests are SOURCE-VERIFIED. The current `browser_tool_executor.dart` includes a terminal fallback return after dispatch; do not reapply the historical missing-return patch without new evidence. Current Quality CI proof remains pending.
 
 ## Privacy / personal-product hardening
-The source boundary is SOURCE-VERIFIED and now has successful Flutter build verification on exact checkpoint `eea4b40...`. This does not prove Android runtime behavior or current Quality test execution.
-
-Confirmed source changes include:
-1. About identity cleanup.
-2. Account callback/handoff startup disabled as a no-op compatibility boundary.
-3. Direct application Supabase dependency removed.
-4. Account/Firefox Sync categories removed from personal Settings.
-5. Account sign-in no longer sends Android `device_name`.
-6. Account sync writes `source_device_id: null`.
-7. Legacy auth/sync paths are disabled/local boundaries.
-8. Search credits remote RPC path replaced by local zero-credit boundary.
-9. Subscription remote RPC path replaced by local inactive boundary.
-10. Search token issuance disabled.
-11. Account Settings reduced to local compatibility UI.
-12. Share-intent callback parsing remains type-correct while redemption/upload remains disabled.
-13. Required upstream AGPL/copyright notices remain.
+The existing privacy/account source boundary remains SOURCE-VERIFIED with Flutter build verification on exact checkpoint `eea4b40...`. Documentation-only commits after that checkpoint do not extend build evidence to the new HEAD.
 
 Still pending: automatic background feed fetch removal, dead-source/reachability audit, outbound endpoint/background-service audit, permission/cleartext minimization review, local privacy/data-flow screen, and Android UA Scenario 1 root-cause fix/revalidation.
 
-## Release / artifact evidence
-Validation Release `validation-stable-5-3aa06cf6ee090e42c9b7bff6abbf17f737b1fef5` remains RELEASE-ASSET-VERIFIED for the independently published ARM64 and ARMv7 APK assets. This is historical evidence for that exact release/checkpoint and is not evidence for a later HEAD.
+## AI orchestration stack
+The project continuity protocol now records a tiered tool stack instead of requiring every tool for every task.
+
+**Always/canonical:** GitHub for repository evidence; get-fable for lifecycle routing when useful.
+
+**Execution/verification as needed:** fable-discover, fable-plan, fable-execute, fable-verify, fable-recover, fable-handoff, fable-review, fable-security, fable-release, and fable-cowork/fable-loop for bounded autonomous chaining or async status polling.
+
+**Engineering:** Codex Engineering Guardrails, AI DevKit TDD/structured-debug/verify/security-review, Codex Process Jobs for long-running local work.
+
+**Parallelism/review:** Codex Coordinator for genuinely independent verticals; CodeRabbit for independent PR/diff review after meaningful changes; PR-completion review/triage skills when shepherding a PR through CI/review/merge readiness.
+
+**Architecture:** Codex Advisor only for material unsettled architecture/interface/concurrency/security decisions.
+
+**Memory/prompt:** Yaps Memory is the preferred durable knowledge layer; avoid competing canonical memory stores. Prompt Optimizer only for long/complex briefs.
+
+**Plugin-only:** Plugin Autopilot remains outside ordinary WebLibre application implementation.
+
+## Recommended autonomous operating pattern
+For a complex bounded milestone:
+`GitHub → get-fable-discover → get-fable-plan → Coordinator/delegate if independent work exists → fable-execute / Process Jobs → fable-verify → fable-review/security as applicable → commit → fable-handoff/save state`.
+
+For async CI/status:
+`GitHub → fable-loop` with bounded polling, timeout and backoff. Never run an infinite watcher.
+
+For repeated failure:
+`fable-recover` before another production-code edit.
+
+## Capability boundary
+A documented skill is an operating rule, not proof that the current ChatGPT/Codex session has that tool or permission. When a required capability is unavailable: do not invent a result; record the exact blocker; continue independent work when dependency-safe; preserve the exact next manual action in state.
 
 ## Last completed step
-**Flutter CI/build verification of the current privacy/account source checkpoint completed successfully:** run `33420348298`, job `99580917046`, exact head `eea4b40baef357136d38e057f708106aeb112da0`.
+**Durable AI orchestration/continuity state updated and committed:** `d781abc958cd4b5c4cdc729326fdba055c4e8820`.
 
 ## Current unfinished step
-**AI-1/current Quality CI verification remains incomplete:** no verified Quality run currently matches `eea4b40baef357136d38e057f708106aeb112da0`.
+**AI-1/current Quality CI verification remains incomplete on the live branch HEAD; no run with matching current `head_sha` is presently verified.**
 
 ## FIRST NEXT STEP — exactly one
-**Run and verify the Quality workflow on `weblibre-ua-mainline-v3` at the exact current HEAD `eea4b40baef357136d38e057f708106aeb112da0`; require SUCCESS for the AI-1 registry/executor tests and targeted container/native tests before proceeding to any Android installation/runtime work.**
+**Obtain/verify a WebLibre Quality run whose `head_sha` exactly matches the live PR branch HEAD, then inspect AI-1 registry/executor, targeted container, and native test results before making any production-code change.**
 
 ## Mandatory loop
 `READ -> VERIFY -> RECONCILE -> PLAN -> EXECUTE -> TEST -> DIFF -> COMMIT -> SAVE STATE`
