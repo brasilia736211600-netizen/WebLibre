@@ -2,10 +2,10 @@
 
 **Date:** 2026-09-03 checkpoint update
 **Branch:** `weblibre-ua-mainline-v3`
-**Source HEAD before this documentation commit:** `5a756952092e62387a47df8af273c75b6af7cec4`
+**Source HEAD before this documentation commit:** `c5991c6e0d2444c37b195fccdbc23c5d0349af7b`
 
 ## Current verification boundary
-Privacy/account hardening changes are SOURCE-VERIFIED. Historical Flutter CICD `33420348298` / job `99580917046` proves only its exact older checkpoint; it does not prove the current HEAD. The current-head GitHub Actions query for the latest cleanup commit returned zero workflow runs, so CI remains NOT VERIFIED.
+Privacy/account hardening changes are SOURCE-VERIFIED. Historical Flutter CICD `33420348298` / job `99580917046` proves only its exact older checkpoint; it does not prove the current HEAD. Current-head Actions queries have returned zero runs for the latest cleanup checkpoints, so CI remains NOT VERIFIED.
 
 ## Confirmed product rule
 `NO SILENT TELEMETRY -> NO SILENT DEVICE IDENTIFIERS -> NO SILENT BACKGROUND USER-DATA UPLOAD -> EXPLICIT OPT-IN FOR OPTIONAL ONLINE SERVICES`
@@ -41,20 +41,32 @@ The active Firefox Sync feature was not removed or redirected; it remains under 
 - `QUERY_ALL_PACKAGES` is removed.
 - `INTERNET` and `ACCESS_NETWORK_STATE` remain required browser/network capabilities.
 - Camera, microphone, location, media/storage, notification and foreground-service declarations remain pending concrete feature-by-feature minimization rather than speculative removal.
-- `android:usesCleartextTraffic="true"` remains pending endpoint/transport audit; no broad change is made without evidence about HTTP app services versus user-directed browser traffic.
+- `android:usesCleartextTraffic="true"` remains unchanged pending stronger evidence about all app-level HTTP consumers versus user-directed browser HTTP traffic.
 - Custom Tabs, downloads, private-tab notifications, and media session services remain declared and are not treated as dead without reachability proof.
 
-## Outbound endpoint/background audit — mapped Firefox Sync path
-`GeckoSyncApiImpl` uses Mozilla Android Components `FxaAccountManager`/`accountsAuthFeature` for authentication, `syncNow(SyncReason.User)` for explicit sync, and `deviceConstellation` for device discovery, send-tab, and command polling. Synced tabs are read from native remote-tabs storage. `FxaServer` selects the Android Components release server by default, with explicit server/token overrides. This confirms there is no parallel WebLibre hard-coded Firefox Sync HTTP transport to remove.
+## Outbound endpoint/background audit — current checkpoint
+### Firefox Sync
+`GeckoSyncApiImpl` uses Mozilla Android Components `FxaAccountManager`/`accountsAuthFeature` for authentication, `syncNow(SyncReason.User)` for explicit sync, and `deviceConstellation` for device discovery, send-tab, and command polling. Synced tabs are read from native remote-tabs storage. `FxaServer` selects the Android Components release server by default, with explicit server/token overrides. There is no parallel WebLibre hard-coded Firefox Sync HTTP transport to remove.
 
-The separate `SupabaseConfig` file still contains HTTPS build-time defaults for the retired account backend. It is currently treated as **unresolved reachability evidence**, not as proof of a live transport; it must not be deleted until branch-specific consumer analysis establishes that no active code imports it.
+### UnifiedPush
+`UnifiedPushReceiver` accepts distributor broadcasts, requires decrypted messages, persists them to the profile-scoped push store and schedules `PushMessageWorker`. The worker restores the owning profile's components and calls the WebLibre Push integration to deliver the message into Gecko. This is an intentional user-enabled background web-push delivery path and must remain.
+
+### Native fetch bridge
+`GeckoFetchApiImpl` exposes a Pigeon fetch API backed by `components.core.client`. It constructs Android Components `Request` objects and forwards URL/method/headers/body/redirect/cookie/cache/OHTTP/referrer options to the native client. This is an active browser/network bridge, not a dead compatibility shell. Therefore `INTERNET` remains justified; global `usesCleartextTraffic` still requires broader transport evidence before changing it.
+
+### Legacy Supabase configuration
+`apps/weblibre/lib/features/account/data/supabase_config.dart` still exists. A known active consumer is the subscription UI's external account portal URL. The file also contains legacy Supabase URL/anon-key constants. Because branch-scoped repository-wide consumer proof is incomplete, the file is not deleted or renamed in this checkpoint.
+
+## Permission minimization finding
+`ACCESS_WIFI_STATE` has a source comment saying it is a Fenix debug-manifest capability, and GitHub's code-search endpoint returned zero concrete `WifiManager` hits, but that search response reported `incomplete_results=true`. No deletion is therefore justified solely from that incomplete index.
 
 ## Still pending
-1. Complete active-consumer audit for remaining app-level HTTP clients, Push/background paths, and concrete permission use.
-2. Finish Android permission and cleartext review from that evidence.
-3. Add a local privacy/data-flow screen.
-4. Measure APK/runtime cost before unrelated performance removals.
-5. Re-run consolidated Android validation later, including UA Scenario 1.
+1. Finish branch-scoped consumer proof for the remaining `supabase_config.dart` constants and any other app-level HTTP client usages.
+2. Complete direct consumer mapping for remaining Android permissions.
+3. Decide whether `usesCleartextTraffic` can be removed/narrowed without breaking browser or user-directed flows.
+4. Add a local privacy/data-flow screen.
+5. Measure APK/runtime cost before unrelated performance removals.
+6. Re-run consolidated Android validation later, including UA Scenario 1.
 
 ## Evidence rule
 Source inspection, even with a successful historical build, does not equal current-head CI or Android runtime verification. Every material privacy change follows:
