@@ -48,7 +48,6 @@ import 'package:weblibre/core/providers/defaults.dart';
 import 'package:weblibre/core/providers/router.dart';
 import 'package:weblibre/domain/services/app_initialization.dart';
 import 'package:weblibre/domain/services/display_mode.dart';
-import 'package:weblibre/features/account/domain/services/account_callback_handler.dart';
 import 'package:weblibre/features/geckoview/features/browser/domain/services/engine_settings_replication.dart';
 import 'package:weblibre/features/geckoview/features/browser/domain/services/proxy_settings_replication.dart';
 import 'package:weblibre/features/geckoview/features/history/domain/services/history_exclusion_replication.dart';
@@ -329,7 +328,6 @@ class _MainWidget extends HookConsumerWidget {
       ref.read(localIndexSettingsSyncProvider);
       unawaited(ref.read(localIndexPrunerProvider.notifier).prune());
 
-      ref.read(accountCallbackHandlerProvider);
       unawaited(ref.read(proxyAutostartServiceProvider.notifier).run());
     });
 
