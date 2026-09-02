@@ -2,19 +2,7 @@
 
 **Canonical source of truth:** GitHub repository, refs, commits, PRs, CI/build/release runs, artifacts and release assets.
 **Branch:** `weblibre-ua-mainline-v3`
-**Source HEAD before this documentation commit:** `7124f1fc1625fa6292064e7c3d01e52ac3ce7bfe`
-
-## Durable documents
-- `docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`
-- `docs/WEBLIBRE_PERSONAL_AI_AGENT_SPEC_2026-08-29.md`
-- `docs/WEBLIBRE_RESUME_COMMAND_2026-08-30.md`
-- `docs/WEBLIBRE_ANDROID_RUNTIME_VALIDATION_CHECKLIST_2026-08-30.md`
-- `docs/WEBLIBRE_UA_FINGERPRINT_PRODUCT_REQUIREMENTS_2026-08-31.md`
-- `docs/WEBLIBRE_RUNTIME_UA_RESTORE_FORENSICS_2026-08-31.md`
-- `docs/WEBLIBRE_PRIVACY_DATA_FLOW_AUDIT_2026-08-31.md`
-- `docs/WEBLIBRE_PERSONAL_PRODUCT_IDENTITY_2026-08-31.md`
-- `docs/WEBLIBRE_AI_COORDINATION_AND_CONTINUITY_2026-09-02.md`
-- `docs/WEBLIBRE_USER_OPERATING_RULES_2026-09-02.md`
+**Source HEAD before this documentation commit:** `cada5b555c5c93a78732f644f77d704dc9f43720`
 
 ## Current product position
 ```text
@@ -25,7 +13,7 @@ Browser / Container / UA foundation
 AI-1 Browser Tool
     specification / inventory / contracts       DONE / SOURCE-VERIFIED
     registry / executor / focused tests         SOURCE-VERIFIED; current Quality CI pending
-    Agent Core                                  NOT STARTED
+    Agent Core                                  NOT STARTED / BLOCKED
 
 Privacy / Personal Product Hardening
     Account callback/handoff legacy path        REMOVED / SOURCE-VERIFIED
@@ -42,48 +30,27 @@ Privacy / Personal Product Hardening
     Tracked pubspec.lock                        NOT PRESENT ON ACTIVE BRANCH
     Manual foreground feed refresh              RETAINED
     QUERY_ALL_PACKAGES permission               REMOVED / SOURCE-VERIFIED
-    outbound app endpoint audit                 IN PROGRESS / Firefox Sync, Push and native fetch mapped
-    remaining permission/cleartext audit        PENDING complete branch-scoped consumer proof
+    outbound app endpoint audit                 PARTIAL / Firefox Sync, Push, native fetch mapped
+    remaining permission/cleartext audit        PENDING direct branch-scoped proof
     local privacy/data-flow screen             PENDING
 ```
 
-## Outbound endpoint/background audit checkpoint
-Active Firefox Sync is implemented through Mozilla Android Components. The WebLibre bridge calls `FxaAccountManager` for account/sync state, account-auth features for sign-in, `syncNow(SyncReason.User)`, device constellation operations, and native remote-tabs storage. `FxaServer` selects the Android Components release server by default and permits explicit server/token overrides. There is no separate hard-coded WebLibre Firefox Sync HTTP transport in `GeckoSyncApiImpl`.
+## Latest completed cleanup
+The legacy account compatibility surface is now informational-only. `AccountAuthStatusCard` no longer exposes remote sign-in, snapshot/sync-key, or other non-functional actions. `supabase_config.dart` retains only the account portal origin consumed by the subscription UI; the retired Supabase project URL and anon key were removed. An orphaned generated legacy account-sync provider file was also removed.
 
-UnifiedPush is an intentional background network integration: `UnifiedPushReceiver` receives distributor callbacks, persists decrypted messages, and schedules `PushMessageWorker`; the worker rehydrates profile-scoped components and calls the WebLibre Push integration to deliver the message into Gecko. This is a concrete user-enabled web-push path and is retained.
+Active Firefox Sync remains separate and intact through Mozilla Android Components. UnifiedPush remains an intentional user-enabled background delivery path. Native fetch/download paths remain active browser functionality, so no speculative global `usesCleartextTraffic` removal was made.
 
-`GeckoFetchApiImpl` is a native fetch bridge backed by `components.core.client`; it exposes the browser/Android Components fetch stack rather than a parallel raw Dart HTTP transport. This keeps `INTERNET` justified, while it does not by itself justify disabling global `usesCleartextTraffic`.
-
-The retained `SupabaseConfig` now contains only `ACCOUNT_BACKEND_ORIGIN`, because the retired Supabase URL and anon key are no longer needed by the active account path. The account portal URL remains consumed by the subscription UI.
-
-The retained account compatibility UI is informational only: the former remote sign-in, snapshot/sync-key and related actions are no longer exposed. Firefox Sync remains a separate browser feature.
-
-## Android manifest safety boundary
-Keep `INTERNET` and `ACCESS_NETWORK_STATE` while active browser/network features remain. Keep foreground service declarations for concrete DownloadService, PrivateTabsNotificationService, and MediaSessionService paths. Camera, microphone, location, media/storage, notification and `usesCleartextTraffic` remain pending direct consumer proof.
-
-`ACCESS_WIFI_STATE` remains unchanged. Its source comment says it is a Fenix debug-manifest capability, but GitHub's code-search endpoint reported incomplete results, so deletion is not yet evidence-complete.
+## Android permission boundary
+`INTERNET` and `ACCESS_NETWORK_STATE` remain justified. Foreground services remain backed by concrete DownloadService, PrivateTabsNotificationService, and MediaSessionService integrations. `ACCESS_WIFI_STATE` is still pending because the available code-search response is explicitly incomplete. Camera, microphone, location, media/storage and notifications still require direct consumer proof.
 
 ## Runtime blocker
-The first real Android validation of the ARM64 validation Release proved:
-- Container A restored.
-- Its tab restored.
-- Before process death the tab sent configured Chrome/120 UA.
-- After relaunch restored navigation sent Gecko/Firefox 152 UA instead.
-- No `Resume last tab` control was present in that post-relaunch state.
+Scenario 1 remains FAIL: restored Container A/tab used Gecko/Firefox 152 instead of the configured Chrome/120 UA after relaunch. Do not run Scenarios 2–6 until Scenario 1 passes.
 
-A source-only UA lifecycle stabilization is in the branch: `HistoryDelegateBindingMiddleware` receives the owning `ProfileContext` and uses it during restore. Do not run Scenarios 2–6 until Scenario 1 passes.
+## AI boundary
+AI-1 remains source-verified. Current-head CI is not verified. AI-2 must remain blocked until browser runtime foundation and current AI-1 CI are validated.
 
-## AI engineering orchestration
-Use the agreed add-ons only where they add leverage: GitHub as source-of-truth, Codex Engineering Guardrails for scoped implementation/verification, Coordinator/AI DevKit for parallel task boundaries when actual agent execution is available, Advisor for material architecture decisions, CodeRabbit for review, and Process Jobs for durable local processes. Do not create competing canonical state stores or invoke every skill unnecessarily.
-
-## Release / APK
-Validation Release `validation-stable-5-3aa06cf6ee090e42c9b7bff6abbf17f737b1fef5` remains RELEASE-ASSET-VERIFIED for separate ARM64 and armeabi-v7a APKs. Production `v*` releases remain blocked on runtime/release validation.
-
-## CI evidence
-- Historical Flutter CICD run `33420348298` / job `99580917046`: SUCCESS on exact older checkpoint `eea4b40...`.
-- Historical Quality #60 `33334955774` succeeded on older `4771404...` and predates AI-1 test-step addition.
-- Current source-head Actions query for `084f0b102e8173b64665c8b512a7ba14fa81caa7` returned `total_count=0`; current-head CI remains NOT VERIFIED.
-- The connector session exposes no workflow-dispatch action.
+## Release
+Validation Release `validation-stable-5-3aa06cf6ee090e42c9b7bff6abbf17f737b1fef5` remains RELEASE-ASSET-VERIFIED for separate ARM64 and armeabi-v7a APKs. Production releases remain blocked on runtime/release validation.
 
 ## Evidence rule
 Never promote:
