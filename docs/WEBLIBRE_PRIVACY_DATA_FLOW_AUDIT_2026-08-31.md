@@ -2,10 +2,10 @@
 
 **Date:** 2026-09-03 checkpoint update
 **Branch:** `weblibre-ua-mainline-v3`
-**Checkpoint:** legacy account callback/handoff + snapshot-sync cleanup + Android package-visibility minimization
+**Source HEAD before this documentation commit:** `5a756952092e62387a47df8af273c75b6af7cec4`
 
 ## Current verification boundary
-Privacy/account hardening changes are SOURCE-VERIFIED. Historical Flutter CICD `33420348298` / job `99580917046` proves only its exact older checkpoint; it does not prove the current HEAD. The current-head GitHub Actions query returned zero runs for the post-cleanup source commit, so CI remains NOT VERIFIED.
+Privacy/account hardening changes are SOURCE-VERIFIED. Historical Flutter CICD `33420348298` / job `99580917046` proves only its exact older checkpoint; it does not prove the current HEAD. The current-head GitHub Actions query for the latest cleanup commit returned zero workflow runs, so CI remains NOT VERIFIED.
 
 ## Confirmed product rule
 `NO SILENT TELEMETRY -> NO SILENT DEVICE IDENTIFIERS -> NO SILENT BACKGROUND USER-DATA UPLOAD -> EXPLICIT OPT-IN FOR OPTIONAL ONLINE SERVICES`
@@ -16,7 +16,7 @@ User-directed navigation, search, feeds, proxy/Tor, sign-in, sharing and similar
 - User-facing About identity no longer promotes the former upstream developer; required upstream legal notices remain.
 - Account callback/handoff startup activation, parser/provider, stream, Android callback deep link, legacy handoff client and generated provider were removed.
 - `account_auth.dart` remains a local compatibility boundary with no remote account network I/O.
-- The active Firefox Sync implementation is separate: `features/sync` uses native `GeckoSyncService` / Firefox Account services and remains live.
+- The active Firefox Sync implementation is separate: `features/sync` delegates to native Mozilla Android Components account/sync services and remains live.
 - Direct application Supabase dependency is removed; legacy handoff transport is gone.
 - Search credits/subscription remote RPC paths and search token issuance remain disabled behind local boundaries.
 - Account Settings remains a local compatibility route that explicitly states remote personal-build account features are unavailable.
@@ -28,13 +28,14 @@ User-directed navigation, search, feeds, proxy/Tor, sign-in, sharing and similar
 The current account compatibility screen imports `account_auth` and `AccountAuthStatusCard` and contains no import of the snapshot-sync UI.
 
 Removed as unreachable/retired:
-- `SyncDocumentListSection`, `sync_document_dialogs.dart`, `sync_setup_card.dart`
-- `AccountSyncRepository`
+- Snapshot-sync UI widgets
+- `AccountSyncRepository` source
 - `SyncDocumentService`, `PrefsSyncService`, `SettingsSyncService`
 - generated providers for the two sync services
 - `SettingsSyncEnvelope` model and generated serialization file
+- orphaned `account_sync_repository.g.dart` generated provider artifact discovered after the initial cleanup
 
-The active Firefox Sync feature was not removed or redirected; it remains under `features/sync` with native `GeckoSyncService`.
+The active Firefox Sync feature was not removed or redirected; it remains under `features/sync` with native Mozilla Android Components services.
 
 ## Android permission / transport checkpoint
 - `QUERY_ALL_PACKAGES` is removed.
@@ -43,11 +44,13 @@ The active Firefox Sync feature was not removed or redirected; it remains under 
 - `android:usesCleartextTraffic="true"` remains pending endpoint/transport audit; no broad change is made without evidence about HTTP app services versus user-directed browser traffic.
 - Custom Tabs, downloads, private-tab notifications, and media session services remain declared and are not treated as dead without reachability proof.
 
-## Outbound endpoint checkpoint
-Known account configuration still contains HTTPS origins for the retired Supabase/account path and current Firefox Sync server overrides. This is configuration evidence only; each active consumer still needs reachability confirmation before endpoint or cleartext changes.
+## Outbound endpoint/background audit — mapped Firefox Sync path
+`GeckoSyncApiImpl` uses Mozilla Android Components `FxaAccountManager`/`accountsAuthFeature` for authentication, `syncNow(SyncReason.User)` for explicit sync, and `deviceConstellation` for device discovery, send-tab, and command polling. Synced tabs are read from native remote-tabs storage. `FxaServer` selects the Android Components release server by default, with explicit server/token overrides. This confirms there is no parallel WebLibre hard-coded Firefox Sync HTTP transport to remove.
+
+The separate `SupabaseConfig` file still contains HTTPS build-time defaults for the retired account backend. It is currently treated as **unresolved reachability evidence**, not as proof of a live transport; it must not be deleted until branch-specific consumer analysis establishes that no active code imports it.
 
 ## Still pending
-1. Complete outbound endpoint/background-service audit against concrete active consumers.
+1. Complete active-consumer audit for remaining app-level HTTP clients, Push/background paths, and concrete permission use.
 2. Finish Android permission and cleartext review from that evidence.
 3. Add a local privacy/data-flow screen.
 4. Measure APK/runtime cost before unrelated performance removals.
