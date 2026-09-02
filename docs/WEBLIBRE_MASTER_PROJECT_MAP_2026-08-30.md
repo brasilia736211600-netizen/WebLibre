@@ -2,7 +2,7 @@
 
 **Canonical source of truth:** GitHub repository, refs, commits, PRs, CI/build/release runs, artifacts and release assets.
 **Branch:** `weblibre-ua-mainline-v3`
-**Last synchronized HEAD:** `fd8d828e241cf13cf691622a1bb4be6b4540f566`
+**Last synchronized HEAD before this map commit:** `1ec49241cef7d853e97b1bed3cb59b4129526eae`
 
 ## Durable documents
 - `docs/WEBLIBRE_WORKFLOW_STATE_2026-08-29.md`
@@ -40,12 +40,16 @@ Privacy / Personal Product Hardening
     Automatic background feed fetch             REMOVED FROM STARTUP
     Background headless feed entrypoint         REMOVED
     Direct background_fetch dependency          REMOVED FROM APP PUBSPEC
+    Tracked pubspec.lock                        NOT PRESENT ON ACTIVE BRANCH
     Manual foreground feed refresh             RETAINED
     Full dead account/sync source cleanup       PENDING reachability audit
     outbound endpoint audit                    PENDING
     permission/cleartext audit                 PENDING
     local privacy/data-flow screen             PENDING
 ```
+
+## Dependency verification checkpoint
+`apps/weblibre/pubspec.yaml` on `weblibre-ua-mainline-v3` contains no direct `background_fetch` dependency. `apps/weblibre/pubspec.lock` is not present/tracked on the active branch, so there is no stale repository lock entry to edit. No generated lockfile was hand-edited. A future Flutter dependency resolution/build remains the appropriate generated-dependency confirmation.
 
 ## Runtime blocker
 The first real Android validation of the ARM64 validation Release proved:
@@ -102,9 +106,9 @@ A successful older run does not prove a later HEAD.
 At every material milestone update this map, Workflow State and the affected specialized document with exact checkpoint, evidence, tests/run IDs, blocker and exactly one first next step.
 
 ## Current checkpoint
-**Last synchronized HEAD:** `fd8d828e241cf13cf691622a1bb4be6b4540f566`.
+**Last synchronized HEAD before this map commit:** `1ec49241cef7d853e97b1bed3cb59b4129526eae`.
 **AI-1 Quality CI:** pending.
 **Android:** Scenario 1 FAIL; lifecycle stabilization committed and Core diff reconciled; runtime verification still pending.
-**Privacy:** automatic background feed refresh source path removed; dependency/lockfile consistency still needs pub/build verification; reachability, outbound, permission/cleartext, and local privacy screen audits remain pending.
+**Privacy:** automatic background feed refresh source path removed; direct dependency and tracked-lockfile check resolved; account/sync reachability, outbound, permission/cleartext, and local privacy screen audits remain pending.
 **Device policy:** APK installation/testing remains deferred until the consolidated final validation gate.
-**First next step:** verify the dependency/lockfile state for the background-fetch removal, then continue account/sync reachability and outbound/permission audits without starting device validation early.
+**First next step:** prove reachability of legacy account/sync services on the active branch, delete only sources proven unreachable, and then re-check outbound endpoints before touching Android permissions.
