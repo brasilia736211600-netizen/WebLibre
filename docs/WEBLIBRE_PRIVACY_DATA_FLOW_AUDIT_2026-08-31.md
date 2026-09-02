@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-03 checkpoint update
 **Branch:** `weblibre-ua-mainline-v3`
-**Source HEAD before this documentation commit:** `c5991c6e0d2444c37b195fccdbc23c5d0349af7b`
+**Source HEAD before this documentation commit:** `b838003af89a22b9ada87dba8cdd53e5184bde0c`
 
 ## Current verification boundary
 Privacy/account hardening changes are SOURCE-VERIFIED. Historical Flutter CICD `33420348298` / job `99580917046` proves only its exact older checkpoint; it does not prove the current HEAD. Current-head Actions queries have returned zero runs for the latest cleanup checkpoints, so CI remains NOT VERIFIED.
@@ -25,7 +25,7 @@ User-directed navigation, search, feeds, proxy/Tor, sign-in, sharing and similar
 - Android `QUERY_ALL_PACKAGES` permission was removed; the narrower intent-query declaration remains for browser/open-with resolution.
 
 ## Legacy snapshot-sync cleanup — completed
-The current account compatibility screen imports `account_auth` and `AccountAuthStatusCard` and contains no import of the snapshot-sync UI.
+The current account compatibility screen contains no import of the retired snapshot-sync UI.
 
 Removed as unreachable/retired:
 - Snapshot-sync UI widgets
@@ -36,6 +36,9 @@ Removed as unreachable/retired:
 - orphaned `account_sync_repository.g.dart` generated provider artifact discovered after the initial cleanup
 
 The active Firefox Sync feature was not removed or redirected; it remains under `features/sync` with native Mozilla Android Components services.
+
+## Legacy account UI cleanup — completed
+The retained account route no longer exposes controls that imply a working remote account or legacy encrypted snapshot service. The account status widget is now informational only and explicitly distinguishes Firefox Sync as a separate browser feature.
 
 ## Android permission / transport checkpoint
 - `QUERY_ALL_PACKAGES` is removed.
@@ -55,13 +58,13 @@ The active Firefox Sync feature was not removed or redirected; it remains under 
 `GeckoFetchApiImpl` exposes a Pigeon fetch API backed by `components.core.client`. It constructs Android Components `Request` objects and forwards URL/method/headers/body/redirect/cookie/cache/OHTTP/referrer options to the native client. This is an active browser/network bridge, not a dead compatibility shell. Therefore `INTERNET` remains justified; global `usesCleartextTraffic` still requires broader transport evidence before changing it.
 
 ### Legacy Supabase configuration
-`apps/weblibre/lib/features/account/data/supabase_config.dart` still exists. A known active consumer is the subscription UI's external account portal URL. The file also contains legacy Supabase URL/anon-key constants. Because branch-scoped repository-wide consumer proof is incomplete, the file is not deleted or renamed in this checkpoint.
+`apps/weblibre/lib/features/account/data/supabase_config.dart` is retained only for the account portal URL used by the subscription UI. The retired `SUPABASE_URL` and `SUPABASE_ANON_KEY` build-time constants were removed; no Supabase credentials remain in this configuration file.
 
 ## Permission minimization finding
 `ACCESS_WIFI_STATE` has a source comment saying it is a Fenix debug-manifest capability, and GitHub's code-search endpoint returned zero concrete `WifiManager` hits, but that search response reported `incomplete_results=true`. No deletion is therefore justified solely from that incomplete index.
 
 ## Still pending
-1. Finish branch-scoped consumer proof for the remaining `supabase_config.dart` constants and any other app-level HTTP client usages.
+1. Finish branch-scoped consumer proof for any remaining account/config artifacts and other app-level HTTP client usages.
 2. Complete direct consumer mapping for remaining Android permissions.
 3. Decide whether `usesCleartextTraffic` can be removed/narrowed without breaking browser or user-directed flows.
 4. Add a local privacy/data-flow screen.
