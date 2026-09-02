@@ -42,9 +42,8 @@ class HistoryDelegateBindingMiddleware(
 
     private val logger = Logger("HistoryDelegateBindingMiddleware")
 
-    private val profileContext by lazy(LazyThreadSafetyMode.NONE) {
+    private val profileContext =
         GlobalComponents.components?.profileApplicationContext
-    }
 
     override fun invoke(
         store: Store<BrowserState, BrowserAction>,
