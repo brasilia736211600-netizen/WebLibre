@@ -1,11 +1,11 @@
 # WebLibre — Privacy / Data-Flow Audit
 
-**Date:** 2026-09-03 checkpoint update
+**Date:** 2026-09-04 checkpoint update
 **Branch:** `weblibre-ua-mainline-v3`
-**Source HEAD before this documentation commit:** `6b81828fb08b170467c2fc053b74973f247c7a32`
+**Source HEAD at previous checkpoint:** `28a1ebcb4285494cc3f6cb3783c71841cf716941`
 
 ## Current verification boundary
-Privacy/account hardening changes are SOURCE-VERIFIED. Historical Flutter CICD `33420348298` / job `99580917046` proves only its exact older checkpoint; it does not prove the current HEAD. Current-head Actions queries have returned zero runs for the latest cleanup checkpoints, so CI remains NOT VERIFIED.
+Privacy/account hardening changes are SOURCE-VERIFIED. Historical CI runs prove only their exact checkpoints; they do not prove the current HEAD. Current-head Actions queries for the latest branch commits return zero runs, so current-head CI remains NOT VERIFIED.
 
 ## Confirmed product rule
 `NO SILENT TELEMETRY -> NO SILENT DEVICE IDENTIFIERS -> NO SILENT BACKGROUND USER-DATA UPLOAD -> EXPLICIT OPT-IN FOR OPTIONAL ONLINE SERVICES`
@@ -43,35 +43,37 @@ The account compatibility route was reduced to an informational screen, making t
 ## Android permission / transport checkpoint
 - `QUERY_ALL_PACKAGES` is removed.
 - `INTERNET` and `ACCESS_NETWORK_STATE` remain required browser/network capabilities.
-- `CAMERA` is positively justified: the QR scanner explicitly calls `Permission.camera.request()` before opening the camera-backed QR view. fileciteturn168file0
-- The native browser fragment installs Android `RequestMultiplePermissions` launchers for downloads, site permissions, and prompt-driven permissions. Its `SitePermissionsRules` configure camera, microphone, location, and notification as `ASK_TO_ALLOW`, with the returned platform permission set passed to the Android activity-result launcher. This is direct source evidence that microphone, location, and site-notification runtime permission paths remain active. fileciteturn253file0L2-L2
-- Web Push settings also exposes an explicit OS notification-permission action through `Permission.notification.request()` and `openAppSettings()`. This independently confirms that `POST_NOTIFICATIONS` has an active application-level consumer, not merely a transitive manifest declaration. fileciteturn231file0L2-L2 fileciteturn232file0L2-L2
-- The same native browser fragment wires `DownloadsFeature` to the download permission launcher and `PromptFeature` to a separate prompt permission launcher, while Android Photo Picker is used for single/multi media selection. This positively establishes active download/media-selection paths, but the exact mapping of every legacy storage/media manifest permission still requires finer per-permission attribution before removal. fileciteturn253file0L2-L2
-- Camera hardware remains optional in the manifest, so devices without camera hardware are not excluded.
-- `ACCESS_WIFI_STATE` remains unchanged because the strongest available branch-scoped code-search result is explicitly incomplete; the manifest comment alone is not sufficient deletion evidence. fileciteturn242file0L2-L2
-- `android:usesCleartextTraffic="true"` remains unchanged pending stronger evidence about all app-level HTTP consumers versus user-directed browser HTTP traffic.
-- Custom Tabs, downloads, private-tab notifications, and media session services remain declared and are not treated as dead without reachability proof.
+- `CAMERA` is positively justified by the QR scanner's direct runtime request.
+- The native browser fragment installs `RequestMultiplePermissions` launchers for downloads, site permissions, and prompt-driven permissions. Its site-permission rules allow camera, microphone, location, and notification requests to reach the Android permission launcher. This keeps those paths active.
+- Web Push settings has an explicit OS notification-permission request path and an app-settings fallback, so `POST_NOTIFICATIONS` remains justified.
+- Native download/prompt permission handling and Android Photo Picker confirm active download/media-selection flows. The exact mapping of each legacy storage/media manifest permission remains unresolved.
+- `ACCESS_WIFI_STATE` remains unchanged because available branch-scoped code-search evidence is explicitly incomplete; the manifest comment alone is not sufficient deletion evidence.
+- `android:usesCleartextTraffic="true"` remains unchanged pending a complete separation of user-directed browser HTTP from app-level HTTP transport requirements.
+- Custom Tabs, downloads, private-tab notifications, and media session services remain declared because they have concrete active integrations.
 
 ## Outbound endpoint/background audit — current checkpoint
 ### Firefox Sync
-`GeckoSyncApiImpl` uses Mozilla Android Components `FxaAccountManager`/`accountsAuthFeature` for authentication, `syncNow(SyncReason.User)` for explicit sync, and `deviceConstellation` for device discovery, send-tab, and command polling. Synced tabs are read from native remote-tabs storage. `FxaServer` selects the Android Components release server by default, with explicit server/token overrides. There is no parallel WebLibre hard-coded Firefox Sync HTTP transport to remove.
+`GeckoSyncApiImpl` uses Mozilla Android Components `FxaAccountManager`/`accountsAuthFeature` for authentication, `syncNow(SyncReason.User)` for explicit sync, and `deviceConstellation` for device discovery, send-tab, and command polling. Synced tabs are read from native remote-tabs storage. There is no parallel WebLibre hard-coded Firefox Sync HTTP transport to remove.
 
 ### UnifiedPush
-`UnifiedPushReceiver` accepts distributor broadcasts, requires decrypted messages, persists them to the profile-scoped push store and schedules `PushMessageWorker`. The worker restores the owning profile's components and calls the WebLibre Push integration to deliver the message into Gecko. This is an intentional user-enabled background web-push delivery path and must remain.
+`UnifiedPushReceiver` accepts distributor broadcasts, requires decrypted messages, persists them to the profile-scoped push store and schedules `PushMessageWorker`. The worker restores the owning profile's components and delivers the message into Gecko. This is an intentional user-enabled background web-push path and must remain.
 
 ### Native fetch/client consumers
-`Core.client` is a live Android Components fetch client. The current `Core` wires that client into browser icons, add-on provider/updater paths, web-app shortcut support, and the browser fragment's copy/share/download features; the Pigeon `GeckoFetchApiImpl` also exposes the same native client as an explicit browser fetch bridge. These are active browser/network consumers, so `INTERNET` remains justified. Global `usesCleartextTraffic` still requires broader transport evidence before changing it because user-directed HTTP navigation and app-level HTTP requests have not yet been cleanly separated by policy.
+`Core.client` is a live Android Components fetch client. It is wired into active browser icons, add-on provider/updater paths, web-app shortcut support, copy/share/download functionality, and the Pigeon `GeckoFetchApiImpl` browser fetch bridge. These are active browser/network consumers, so `INTERNET` remains justified. Global `usesCleartextTraffic` still requires broader transport evidence before changing it.
+
+## AI-1 checkpoint
+The model-independent Browser Tool slice remains source-verified. The executor now has focused regression coverage for permission denial, unknown tools, invalid input, successful navigation dispatch, and backend exception conversion to `executionException`. No global provider/LLM dependency was introduced.
 
 ## Permission minimization finding
-`ACCESS_WIFI_STATE` has a source comment saying it is a Fenix debug-manifest capability. Available GitHub code-search evidence is incomplete, so no deletion is justified solely from that search result. The current manifest is therefore intentionally unchanged for this permission. fileciteturn242file0L2-L2
+`ACCESS_WIFI_STATE` remains pending branch-scoped proof. Legacy storage/media declarations remain pending finer per-permission attribution. No speculative manifest reduction is made without direct evidence.
 
 ## Remaining opportunities
-1. Finish branch-scoped consumer proof for `ACCESS_WIFI_STATE`, remaining media/storage permissions, and any remaining app-level HTTP/configuration consumers.
+1. Finish branch-scoped consumer proof for `ACCESS_WIFI_STATE`, remaining media/storage permissions, and remaining app-level HTTP/configuration consumers.
 2. Decide whether `usesCleartextTraffic` can be removed/narrowed without breaking browser or user-directed flows.
 3. Add a local privacy/data-flow screen.
 4. Measure APK/runtime cost before unrelated performance removals.
-5. Re-run consolidated Android validation later, including UA Scenario 1.
+5. Re-run consolidated Android validation later, with UA Scenario 1 first.
 
 ## Evidence rule
-Source inspection, even with a successful historical build, does not equal current-head CI or Android runtime verification. Every material privacy change follows:
+Source inspection does not equal current-head CI or Android runtime verification. Every material privacy change follows:
 `READ -> VERIFY -> RECONCILE -> PLAN -> EXECUTE -> TEST -> DIFF -> COMMIT -> SAVE STATE`.
