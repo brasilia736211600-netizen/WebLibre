@@ -26,6 +26,30 @@ final class _FakeBackend implements BrowserToolBackend {
       const OperationResult(success: true);
 }
 
+final class _ThrowingBackend implements BrowserToolBackend {
+  @override
+  Future<GetTabsOutput> getTabs() async => throw StateError('backend failed');
+
+  @override
+  Future<CurrentTabOutput> getCurrentTab() async => const CurrentTabOutput(null);
+
+  @override
+  Future<TabMutationOutput> createTab(OpenUrlInput input) async =>
+      const TabMutationOutput(tabId: 'created');
+
+  @override
+  Future<OperationResult> switchTab(TabIdInput input) async =>
+      const OperationResult(success: true);
+
+  @override
+  Future<OperationResult> closeTab(TabIdInput input) async =>
+      const OperationResult(success: true);
+
+  @override
+  Future<OperationResult> openUrl(OpenUrlTabInput input) async =>
+      const OperationResult(success: true);
+}
+
 void main() {
   final executor = BrowserToolExecutor(backend: _FakeBackend());
 
@@ -82,5 +106,19 @@ void main() {
 
     expect(result.success, isFalse);
     expect(result.error?.code, BrowserToolExecutionErrorCode.invalidInput);
+  });
+
+  test('converts backend exceptions into executionException failures', () async {
+    final result = await BrowserToolExecutor(backend: _ThrowingBackend()).execute(
+      name: 'get_tabs',
+      input: const EmptyToolInput(),
+      grantedPermissions: const {BrowserToolPermission.readBrowserState},
+    );
+
+    expect(result.success, isFalse);
+    expect(result.error?.code, BrowserToolExecutionErrorCode.executionException);
+    expect(result.error?.message, contains('backend failed'));
+    expect(result.audit.toolName, 'get_tabs');
+    expect(result.audit.success, isFalse);
   });
 }
