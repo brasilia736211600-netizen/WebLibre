@@ -166,9 +166,14 @@ final class RiverpodBrowserToolBackend implements BrowserToolBackend {
 }
 
 final class BrowserToolExecutor {
-  BrowserToolExecutor({required BrowserToolBackend backend}) : _backend = backend;
+  BrowserToolExecutor({
+    required BrowserToolBackend backend,
+    void Function(BrowserToolAuditEvent event)? onAudit,
+  })  : _backend = backend,
+        _onAudit = onAudit;
 
   final BrowserToolBackend _backend;
+  final void Function(BrowserToolAuditEvent event)? _onAudit;
 
   Future<BrowserToolExecutionResult> execute({
     required String name,
@@ -177,21 +182,25 @@ final class BrowserToolExecutor {
   }) async {
     final spec = BrowserToolRegistry.byName(name);
     if (spec == null) {
-      return BrowserToolExecutionResult.failure(
-        toolName: name,
-        error: const BrowserToolExecutionError(
-          code: BrowserToolExecutionErrorCode.unknownTool,
-          message: 'Tool is not registered.',
+      return _record(
+        BrowserToolExecutionResult.failure(
+          toolName: name,
+          error: const BrowserToolExecutionError(
+            code: BrowserToolExecutionErrorCode.unknownTool,
+            message: 'Tool is not registered.',
+          ),
         ),
       );
     }
 
     if (!spec.permissions.every(grantedPermissions.contains)) {
-      return BrowserToolExecutionResult.failure(
-        toolName: name,
-        error: const BrowserToolExecutionError(
-          code: BrowserToolExecutionErrorCode.permissionDenied,
-          message: 'Required browser-tool permission is not granted.',
+      return _record(
+        BrowserToolExecutionResult.failure(
+          toolName: name,
+          error: const BrowserToolExecutionError(
+            code: BrowserToolExecutionErrorCode.permissionDenied,
+            message: 'Required browser-tool permission is not granted.',
+          ),
         ),
       );
     }
@@ -199,50 +208,65 @@ final class BrowserToolExecutor {
     try {
       switch (name) {
         case 'get_tabs':
-          if (input is! EmptyToolInput) return _invalid(name);
-          return BrowserToolExecutionResult.success(
-            toolName: name,
-            output: await _backend.getTabs(),
+          if (input is! EmptyToolInput) return _record(_invalid(name));
+          return _record(
+            BrowserToolExecutionResult.success(
+              toolName: name,
+              output: await _backend.getTabs(),
+            ),
           );
         case 'get_current_tab':
-          if (input is! EmptyToolInput) return _invalid(name);
-          return BrowserToolExecutionResult.success(
-            toolName: name,
-            output: await _backend.getCurrentTab(),
+          if (input is! EmptyToolInput) return _record(_invalid(name));
+          return _record(
+            BrowserToolExecutionResult.success(
+              toolName: name,
+              output: await _backend.getCurrentTab(),
+            ),
           );
         case 'create_tab':
-          if (input is! OpenUrlInput) return _invalid(name);
-          return BrowserToolExecutionResult.success(
-            toolName: name,
-            output: await _backend.createTab(input),
+          if (input is! OpenUrlInput) return _record(_invalid(name));
+          return _record(
+            BrowserToolExecutionResult.success(
+              toolName: name,
+              output: await _backend.createTab(input),
+            ),
           );
         case 'switch_tab':
-          if (input is! TabIdInput) return _invalid(name);
-          return _operationResult(name, await _backend.switchTab(input));
+          if (input is! TabIdInput) return _record(_invalid(name));
+          return _record(_operationResult(name, await _backend.switchTab(input)));
         case 'close_tab':
-          if (input is! TabIdInput) return _invalid(name);
-          return _operationResult(name, await _backend.closeTab(input));
+          if (input is! TabIdInput) return _record(_invalid(name));
+          return _record(_operationResult(name, await _backend.closeTab(input)));
         case 'open_url':
-          if (input is! OpenUrlTabInput) return _invalid(name);
-          return _operationResult(name, await _backend.openUrl(input));
+          if (input is! OpenUrlTabInput) return _record(_invalid(name));
+          return _record(_operationResult(name, await _backend.openUrl(input)));
       }
 
-      return BrowserToolExecutionResult.failure(
-        toolName: name,
-        error: const BrowserToolExecutionError(
-          code: BrowserToolExecutionErrorCode.unknownTool,
-          message: 'Registered tool has no executor implementation.',
+      return _record(
+        BrowserToolExecutionResult.failure(
+          toolName: name,
+          error: const BrowserToolExecutionError(
+            code: BrowserToolExecutionErrorCode.unknownTool,
+            message: 'Registered tool has no executor implementation.',
+          ),
         ),
       );
     } catch (error) {
-      return BrowserToolExecutionResult.failure(
-        toolName: name,
-        error: BrowserToolExecutionError(
-          code: BrowserToolExecutionErrorCode.executionException,
-          message: error.toString(),
+      return _record(
+        BrowserToolExecutionResult.failure(
+          toolName: name,
+          error: BrowserToolExecutionError(
+            code: BrowserToolExecutionErrorCode.executionException,
+            message: error.toString(),
+          ),
         ),
       );
     }
+  }
+
+  BrowserToolExecutionResult _record(BrowserToolExecutionResult result) {
+    _onAudit?.call(result.audit);
+    return result;
   }
 
   BrowserToolExecutionResult _invalid(String name) {
