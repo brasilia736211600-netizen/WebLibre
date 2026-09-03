@@ -2,7 +2,7 @@
 
 **Canonical source of truth:** GitHub repository, refs, commits, PRs, CI/build/release runs, artifacts and release assets.
 **Branch:** `weblibre-ua-mainline-v3`
-**Source HEAD before this documentation commit:** `bf3ed17ab9af6b921986aa83112e39b722a7e874`
+**Source HEAD before this documentation commit:** `e76e065a854e7bc7489042a0e2d3d512fc5b3298`
 
 ## Current product position
 ```text
@@ -31,7 +31,10 @@ Privacy / Personal Product Hardening
     Manual foreground feed refresh              RETAINED
     QUERY_ALL_PACKAGES permission               REMOVED / SOURCE-VERIFIED
     Camera permission                            RETAINED / DIRECTLY JUSTIFIED BY QR SCANNER
-    outbound app endpoint audit                 PARTIAL / Firefox Sync, Push, native fetch mapped
+    Microphone/location site permissions         RETAINED / DIRECTLY JUSTIFIED BY native site-permission bridge
+    POST_NOTIFICATIONS permission               RETAINED / DIRECTLY JUSTIFIED by native site permissions + Web Push settings
+    Download/media-selection paths               ACTIVE / exact legacy storage-permission attribution still pending
+    outbound app endpoint audit                 PARTIAL / Firefox Sync, Push, native fetch and Core client consumers mapped
     remaining permission/cleartext audit        PENDING direct branch-scoped proof
     local privacy/data-flow screen             PENDING
 ```
@@ -44,13 +47,15 @@ The QR scanner directly requests `Permission.camera` before opening its camera-b
 Active Firefox Sync remains separate and intact through Mozilla Android Components. UnifiedPush remains an intentional user-enabled background delivery path. Native fetch/download paths remain active browser functionality, so no speculative global `usesCleartextTraffic` removal was made.
 
 ## Android permission boundary
-`INTERNET` and `ACCESS_NETWORK_STATE` remain justified. Foreground services remain backed by concrete DownloadService, PrivateTabsNotificationService, and MediaSessionService integrations. `CAMERA` is directly justified by the QR scanner. `ACCESS_WIFI_STATE` is still pending because the available code-search response is explicitly incomplete. Microphone, location, media/storage and notifications still require direct consumer proof.
+`INTERNET` and `ACCESS_NETWORK_STATE` remain justified. Foreground services remain backed by concrete DownloadService, PrivateTabsNotificationService, and MediaSessionService integrations. `CAMERA`, microphone, location, and notification site permissions have positive native request-path evidence. The app's Web Push settings also directly calls `Permission.notification.request()` / `openAppSettings()`, so `POST_NOTIFICATIONS` is confirmed active and no longer a removal candidate. fileciteturn253file0L2-L2 fileciteturn231file0L2-L2 fileciteturn232file0L2-L2
+
+`ACCESS_WIFI_STATE` remains pending because the available branch-scoped code-search response is explicitly incomplete. Legacy storage/media declarations remain pending finer per-permission attribution. `usesCleartextTraffic` remains unchanged pending a complete app-level HTTP consumer map.
 
 ## Runtime blocker
-Scenario 1 remains FAIL: restored Container A/tab used Gecko/Firefox 152 instead of the configured Chrome/120 UA after relaunch. Do not run Scenarios 2–6 until Scenario 1 passes.
+Scenario 1 remains FAIL: restored Container A/tab used Gecko/Firefox 152 instead of the configured Chrome/120 UA after relaunch. The restore middleware is installed before `EngineMiddleware.create`, and the native restore binder performs a profile-scoped `tab.db` lookup keyed by the restored tab's `contextId`; runtime revalidation is still required to determine why the lookup/application did not yield the persisted UA in Scenario 1. Do not run Scenarios 2–6 until Scenario 1 passes. fileciteturn246file0L2-L2 fileciteturn249file0L2-L2 fileciteturn247file0L2-L2
 
 ## AI boundary
-AI-1 remains source-verified. Current-head CI is not verified. AI-2 must remain blocked until browser runtime foundation and current AI-1 CI are validated.
+AI-1 remains source-verified. Current-head Quality CI is not verified. The Quality workflow is PR-triggered for app/package changes and contains the AI-1/container tests plus native checks; the Flutter CICD workflow is tag/manual rather than push-triggered. AI-2 must remain blocked until browser runtime foundation and current AI-1 CI are validated. fileciteturn240file0L2-L2 fileciteturn214file0L2-L2
 
 ## Release
 Validation Release `validation-stable-5-3aa06cf6ee090e42c9b7bff6abbf17f737b1fef5` remains RELEASE-ASSET-VERIFIED for separate ARM64 and armeabi-v7a APKs. Production releases remain blocked on runtime/release validation.
@@ -60,7 +65,7 @@ Never promote:
 `SOURCE-VERIFIED -> CI-VERIFIED -> ANDROID-RUNTIME-VERIFIED -> ARTIFACT-VERIFIED -> RELEASE-ASSET-VERIFIED`.
 
 ## FIRST NEXT STEP — exactly one
-**Finish branch-scoped direct consumer proof for the remaining Android permissions and any remaining app-level HTTP/configuration consumers; then make only evidence-backed manifest/transport reductions.**
+**Finish branch-scoped attribution for `ACCESS_WIFI_STATE` and the remaining legacy storage/media permissions, while completing the app-level HTTP/configuration consumer map; then make only evidence-backed manifest/transport reductions.**
 
 ## Mandatory loop
 `READ -> VERIFY -> RECONCILE -> PLAN -> EXECUTE -> TEST -> DIFF -> COMMIT -> SAVE STATE`
