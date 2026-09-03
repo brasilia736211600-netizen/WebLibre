@@ -1,18 +1,18 @@
 # WebLibre — Durable Workflow State
 
-**Last synchronized:** 2026-09-03
+**Last synchronized:** 2026-09-04
 **Branch:** `weblibre-ua-mainline-v3`
-**Source HEAD at previous checkpoint:** `1ab0a22d9695dd4a74378d520c148c93bd37f05a`
+**Source HEAD at previous checkpoint:** `d0cd190c5b4f0fdb2fe97b1ed8e520ed1fab96d3`
 
 ## Source of truth
-GitHub code, refs, commits, PRs, CI/build/release runs, artifacts and release assets are authoritative. Chat memory is not evidence.
+GitHub code, refs, commits, CI/build/release runs, artifacts and release assets are authoritative. Chat memory is not evidence.
 
 ## Current checkpoint
 - PR #3 remains OPEN and DRAFT, base `main`, exact current head is tracked in PR metadata.
 - Current source HEAD was revalidated directly against `weblibre-ua-mainline-v3`.
-- AI-1 executor source is compile-structured with an explicit terminal fallback after the dispatch switch; no historical missing-return patch was reintroduced.
-- A focused regression test was added for backend exceptions, proving the executor's `executionException` result contract at source level.
-- Current-head Actions lookup for the new test commit returned zero workflow runs; therefore current-head CI remains NOT VERIFIED.
+- AI-1 executor source retains its explicit terminal fallback after the dispatch switch; no historical missing-return patch was reintroduced.
+- Focused AI-1 regression coverage now includes backend exception conversion to `executionException` and the full permission/side-effect matrix for the six-tool registry.
+- Current-head Actions lookup for the latest source commit returned zero workflow runs; current-head CI remains NOT VERIFIED.
 - Retired account callback/handoff cleanup is complete.
 - Legacy snapshot-sync cluster is removed after reachability review.
 - Orphaned generated `account_sync_repository.g.dart` was removed.
@@ -37,7 +37,7 @@ A source lifecycle stabilization is committed in the branch. Do not run Scenario
 
 ## AI-1
 Six-tool model-independent Browser Tool slice: `get_tabs`, `get_current_tab`, `create_tab`, `switch_tab`, `close_tab`, `open_url`.
-Contracts, registry, executor, mappings and focused tests remain SOURCE-VERIFIED. The executor now has an additional focused exception-path regression test. Current-head Quality CI remains pending; AI-2 remains blocked.
+Contracts, registry, executor, mappings and focused tests remain SOURCE-VERIFIED. The executor has focused exception-path coverage, and the registry has explicit permission/side-effect matrix coverage. Current-head Quality CI remains pending; AI-2 remains blocked.
 
 ## Privacy / personal-product hardening
 - Legacy account callback/handoff path removed.
