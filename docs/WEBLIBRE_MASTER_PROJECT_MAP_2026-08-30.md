@@ -2,7 +2,7 @@
 
 **Canonical source of truth:** GitHub repository, refs, commits, PRs, CI/build/release runs, artifacts and release assets.
 **Branch:** `weblibre-ua-mainline-v3`
-**Source HEAD at previous checkpoint:** `148882836f4abc78099126f97b4acf62d0b96da1`
+**Source HEAD at previous checkpoint:** `399bc15a546f48da1b8490502e6137be5717d925`
 
 ## Current product position
 ```text
@@ -12,7 +12,7 @@ Browser / Container / UA foundation
 
 AI-1 Browser Tool
     specification / inventory / contracts       DONE / SOURCE-VERIFIED
-    registry / executor / focused tests         SOURCE-VERIFIED; exception-path regression added; current Quality CI pending
+    registry / executor / focused tests         SOURCE-VERIFIED; exception + permission/audit coverage added; current Quality CI pending
     Agent Core                                  NOT STARTED / BLOCKED
 
 Privacy / Personal Product Hardening
@@ -46,6 +46,8 @@ The QR scanner directly requests `Permission.camera` before opening its camera-b
 
 Active Firefox Sync remains separate and intact through Mozilla Android Components. UnifiedPush remains an intentional user-enabled background delivery path. Native fetch/download paths remain active browser functionality, so no speculative global `usesCleartextTraffic` removal was made.
 
+AI-1 now has source-level regression coverage for unknown tools, missing permissions, invalid inputs, backend exceptions, audit emission, and the explicit permission/side-effect matrix for all six tools.
+
 ## Android permission boundary
 `INTERNET` and `ACCESS_NETWORK_STATE` remain justified. Foreground services remain backed by concrete DownloadService, PrivateTabsNotificationService, and MediaSessionService integrations. `CAMERA`, microphone, location, and notification site permissions have positive native request-path evidence. The app's Web Push settings also directly calls `Permission.notification.request()` / `openAppSettings()`, so `POST_NOTIFICATIONS` is confirmed active and no longer a removal candidate.
 
@@ -55,7 +57,7 @@ Active Firefox Sync remains separate and intact through Mozilla Android Componen
 Scenario 1 remains FAIL: restored Container A/tab used Gecko/Firefox 152 instead of the configured Chrome/120 UA after relaunch. The restore middleware is installed before `EngineMiddleware.create`, and the native restore binder performs a profile-scoped `tab.db` lookup keyed by the restored tab's `contextId`; runtime revalidation is still required to determine why the lookup/application did not yield the persisted UA in Scenario 1. Do not run Scenarios 2–6 until Scenario 1 passes.
 
 ## AI boundary
-AI-1 remains source-verified. Current-head Quality CI is not verified. The executor now also has focused regression coverage for backend exception conversion to `executionException`. The Quality workflow is PR-triggered for app/package changes and contains the AI-1/container tests plus native checks; the Flutter CICD workflow is tag/manual rather than push-triggered. AI-2 must remain blocked until browser runtime foundation and current AI-1 CI are validated.
+AI-1 remains source-verified. Current-head Quality CI is not verified. The executor has focused exception-path and audit coverage, while the registry has explicit permission/side-effect coverage. The Quality workflow is PR-triggered for app/package changes and contains the AI-1/container tests plus native checks; the Flutter CICD workflow is tag/manual rather than push-triggered. AI-2 must remain blocked until browser runtime foundation and current AI-1 CI are validated.
 
 ## Release
 Validation Release `validation-stable-5-3aa06cf6ee090e42c9b7bff6abbf17f737b1fef5` remains RELEASE-ASSET-VERIFIED for separate ARM64 and armeabi-v7a APKs. Production releases remain blocked on runtime/release validation.
