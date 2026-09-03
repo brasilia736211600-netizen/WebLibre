@@ -33,4 +33,38 @@ void main() {
     expect(createTab.permissions, contains(BrowserToolPermission.tabs));
     expect(createTab.permissions, contains(BrowserToolPermission.navigate));
   });
+
+  test('each AI-1 mutating tool keeps its intended minimum permissions', () {
+    expect(
+      BrowserToolRegistry.byName('switch_tab')!.permissions,
+      equals(const {BrowserToolPermission.tabs}),
+    );
+    expect(
+      BrowserToolRegistry.byName('close_tab')!.permissions,
+      equals(const {BrowserToolPermission.tabs}),
+    );
+    expect(
+      BrowserToolRegistry.byName('open_url')!.permissions,
+      equals(const {BrowserToolPermission.navigate}),
+    );
+    expect(
+      BrowserToolRegistry.byName('create_tab')!.permissions,
+      equals(const {
+        BrowserToolPermission.tabs,
+        BrowserToolPermission.navigate,
+      }),
+    );
+
+    for (final name in <String>[
+      'create_tab',
+      'switch_tab',
+      'close_tab',
+      'open_url',
+    ]) {
+      expect(
+        BrowserToolRegistry.byName(name)!.sideEffect,
+        BrowserToolSideEffect.mutateBrowser,
+      );
+    }
+  });
 }
