@@ -2,13 +2,13 @@
 
 **Last synchronized:** 2026-09-03
 **Branch:** `weblibre-ua-mainline-v3`
-**Source HEAD before this documentation commit:** `c463b8d5bfda401c21267a3707919a409bdee748`
+**Source HEAD before this documentation commit:** `b1a71748207d26eea35571f2cefea3a38c3819d8`
 
 ## Source of truth
 GitHub code, refs, commits, PRs, CI/build/release runs, artifacts and release assets are authoritative. Chat memory is not evidence.
 
 ## Current checkpoint
-- PR #3 remains OPEN and DRAFT, base `main`; its metadata head is current, but its body still needs a later refresh because the PR update path was rejected by the connector security layer in this session.
+- PR #3 remains OPEN and DRAFT, base `main`. Its metadata head is current, but its body still contains stale older checkpoint text and still needs a later refresh because the PR update path was previously rejected by the connector security layer.
 - Retired account callback/handoff cleanup is complete.
 - Legacy snapshot-sync cluster is removed after reachability review.
 - Orphaned generated `account_sync_repository.g.dart` was removed.
@@ -16,7 +16,10 @@ GitHub code, refs, commits, PRs, CI/build/release runs, artifacts and release as
 - The legacy account route is informational-only; the obsolete account-auth repository, generated provider, state model/generated file, and auth card were removed.
 - Active Firefox Sync remains live through `features/sync` + native Mozilla Android Components; it was not touched by the cleanup.
 - Android `QUERY_ALL_PACKAGES` remains removed.
-- `CAMERA` is positively justified by the QR scanner's direct runtime permission request and camera-backed view. Native site-permission handling also retains microphone and location runtime permission request paths.
+- `CAMERA` is positively justified by the QR scanner's direct runtime permission request and camera-backed view.
+- Microphone, location, and site-notification runtime permission paths are positively justified by native `SitePermissionsFeature` + Android activity-result handling.
+- `POST_NOTIFICATIONS` is independently and directly justified by Web Push settings using `Permission.notification.request()` plus an app-settings fallback.
+- Download/media-selection paths are active through native `DownloadsFeature`, prompt permissions, and Android Photo Picker; exact mapping for every legacy storage/media manifest permission is still pending.
 - Current-head CI remains NOT VERIFIED.
 
 ## Browser / Android runtime
@@ -35,28 +38,33 @@ Contracts, registry, executor, source mappings and focused tests remain SOURCE-V
 
 ## Privacy / personal-product hardening
 - Legacy account callback/handoff path removed.
-- Legacy snapshot-sync path removed after source reachability review.
+- Legacy snapshot-sync path removed after reachability review.
 - Orphaned legacy generated sync provider artifact removed.
 - Active Firefox Sync retained.
 - Automatic background feed fetch/headless entrypoint/direct dependency removed; manual foreground refresh retained.
 - `QUERY_ALL_PACKAGES` removed.
 - Supabase credentials and obsolete URL configuration removed from the retained account compatibility config; account portal URL retained because it has a live UI consumer.
 - Legacy account-auth repository/state/UI cluster removed; account route remains a local compatibility boundary.
-- `CAMERA` retained because the active QR scanner requests it explicitly. Microphone/location remain retained because native `SitePermissionsFeature` requests corresponding platform permissions when a site asks for them.
+- `CAMERA` retained because the active QR scanner requests it explicitly.
+- Microphone/location retained because native `SitePermissionsFeature` requests corresponding platform permissions when a site asks for them.
+- `POST_NOTIFICATIONS` retained because both native site-permission handling and the Web Push settings service directly request/read the OS notification permission.
 
 ## Outbound endpoint / background audit
 - Active Firefox Sync delegates to Mozilla Android Components `FxaAccountManager`, account-auth features, explicit `syncNow(SyncReason.User)`, device constellation, and native remote-tabs storage.
 - UnifiedPush is a concrete user-enabled background delivery path and remains retained.
 - `GeckoFetchApiImpl` is an active browser/native fetch bridge backed by `components.core.client`.
+- `Core.client` is also wired into active icon, add-on, web-app shortcut, copy/share/download browser features.
 - `DownloadService` uses the shared Android Components HTTP client.
-- `android:usesCleartextTraffic="true"` remains unchanged because browser HTTP support and app-level HTTP transports have not yet been fully separated by evidence.
+- `android:usesCleartextTraffic="true"` remains unchanged because user-directed HTTP navigation and app-level HTTP transports have not yet been separated with sufficient evidence.
 
 ## Android permission audit boundary
 - `INTERNET` and `ACCESS_NETWORK_STATE` remain justified by active browser/network features.
 - Foreground-service declarations remain justified by concrete download, private-tab notification, and media-session integrations.
 - `CAMERA` is source-verified as required by QR scanning.
-- `ACCESS_WIFI_STATE` remains unchanged because available negative search evidence is incomplete.
-- Microphone and location now have positive native request-path evidence; media/storage and notification permissions remain pending finer direct consumer attribution.
+- Native browser `RequestMultiplePermissions` launchers handle download, site, and prompt permission flows. `SitePermissionsRules` explicitly allow camera, location, notification, and microphone to reach `ASK_TO_ALLOW`, confirming the site-permission bridge remains active.
+- `POST_NOTIFICATIONS` additionally has an explicit app-level `Permission.notification.request()` path in Web Push settings, so it is no longer a pending-minimization permission.
+- `ACCESS_WIFI_STATE` remains unchanged because available branch-scoped code-search evidence is incomplete; the manifest comment alone is insufficient for deletion.
+- `READ_EXTERNAL_STORAGE`/`WRITE_EXTERNAL_STORAGE` and `READ_MEDIA_VISUAL_USER_SELECTED` remain pending finer attribution to determine which declarations are still required on supported Android versions.
 
 ## Release
 Validation release `validation-stable-5-3aa06cf6ee090e42c9b7bff6abbf17f737b1fef5` remains RELEASE-ASSET-VERIFIED for separate ARM64 and armeabi-v7a APKs. Production `v*` releases remain blocked on runtime/release validation.
@@ -65,7 +73,7 @@ Validation release `validation-stable-5-3aa06cf6ee090e42c9b7bff6abbf17f737b1fef5
 `SOURCE-VERIFIED -> CI-VERIFIED -> ANDROID-RUNTIME-VERIFIED -> ARTIFACT-VERIFIED -> RELEASE-ASSET-VERIFIED` are separate states.
 
 ## FIRST NEXT STEP — exactly one
-**Finish branch-scoped direct consumer proof for `ACCESS_WIFI_STATE`, notification, media/storage, and any remaining app-level HTTP/configuration consumers; then make only evidence-backed manifest/transport reductions.**
+**Finish branch-scoped attribution for `ACCESS_WIFI_STATE` and the remaining legacy storage/media permissions, while completing the app-level HTTP/configuration consumer map; then make only evidence-backed manifest/transport reductions.**
 
 ## Mandatory loop
 `READ -> VERIFY -> RECONCILE -> PLAN -> EXECUTE -> TEST -> DIFF -> COMMIT -> SAVE STATE`
