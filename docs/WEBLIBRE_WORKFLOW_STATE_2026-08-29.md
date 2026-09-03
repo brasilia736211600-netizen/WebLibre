@@ -2,13 +2,17 @@
 
 **Last synchronized:** 2026-09-03
 **Branch:** `weblibre-ua-mainline-v3`
-**Source HEAD before this documentation commit:** `b1a71748207d26eea35571f2cefea3a38c3819d8`
+**Source HEAD at previous checkpoint:** `1ab0a22d9695dd4a74378d520c148c93bd37f05a`
 
 ## Source of truth
 GitHub code, refs, commits, PRs, CI/build/release runs, artifacts and release assets are authoritative. Chat memory is not evidence.
 
 ## Current checkpoint
-- PR #3 remains OPEN and DRAFT, base `main`. Its metadata head is current, but its body still contains stale older checkpoint text and still needs a later refresh because the PR update path was previously rejected by the connector security layer.
+- PR #3 remains OPEN and DRAFT, base `main`, exact current head is tracked in PR metadata.
+- Current source HEAD was revalidated directly against `weblibre-ua-mainline-v3`.
+- AI-1 executor source is compile-structured with an explicit terminal fallback after the dispatch switch; no historical missing-return patch was reintroduced.
+- A focused regression test was added for backend exceptions, proving the executor's `executionException` result contract at source level.
+- Current-head Actions lookup for the new test commit returned zero workflow runs; therefore current-head CI remains NOT VERIFIED.
 - Retired account callback/handoff cleanup is complete.
 - Legacy snapshot-sync cluster is removed after reachability review.
 - Orphaned generated `account_sync_repository.g.dart` was removed.
@@ -20,7 +24,6 @@ GitHub code, refs, commits, PRs, CI/build/release runs, artifacts and release as
 - Microphone, location, and site-notification runtime permission paths are positively justified by native `SitePermissionsFeature` + Android activity-result handling.
 - `POST_NOTIFICATIONS` is independently and directly justified by Web Push settings using `Permission.notification.request()` plus an app-settings fallback.
 - Download/media-selection paths are active through native `DownloadsFeature`, prompt permissions, and Android Photo Picker; exact mapping for every legacy storage/media manifest permission is still pending.
-- Current-head CI remains NOT VERIFIED.
 
 ## Browser / Android runtime
 Scenario 1 remains **FAIL / runtime revalidation pending**:
@@ -34,7 +37,7 @@ A source lifecycle stabilization is committed in the branch. Do not run Scenario
 
 ## AI-1
 Six-tool model-independent Browser Tool slice: `get_tabs`, `get_current_tab`, `create_tab`, `switch_tab`, `close_tab`, `open_url`.
-Contracts, registry, executor, source mappings and focused tests remain SOURCE-VERIFIED. Current-head Quality CI remains pending; AI-2 remains blocked.
+Contracts, registry, executor, mappings and focused tests remain SOURCE-VERIFIED. The executor now has an additional focused exception-path regression test. Current-head Quality CI remains pending; AI-2 remains blocked.
 
 ## Privacy / personal-product hardening
 - Legacy account callback/handoff path removed.
@@ -49,7 +52,7 @@ Contracts, registry, executor, source mappings and focused tests remain SOURCE-V
 - Microphone/location retained because native `SitePermissionsFeature` requests corresponding platform permissions when a site asks for them.
 - `POST_NOTIFICATIONS` retained because both native site-permission handling and the Web Push settings service directly request/read the OS notification permission.
 
-## Outbound endpoint / background audit
+## Outbound endpoint/background audit
 - Active Firefox Sync delegates to Mozilla Android Components `FxaAccountManager`, account-auth features, explicit `syncNow(SyncReason.User)`, device constellation, and native remote-tabs storage.
 - UnifiedPush is a concrete user-enabled background delivery path and remains retained.
 - `GeckoFetchApiImpl` is an active browser/native fetch bridge backed by `components.core.client`.
