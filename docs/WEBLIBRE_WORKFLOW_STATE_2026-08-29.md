@@ -2,16 +2,16 @@
 
 **Last synchronized:** 2026-09-04
 **Branch:** `weblibre-ua-mainline-v3`
-**Source HEAD at previous checkpoint:** `d0cd190c5b4f0fdb2fe97b1ed8e520ed1fab96d3`
+**Source HEAD at previous checkpoint:** `824d5ce954f2422b738ca753d60f3a49ff9a130f`
 
 ## Source of truth
 GitHub code, refs, commits, CI/build/release runs, artifacts and release assets are authoritative. Chat memory is not evidence.
 
 ## Current checkpoint
 - PR #3 remains OPEN and DRAFT, base `main`, exact current head is tracked in PR metadata.
-- Current source HEAD was revalidated directly against `weblibre-ua-mainline-v3`.
-- AI-1 executor source retains its explicit terminal fallback after the dispatch switch; no historical missing-return patch was reintroduced.
-- Focused AI-1 regression coverage now includes backend exception conversion to `executionException` and the full permission/side-effect matrix for the six-tool registry.
+- AI-1 executor keeps the explicit terminal fallback after the dispatch switch; no historical missing-return patch was reintroduced.
+- Browser-tool audit events are now emitted through an optional executor callback for every execution result, including denied, invalid, failed, and successful paths.
+- Focused AI-1 regression coverage includes backend exception conversion, audit emission, and the complete six-tool permission/side-effect matrix.
 - Current-head Actions lookup for the latest source commit returned zero workflow runs; current-head CI remains NOT VERIFIED.
 - Retired account callback/handoff cleanup is complete.
 - Legacy snapshot-sync cluster is removed after reachability review.
@@ -37,7 +37,7 @@ A source lifecycle stabilization is committed in the branch. Do not run Scenario
 
 ## AI-1
 Six-tool model-independent Browser Tool slice: `get_tabs`, `get_current_tab`, `create_tab`, `switch_tab`, `close_tab`, `open_url`.
-Contracts, registry, executor, mappings and focused tests remain SOURCE-VERIFIED. The executor has focused exception-path coverage, and the registry has explicit permission/side-effect matrix coverage. Current-head Quality CI remains pending; AI-2 remains blocked.
+Contracts, registry, executor, mappings and focused tests remain SOURCE-VERIFIED. The executor now emits its `BrowserToolAuditEvent` through an optional callback so the calling layer can persist/route audit records without coupling the executor to a storage/provider implementation. The registry has explicit permission/side-effect matrix coverage. Current-head Quality CI remains pending; AI-2 remains blocked.
 
 ## Privacy / personal-product hardening
 - Legacy account callback/handoff path removed.
