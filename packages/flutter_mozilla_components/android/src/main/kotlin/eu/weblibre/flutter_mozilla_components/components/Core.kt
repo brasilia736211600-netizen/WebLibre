@@ -20,6 +20,7 @@ import eu.weblibre.flutter_mozilla_components.EngineProvider.getOrCreateRuntime
 import eu.weblibre.flutter_mozilla_components.GlobalComponents
 import eu.weblibre.flutter_mozilla_components.history.FallbackHistoryDelegate
 import eu.weblibre.flutter_mozilla_components.middleware.HistoryDelegateBindingMiddleware
+import eu.weblibre.flutter_mozilla_components.middleware.ContainerUserAgentCreateSessionMiddleware
 import eu.weblibre.flutter_mozilla_components.PermissionStorage
 import eu.weblibre.flutter_mozilla_components.services.MediaSessionService
 import eu.weblibre.flutter_mozilla_components.activities.NotificationActivity
@@ -216,6 +217,11 @@ class Core(
                     ),
                 ),
                 HistoryMetadataMiddleware(historyMetadataService),
+                ContainerUserAgentCreateSessionMiddleware(
+                    engine = engine,
+                    profileContext = components.profileApplicationContext,
+                    scope = MainScope(),
+                ),
                 HistoryDelegateBindingMiddleware(
                     profileContext = components.profileApplicationContext,
                     storageDelegate = historyStorageDelegate,
