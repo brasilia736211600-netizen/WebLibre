@@ -121,4 +121,26 @@ void main() {
     expect(result.audit.toolName, 'get_tabs');
     expect(result.audit.success, isFalse);
   });
+
+  test('emits one audit event for each execution result', () async {
+    final events = <BrowserToolAuditEvent>[];
+    final auditedExecutor = BrowserToolExecutor(
+      backend: _FakeBackend(),
+      onAudit: events.add,
+    );
+
+    final result = await auditedExecutor.execute(
+      name: 'open_url',
+      input: OpenUrlTabInput(
+        tabId: 'tab-1',
+        url: Uri.parse('https://example.com'),
+      ),
+      grantedPermissions: const {BrowserToolPermission.navigate},
+    );
+
+    expect(result.success, isTrue);
+    expect(events, hasLength(1));
+    expect(events.single.toolName, 'open_url');
+    expect(events.single.success, isTrue);
+  });
 }
