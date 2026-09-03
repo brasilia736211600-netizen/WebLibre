@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-03 checkpoint update
 **Branch:** `weblibre-ua-mainline-v3`
-**Source HEAD before this documentation commit:** `24227982c8ef73a6edab6d136729dba3e3a95333`
+**Source HEAD before this documentation commit:** `6b81828fb08b170467c2fc053b74973f247c7a32`
 
 ## Current verification boundary
 Privacy/account hardening changes are SOURCE-VERIFIED. Historical Flutter CICD `33420348298` / job `99580917046` proves only its exact older checkpoint; it does not prove the current HEAD. Current-head Actions queries have returned zero runs for the latest cleanup checkpoints, so CI remains NOT VERIFIED.
@@ -44,10 +44,11 @@ The account compatibility route was reduced to an informational screen, making t
 - `QUERY_ALL_PACKAGES` is removed.
 - `INTERNET` and `ACCESS_NETWORK_STATE` remain required browser/network capabilities.
 - `CAMERA` is positively justified: the QR scanner explicitly calls `Permission.camera.request()` before opening the camera-backed QR view. fileciteturn168file0
-- The native browser fragment also installs an Android `RequestMultiplePermissions` launcher for site-permission requests and configures camera, microphone, and location site permissions to `ASK_TO_ALLOW`; this is direct evidence that microphone and location runtime permission paths remain active. fileciteturn201file0L2-L2
-- The same fragment registers a separate permission launcher for downloads and another for prompt-driven permissions, so download/media and web-content permission paths are intentionally retained pending finer per-permission attribution. fileciteturn201file0L2-L2
+- The native browser fragment installs Android `RequestMultiplePermissions` launchers for downloads, site permissions, and prompt-driven permissions. Its `SitePermissionsRules` configure camera, microphone, location, and notification as `ASK_TO_ALLOW`, with the returned platform permission set passed to the Android activity-result launcher. This is direct source evidence that microphone, location, and site-notification runtime permission paths remain active. fileciteturn253file0L2-L2
+- Web Push settings also exposes an explicit OS notification-permission action through `Permission.notification.request()` and `openAppSettings()`. This independently confirms that `POST_NOTIFICATIONS` has an active application-level consumer, not merely a transitive manifest declaration. fileciteturn231file0L2-L2 fileciteturn232file0L2-L2
+- The same native browser fragment wires `DownloadsFeature` to the download permission launcher and `PromptFeature` to a separate prompt permission launcher, while Android Photo Picker is used for single/multi media selection. This positively establishes active download/media-selection paths, but the exact mapping of every legacy storage/media manifest permission still requires finer per-permission attribution before removal. fileciteturn253file0L2-L2
 - Camera hardware remains optional in the manifest, so devices without camera hardware are not excluded.
-- Notification, media/storage and foreground-service declarations remain pending concrete feature-by-feature minimization rather than speculative removal.
+- `ACCESS_WIFI_STATE` remains unchanged because the strongest available branch-scoped code-search result is explicitly incomplete; the manifest comment alone is not sufficient deletion evidence. fileciteturn242file0L2-L2
 - `android:usesCleartextTraffic="true"` remains unchanged pending stronger evidence about all app-level HTTP consumers versus user-directed browser HTTP traffic.
 - Custom Tabs, downloads, private-tab notifications, and media session services remain declared and are not treated as dead without reachability proof.
 
@@ -58,14 +59,14 @@ The account compatibility route was reduced to an informational screen, making t
 ### UnifiedPush
 `UnifiedPushReceiver` accepts distributor broadcasts, requires decrypted messages, persists them to the profile-scoped push store and schedules `PushMessageWorker`. The worker restores the owning profile's components and calls the WebLibre Push integration to deliver the message into Gecko. This is an intentional user-enabled background web-push delivery path and must remain.
 
-### Native fetch bridge
-`GeckoFetchApiImpl` exposes a Pigeon fetch API backed by `components.core.client`. It constructs Android Components `Request` objects and forwards URL/method/headers/body/redirect/cookie/cache/OHTTP/referrer options to the native client. This is an active browser/network bridge, not a dead compatibility shell. Therefore `INTERNET` remains justified; global `usesCleartextTraffic` still requires broader transport evidence before changing it.
+### Native fetch/client consumers
+`Core.client` is a live Android Components fetch client. The current `Core` wires that client into browser icons, add-on provider/updater paths, web-app shortcut support, and the browser fragment's copy/share/download features; the Pigeon `GeckoFetchApiImpl` also exposes the same native client as an explicit browser fetch bridge. These are active browser/network consumers, so `INTERNET` remains justified. Global `usesCleartextTraffic` still requires broader transport evidence before changing it because user-directed HTTP navigation and app-level HTTP requests have not yet been cleanly separated by policy.
 
 ## Permission minimization finding
-`ACCESS_WIFI_STATE` has a source comment saying it is a Fenix debug-manifest capability. Available GitHub code-search evidence is incomplete, so no deletion is justified solely from that search result. The current manifest is therefore intentionally unchanged for this permission.
+`ACCESS_WIFI_STATE` has a source comment saying it is a Fenix debug-manifest capability. Available GitHub code-search evidence is incomplete, so no deletion is justified solely from that search result. The current manifest is therefore intentionally unchanged for this permission. fileciteturn242file0L2-L2
 
 ## Remaining opportunities
-1. Finish branch-scoped consumer proof for `ACCESS_WIFI_STATE`, notification, media/storage and any remaining app-level HTTP/configuration consumers.
+1. Finish branch-scoped consumer proof for `ACCESS_WIFI_STATE`, remaining media/storage permissions, and any remaining app-level HTTP/configuration consumers.
 2. Decide whether `usesCleartextTraffic` can be removed/narrowed without breaking browser or user-directed flows.
 3. Add a local privacy/data-flow screen.
 4. Measure APK/runtime cost before unrelated performance removals.
