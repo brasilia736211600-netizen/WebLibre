@@ -2,7 +2,8 @@
 
 **Canonical source of truth:** GitHub repository, refs, commits, PRs, CI/build/release runs, artifacts and release assets.
 **Branch:** `weblibre-ua-mainline-v3`
-**Source HEAD at current checkpoint:** `3be7de126e6342a2ade388a897c5e51674acb018`
+**Source HEAD at current checkpoint:** `1d56423373b08cc57cf857bd33b1be42a1ce21b7`
+**Functional code checkpoint:** `3be7de126e6342a2ade388a897c5e51674acb018`
 
 ## Current product position
 ```text
@@ -40,9 +41,11 @@ Privacy / Personal Product Hardening
 ```
 
 ## Current checkpoint
-The per-container UA lifecycle fix is source-committed. `ContainerUserAgentCreateSessionMiddleware` is wired before Android Components' engine-session creation path; it creates the restored session, applies the persisted container UA before `restoreState()`, reapplies it defensively, and then dispatches `LinkEngineSessionAction`.
+The per-container UA lifecycle fix is source-committed at functional checkpoint `3be7de126e6342a2ade388a897c5e51674acb018`. `ContainerUserAgentCreateSessionMiddleware` is wired before Android Components' engine-session creation path; it creates the restored session, applies the persisted container UA before `restoreState()`, reapplies it defensively, and then dispatches `LinkEngineSessionAction`.
 
 The implementation follows the current Android Components creation lifecycle evidence: restored engine state is applied before application link-time middleware runs, so a link-time-only UA assignment can be too late for the first restored navigation.
+
+The two commits after the functional checkpoint only synchronize durable workflow documents; they do not alter browser behavior.
 
 AI-1 remains a minimal model-independent six-tool Browser Tool slice with source-level regression coverage for unknown tools, permission denial, invalid inputs, backend exceptions, audit emission, and the explicit permission/side-effect matrix.
 
@@ -59,10 +62,10 @@ Scenario 1 remains **FAIL / runtime revalidation pending** based on the prior An
 - After relaunch: restored navigation observed Gecko/Firefox 152 UA.
 - No `Resume last tab` control was present in that post-relaunch state.
 
-The source lifecycle fix intended to close this failure is committed in the current branch, but it is **not CI-verified or Android-runtime-verified** at the current head. Do not run Scenarios 2–6 until Scenario 1 passes.
+The source lifecycle fix intended to close this failure is committed at `3be7de126e6342a2ade388a897c5e51674acb018`, but it is **not CI-verified or Android-runtime-verified** at the current branch head. Do not run Scenarios 2–6 until Scenario 1 passes.
 
 ## CI evidence
-Current branch HEAD is `3be7de126e6342a2ade388a897c5e51674acb018`. GitHub Actions lookup for that exact SHA returns zero workflow runs and zero commit status entries in the currently accessible API surface. Therefore current-head CI remains **NOT VERIFIED**. The latest known successful Quality run is historical and does not satisfy the exact-head evidence rule.
+Current branch HEAD is `1d56423373b08cc57cf857bd33b1be42a1ce21b7`. GitHub Actions lookup for the exact branch head returns zero workflow runs. The functional code checkpoint also has no accessible exact-head run/status through the current GitHub connector surface. Therefore current-head CI remains **NOT VERIFIED**. The latest known successful Quality run is historical and does not satisfy the exact-head evidence rule.
 
 The Quality workflow contains a manual `workflow_dispatch` path, but the available GitHub connector does not expose a workflow-dispatch action. No artificial source change is being introduced solely to manufacture a CI trigger.
 
@@ -77,7 +80,7 @@ Never promote without evidence:
 `SOURCE-VERIFIED -> CI-VERIFIED -> ANDROID-RUNTIME-VERIFIED -> ARTIFACT-VERIFIED -> RELEASE-ASSET-VERIFIED`.
 
 ## FIRST NEXT STEP — exactly one
-**Obtain an exact-head Quality run for `3be7de126e6342a2ade388a897c5e51674acb018`; if green, perform only Android Scenario 1 and verify that the restored container uses the persisted UA before advancing to Scenarios 2–6.**
+**Obtain an exact-head Quality run for the current functional branch, then, on green CI, perform only Android Scenario 1 and verify that the restored container uses the persisted UA before advancing to Scenarios 2–6.**
 
 ## Mandatory loop
 `READ -> VERIFY -> RECONCILE -> PLAN -> EXECUTE -> TEST -> DIFF -> COMMIT -> SAVE STATE`
