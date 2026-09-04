@@ -2,7 +2,7 @@
 
 **Canonical source of truth:** GitHub repository, refs, commits, PRs, CI/build/release runs, artifacts and release assets.
 **Branch:** `weblibre-ua-mainline-v3`
-**Source HEAD at current checkpoint:** `1d56423373b08cc57cf857bd33b1be42a1ce21b7`
+**Source HEAD at current checkpoint:** `02872ec7f05a749257459dcda616b1f3267c4175`
 **Functional code checkpoint:** `3be7de126e6342a2ade388a897c5e51674acb018`
 
 ## Current product position
@@ -45,7 +45,7 @@ The per-container UA lifecycle fix is source-committed at functional checkpoint 
 
 The implementation follows the current Android Components creation lifecycle evidence: restored engine state is applied before application link-time middleware runs, so a link-time-only UA assignment can be too late for the first restored navigation.
 
-The two commits after the functional checkpoint only synchronize durable workflow documents; they do not alter browser behavior.
+The commits after the functional checkpoint only synchronize durable workflow documents; they do not alter browser behavior.
 
 AI-1 remains a minimal model-independent six-tool Browser Tool slice with source-level regression coverage for unknown tools, permission denial, invalid inputs, backend exceptions, audit emission, and the explicit permission/side-effect matrix.
 
@@ -65,7 +65,7 @@ Scenario 1 remains **FAIL / runtime revalidation pending** based on the prior An
 The source lifecycle fix intended to close this failure is committed at `3be7de126e6342a2ade388a897c5e51674acb018`, but it is **not CI-verified or Android-runtime-verified** at the current branch head. Do not run Scenarios 2–6 until Scenario 1 passes.
 
 ## CI evidence
-Current branch HEAD is `1d56423373b08cc57cf857bd33b1be42a1ce21b7`. GitHub Actions lookup for the exact branch head returns zero workflow runs. The functional code checkpoint also has no accessible exact-head run/status through the current GitHub connector surface. Therefore current-head CI remains **NOT VERIFIED**. The latest known successful Quality run is historical and does not satisfy the exact-head evidence rule.
+Current branch HEAD is `02872ec7f05a749257459dcda616b1f3267c4175`. GitHub Actions lookup for the exact branch head returns zero workflow runs. The functional code checkpoint also has no accessible exact-head run/status through the current GitHub connector surface. Therefore current-head CI remains **NOT VERIFIED**. The latest known successful Quality run is historical and does not satisfy the exact-head evidence rule.
 
 The Quality workflow contains a manual `workflow_dispatch` path, but the available GitHub connector does not expose a workflow-dispatch action. No artificial source change is being introduced solely to manufacture a CI trigger.
 
