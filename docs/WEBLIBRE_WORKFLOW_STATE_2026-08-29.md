@@ -2,19 +2,22 @@
 
 **Last synchronized:** 2026-09-04
 **Branch:** `weblibre-ua-mainline-v3`
-**Source HEAD at current checkpoint:** `237bf11260e9154297b23ad2f45e5bbdaf7c47ed`
+**Source HEAD at current checkpoint:** `9d8bc4a6d421c51f35729a8ae464f7070dae0234`
+**Functional code checkpoint:** `3be7de126e6342a2ade388a897c5e51674acb018`
 
 ## Source of truth
 GitHub code, refs, commits, CI/build/release runs, artifacts and release assets are authoritative. Chat memory is not evidence.
 
 ## Current checkpoint
-- PR #3 remains OPEN and DRAFT, base `main`, exact current head is `237bf11260e9154297b23ad2f45e5bbdaf7c47ed`.
+- PR #3 remains OPEN and DRAFT, base `main`, exact branch head is `9d8bc4a6d421c51f35729a8ae464f7070dae0234`.
+- The latest functional UA change remains at `3be7de126e6342a2ade388a897c5e51674acb018`; the current head adds only durable project-map synchronization.
 - AI-1 executor keeps the explicit terminal fallback after the dispatch switch; no historical missing-return patch was reintroduced.
 - Browser-tool audit events are emitted through an optional executor callback for every execution result, including denied, invalid, failed, and successful paths.
 - Focused AI-1 regression coverage includes backend exception conversion, audit emission, and the complete six-tool permission/side-effect matrix.
-- Current-head Quality Actions/status lookup for `237bf11260e9154297b23ad2f45e5bbdaf7c47ed` returns no run/status; current-head CI remains NOT VERIFIED.
-- A new UA restore fix is now source-committed: `ContainerUserAgentCreateSessionMiddleware` intercepts engine-session creation before Android Components' creation middleware, creates the session, applies the persisted container UA, restores the engine session state, reapplies the UA defensively, then dispatches `LinkEngineSessionAction`. `Core` wires this middleware before `EngineMiddleware.create(...)`.
-- The fix was chosen from current dependency lifecycle evidence: Android Components creates the session and calls `restoreState()` before dispatching `LinkEngineSessionAction`, so link-time-only UA assignment can be too late for the first restored navigation.
+- Exact-head Quality Actions/status lookup for the current branch head returns no run/status; current-head CI remains NOT VERIFIED.
+- `ContainerUserAgentCreateSessionMiddleware` intercepts engine-session creation before Android Components' creation middleware, creates the session, applies the persisted container UA, restores engine state, reapplies the UA defensively, then dispatches `LinkEngineSessionAction`. `Core` wires it before `EngineMiddleware.create(...)`.
+- The fix was chosen from current dependency lifecycle evidence: Android Components creates the session and calls `restoreState()` before `LinkEngineSessionAction`, so link-time-only UA assignment can be too late for the first restored navigation.
+- The middleware was manually compared against the current upstream Android Components creation lifecycle; this comparison is source evidence, not CI/runtime proof.
 - Retired account callback/handoff cleanup is complete.
 - Legacy snapshot-sync cluster is removed after reachability review.
 - Orphaned generated `account_sync_repository.g.dart` was removed.
@@ -35,7 +38,7 @@ Scenario 1 remains **FAIL / runtime revalidation pending**:
 - After relaunch: restored navigation observed Gecko/Firefox 152 UA.
 - No `Resume last tab` control was present in that post-relaunch state.
 
-A source lifecycle fix intended to close Scenario 1 is committed at `237bf11260e9154297b23ad2f45e5bbdaf7c47ed`, but it is not yet CI- or Android-runtime-verified. Do not run Scenarios 2–6 until Scenario 1 passes.
+The source lifecycle fix intended to close Scenario 1 is committed, but it is not yet CI- or Android-runtime-verified. Do not run Scenarios 2–6 until Scenario 1 passes.
 
 ## AI-1
 Six-tool model-independent Browser Tool slice: `get_tabs`, `get_current_tab`, `create_tab`, `switch_tab`, `close_tab`, `open_url`.
@@ -78,7 +81,7 @@ Validation release `validation-stable-5-3aa06cf6ee090e42c9b7bff6abbf17f737b1fef5
 `SOURCE-VERIFIED -> CI-VERIFIED -> ANDROID-RUNTIME-VERIFIED -> ARTIFACT-VERIFIED -> RELEASE-ASSET-VERIFIED` are separate states.
 
 ## FIRST NEXT STEP — exactly one
-**Obtain fresh current-head Quality CI for `237bf11260e9154297b23ad2f45e5bbdaf7c47ed`; then, on a green build, run only Android Scenario 1 to verify the restored container UA before proceeding to any other runtime scenario.**
+**Obtain an exact-head Quality run for the functional UA checkpoint/current branch, then, on green CI, perform only Android Scenario 1 and verify the restored container UA before advancing to Scenarios 2–6.**
 
 ## Mandatory loop
 `READ -> VERIFY -> RECONCILE -> PLAN -> EXECUTE -> TEST -> DIFF -> COMMIT -> SAVE STATE`
