@@ -32,6 +32,7 @@ jobs:
           large-packages: false
           docker-images: false
           swap-storage: false
+          swap-storage: false
 
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -55,7 +56,9 @@ jobs:
           set -euo pipefail
           ANDROID_NDK_VERSION="$(sed -n 's/^weblibre\.ndkVersion[[:space:]]*=[[:space:]]*//p' apps/weblibre/android/gradle.properties)"
           test -n "$ANDROID_NDK_VERSION"
+          set +o pipefail
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;$ANDROID_NDK_VERSION"
+          set -o pipefail
           test -f "$ANDROID_HOME/ndk/$ANDROID_NDK_VERSION/source.properties"
           echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/$ANDROID_NDK_VERSION" >> "$GITHUB_ENV"
           echo "ANDROID_NDK_ROOT=$ANDROID_HOME/ndk/$ANDROID_NDK_VERSION" >> "$GITHUB_ENV"
@@ -158,7 +161,7 @@ jobs:
             adb shell am force-stop eu.weblibre.gecko
             adb shell monkey -p eu.weblibre.gecko 1
             sleep 8
-            adb shell dumpsys activity activities | grep -E 'mResumedActivity|eu.weblibre.gecko' || true
+            adb shell dumpsys activity activities | grep -E 'mResumedActivity|eu\.weblibre\.gecko' || true
             adb logcat -d > "$RUNNER_TEMP/weblibre-emulator-logcat.txt"
 
       - name: Upload emulator logcat
