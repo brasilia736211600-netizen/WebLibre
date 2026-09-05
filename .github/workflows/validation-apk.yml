@@ -4,10 +4,20 @@ on:
   push:
     branches:
       - weblibre-ua-mainline-v3
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/validation-apk.yml'
+      - 'apps/weblibre/**'
+      - 'packages/flutter_mozilla_components/**'
+      - 'native/go_mobile_runtime/**'
+      - 'pubspec.yaml'
+      - 'melos.yaml'
   workflow_dispatch:
 
 concurrency:
-  group: validation-apk-${{ github.ref }}
+  group: validation-apk-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
