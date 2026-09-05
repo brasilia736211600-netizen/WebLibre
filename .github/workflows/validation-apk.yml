@@ -146,22 +146,36 @@ jobs:
           disable-animations: true
           script: |
             set -euo pipefail
+            LOG_PATH="$RUNNER_TEMP/weblibre-emulator-logcat.txt"
+            : > "$LOG_PATH"
+            trap 'adb logcat -d > "$LOG_PATH" 2>/dev/null || true' EXIT
+
             adb wait-for-device
-            adb shell getprop ro.build.version.sdk
+            test "$(adb shell getprop ro.build.version.sdk | tr -d '\r')" = "35"
+            adb logcat -c
             adb install -r apps/weblibre/build/app/outputs/flutter-apk/app-stable-debug.apk
-            adb shell am force-stop eu.weblibre.gecko
-            adb shell monkey -p eu.weblibre.gecko 1
-            sleep 12
-            adb shell dumpsys activity activities | grep -E 'mResumedActivity|eu.weblibre.gecko' || true
-            if adb logcat -d -b crash | grep -E 'FATAL EXCEPTION|Process: eu\.weblibre\.gecko' ; then
-              echo 'Application crash detected during emulator smoke test.' >&2
-              exit 1
-            fi
-            adb shell am force-stop eu.weblibre.gecko
-            adb shell monkey -p eu.weblibre.gecko 1
-            sleep 8
-            adb shell dumpsys activity activities | grep -E 'mResumedActivity|eu\.weblibre\.gecko' || true
-            adb logcat -d > "$RUNNER_TEMP/weblibre-emulator-logcat.txt"
+            adb shell cmd package path eu.weblibre.gecko
+
+            launch_and_verify() {
+              local wait_seconds="$1"
+              adb shell am force-stop eu.weblibre.gecko
+              adb logcat -c
+              adb shell monkey -p eu.weblibre.gecko 1 >/dev/null
+              sleep "$wait_seconds"
+
+              local pid
+              pid="$(adb shell pidof eu.weblibre.gecko | tr -d '\r' | xargs)"
+              test -n "$pid"
+              adb shell dumpsys activity activities | grep -E 'mResumedActivity.*eu\.weblibre\.gecko|eu\.weblibre\.gecko' >/dev/null
+
+              if adb logcat -d -b crash | grep -E 'FATAL EXCEPTION|Process: eu\.weblibre\.gecko' ; then
+                echo 'Application crash detected during emulator smoke test.' >&2
+                return 1
+              fi
+            }
+
+            launch_and_verify 12
+            launch_and_verify 8
 
       - name: Upload emulator logcat
         if: always()
