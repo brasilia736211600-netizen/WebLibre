@@ -13,6 +13,8 @@ abstract class _$ContainerMetadataCWProxy {
 
   ContainerMetadata proxyConnectionId(ProxyConnectionId? proxyConnectionId);
 
+  ContainerMetadata userAgent(String? userAgent);
+
   ContainerMetadata clearDataOnExit(bool clearDataOnExit);
 
   ContainerMetadata excludeFromIndex(bool excludeFromIndex);
@@ -40,6 +42,7 @@ abstract class _$ContainerMetadataCWProxy {
     IconData? iconData,
     String? contextualIdentity,
     ProxyConnectionId? proxyConnectionId,
+    String? userAgent,
     bool clearDataOnExit,
     bool excludeFromIndex,
     bool excludeFromHistory,
@@ -68,6 +71,9 @@ class _$ContainerMetadataCWProxyImpl implements _$ContainerMetadataCWProxy {
   @override
   ContainerMetadata proxyConnectionId(ProxyConnectionId? proxyConnectionId) =>
       call(proxyConnectionId: proxyConnectionId);
+
+  @override
+  ContainerMetadata userAgent(String? userAgent) => call(userAgent: userAgent);
 
   @override
   ContainerMetadata clearDataOnExit(bool clearDataOnExit) =>
@@ -112,6 +118,7 @@ class _$ContainerMetadataCWProxyImpl implements _$ContainerMetadataCWProxy {
     Object? iconData = const $CopyWithPlaceholder(),
     Object? contextualIdentity = const $CopyWithPlaceholder(),
     Object? proxyConnectionId = const $CopyWithPlaceholder(),
+    Object? userAgent = const $CopyWithPlaceholder(),
     Object? clearDataOnExit = const $CopyWithPlaceholder(),
     Object? excludeFromIndex = const $CopyWithPlaceholder(),
     Object? excludeFromHistory = const $CopyWithPlaceholder(),
@@ -134,6 +141,10 @@ class _$ContainerMetadataCWProxyImpl implements _$ContainerMetadataCWProxy {
           ? _value.proxyConnectionId
           // ignore: cast_nullable_to_non_nullable
           : proxyConnectionId as ProxyConnectionId?,
+      userAgent: userAgent == const $CopyWithPlaceholder()
+          ? _value.userAgent
+          // ignore: cast_nullable_to_non_nullable
+          : userAgent as String?,
       clearDataOnExit:
           clearDataOnExit == const $CopyWithPlaceholder() ||
               clearDataOnExit == null
@@ -313,6 +324,7 @@ ContainerMetadata _$ContainerMetadataFromJson(Map<String, dynamic> json) =>
       proxyConnectionId: _proxyConnectionIdFromJson(
         json['proxyConnectionId'] as String?,
       ),
+      userAgent: json['userAgent'] as String?,
       clearDataOnExit: json['clearDataOnExit'] as bool? ?? false,
       excludeFromIndex: json['excludeFromIndex'] as bool? ?? false,
       excludeFromHistory: json['excludeFromHistory'] as bool? ?? false,
@@ -335,6 +347,7 @@ Map<String, dynamic> _$ContainerMetadataToJson(
   ),
   'contextualIdentity': instance.contextualIdentity,
   'proxyConnectionId': _proxyConnectionIdToJson(instance.proxyConnectionId),
+  'userAgent': instance.userAgent,
   'clearDataOnExit': instance.clearDataOnExit,
   'excludeFromIndex': instance.excludeFromIndex,
   'excludeFromHistory': instance.excludeFromHistory,

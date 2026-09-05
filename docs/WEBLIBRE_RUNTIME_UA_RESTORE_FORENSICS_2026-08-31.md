@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-31
 **Branch:** `weblibre-ua-mainline-v3`
-**Source inspection HEAD:** `5c7f81023792b51d9185f6c572f1f361bbbf9a01`
+**Source inspection checkpoint:** `5c7f81023792b51d9185f6c572f1f361bbbf9a01`
 **Runtime-tested APK source:** `3aa06cf6ee090e42c9b7bff6abbf17f737b1fef5`
 **Runtime result:** Scenario 1 FAIL
 
@@ -38,64 +38,78 @@ For the first full setup it calls:
 - `newComponents.useCases.tabsUseCases.restore(RecoverableBrowserState(...))`
 - then dispatches `RestoreCompleteAction`.
 
-This is the path exercised by process-death restoration. It does **not** call the application's normal `GeckoTabsApiImpl.addTab(...)` path for each restored tab.
+This path does not call the application's normal `GeckoTabsApiImpl.addTab(...)` path for each restored tab.
 
-### 3. The restore representation does not carry the custom UA
+### 3. The repository already contains a restore-binding implementation
 
-`packages/flutter_mozilla_components/pigeons/gecko.dart` defines `RecoverableTab` with only:
+Actual files on the current branch are:
 
-- `engineSessionStateJson`
-- `TabState state`
+- `packages/flutter_mozilla_components/android/src/main/kotlin/eu/weblibre/flutter_mozilla_components/middleware/HistoryDelegateBindingMiddleware.kt`
+- `packages/flutter_mozilla_components/android/src/main/kotlin/eu/weblibre/flutter_mozilla_components/feature/ContainerUserAgentStore.kt`
 
-`TabState` carries `contextId`, URL, title, history state, etc., but no `userAgent` field.
+`Core.kt` installs `HistoryDelegateBindingMiddleware` before `EngineMiddleware`.
 
-`GeckoTabsApiImpl.mapTab(...)` maps the Pigeon `RecoverableTab` into Android Components' `mozilla.components.browser.state.state.recover.RecoverableTab` using the engine session state and tab state. No per-tab/container UA is injected there.
+On `EngineAction.LinkEngineSessionAction`, the middleware obtains the restored tab's `contextId`, reads the existing per-profile `tab.db` through `ContainerUserAgentStore`, and if a UA is found sets:
 
-### 4. Existing Pigeon restore API is not the cold-start path
+`engineSession.settings.userAgentString = userAgent`
 
-`GeckoTabService.restoreTabsByList(...)` and native `GeckoTabsApiImpl.restoreTabsByList(...)` exist for explicit Pigeon-driven restoration. They map recoverable tabs and call `tabsUseCases.restore(...)`.
+The implementation was introduced by:
 
-The observed cold-start path in `GlobalComponents.restoreBrowserState(...)` restores directly from `core.sessionStorage`, so adding logic only to `GeckoTabsApiImpl.restoreTabsByList(...)` would not fix the tested process-death path.
+- `435c1e8bad653213bfb44e63235ac86741f88db` — `fix(restore): bind persisted container UA during session linking`
+- `64e196c6213abddde0a4446b1fc876bb142a6edf` — `fix(restore): pass actual profile context to UA lookup`
 
-### 5. Current repository/state drift discovered
+Therefore the current problem is **not** simply “the restore path has no UA binding.” A source-level binding exists, and it already uses the existing `tab.db` rather than a second persistence system.
 
-The Master Project Map previously claimed dedicated native files named `ContainerUserAgentStore.kt` and `HistoryDelegateBindingMiddleware.kt` were present and source-verified. The actual current branch was checked directly and GitHub code search for `ContainerUserAgentStore` returns zero results. The exact claimed path is also absent.
+### 4. The Pigeon RecoverableTab limitation is not currently the first fix target
 
-Therefore those claims are documentation drift and must not be treated as implementation evidence. The actual current source of truth is the restore path described above.
+`packages/flutter_mozilla_components/pigeons/gecko.dart` defines `RecoverableTab` with `engineSessionStateJson` plus `TabState`, and `TabState` contains `contextId` but no `userAgent`.
 
-## First causal boundary
+However, the existing `HistoryDelegateBindingMiddleware` was explicitly designed to recover the UA after Android Components creates/links the EngineSession, using the existing `contextId` and `tab.db`. Therefore adding `RecoverableTab.userAgent` or forking Android Components is **not justified yet**.
 
-The first proven causal boundary is:
+### 5. ContainerUserAgentStore is tested only at parsing level
 
-`sessionStorage.restore -> RecoverableBrowserState -> tabsUseCases.restore`
+`ContainerUserAgentStoreTest.kt` currently verifies matching context, different-context rejection, blank-UA handling, and malformed metadata handling.
 
-where the restored session is created from persisted engine/session state without a persisted per-container UA being supplied to the restored `EngineSession` before its navigation.
+There is no focused test proving that the real profile `tab.db` can be opened/read during the actual cold-start restore timing, nor a runtime trace proving that `LinkEngineSessionAction` reaches the middleware with the expected `contextId` and that `ContainerUserAgentStore.get(...)` returns the expected UA.
 
-This is sufficient to explain the observed fallback to Gecko/Firefox 152 and is stronger evidence than the previous source-only claim.
+### 6. Strongest current hypothesis boundary
+
+The runtime contradiction is now narrower:
+
+`restored session exists -> HistoryDelegateBindingMiddleware should bind UA -> observed navigation still used default UA`
+
+At least one of these must be false at runtime:
+
+1. the restore-created session reaches `HistoryDelegateBindingMiddleware` through `LinkEngineSessionAction` before the first navigation;
+2. the middleware sees the expected `contextId`;
+3. `ContainerUserAgentStore.get(profileContext, contextId)` can read `tab.db` at that exact startup point;
+4. `engineSession.settings.userAgentString = userAgent` is applied early enough to affect the restored navigation;
+5. the observed request belongs to the same restored EngineSession whose settings were modified.
+
+The source alone does not distinguish these possibilities. The Android runtime failure proves the current implementation is insufficient in practice, but **does not yet justify a new architecture**.
 
 ## YAGNI decision
 
-Do **not** add:
+Do **not** add yet:
 
 - a second database,
 - a global GeckoRuntime UA,
 - arbitrary raw-UA spoofing,
 - a new anti-detect architecture,
-- a new Pigeon restore-generation mechanism,
-- or a large fingerprint subsystem
+- `RecoverableTab.userAgent`,
+- an Android Components fork,
+- or a new Pigeon restore contract.
 
-as part of this fix.
-
-The minimum-fix design must first reuse the existing `ContainerMetadata.userAgent` and existing `contextId`/container mapping, and must ensure that the UA is available to the restored EngineSession **before restored navigation**.
+The next change should be a focused diagnostic/regression instrument around the existing restore-binding path. Only if that evidence proves the current hook cannot affect the first restored navigation should we move to the next-minimum mechanism.
 
 ## Next execution boundary
 
-1. Inspect the existing component/session-storage restore construction and identify the smallest hook that can associate restored `contextId` with the already-persisted container UA before the restored navigation starts.
-2. Confirm whether the existing Flutter-side container metadata can be exposed to native at the required startup point without introducing a second persistence system.
-3. Implement only that minimum correction if the call chain proves it is sufficient.
-4. Add a focused regression test for restored-session UA application.
+1. Add a focused, low-noise diagnostic/test boundary around `HistoryDelegateBindingMiddleware` and `ContainerUserAgentStore.get(...)` that can distinguish `contextId missing` vs `DB lookup failure` vs `UA assignment too late/not effective`.
+2. Add a real SQLite-backed test for `ContainerUserAgentStore.get(...)` using a profile-style `tab.db` containing the same `container.metadata` shape used by Drift.
+3. If the source test proves lookup works, instrument the middleware path only for the validation build so the next single Android run can identify whether the hook executes and what `contextId`/UA it sees.
+4. Implement the minimum correction indicated by that evidence.
 5. Run focused CI/native tests.
-6. Produce one new integrated ARM64 validation APK and repeat Scenario 1.
+6. Produce one new integrated ARM64 validation APK only after focused checks are green, then repeat Scenario 1.
 
 Do not proceed to Scenarios 2–6 until Scenario 1 is revalidated.
 
@@ -104,5 +118,6 @@ Do not proceed to Scenarios 2–6 until Scenario 1 is revalidated.
 - Runtime: `ANDROID-RUNTIME-VERIFIED` for the failure itself.
 - Normal UA creation path: `SOURCE-VERIFIED`.
 - Automatic restore path: `SOURCE-VERIFIED`.
+- Existing restore UA middleware/store: `SOURCE-VERIFIED`.
 - Restored UA correctness: `ANDROID-RUNTIME-VERIFIED = FAIL`.
-- Current Master Map claims about the two dedicated native files: contradicted by actual repository inspection and must be reconciled.
+- Exact first runtime failure point inside the existing restore binding: **NOT YET PROVEN**.

@@ -1,0 +1,128 @@
+name: WebLibre Quality
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/weblibre/**'
+      - 'packages/flutter_mozilla_components/**'
+      - 'native/go_mobile_runtime/**'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - 'melos.yaml'
+  workflow_dispatch:
+
+# Keep only the newest Quality run for a PR/branch. Older runs test stale
+# commits and waste a full gomobile/native build.
+concurrency:
+  group: quality-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dart:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.x'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.0
+          cache: true
+      - name: Bootstrap workspace
+        run: |
+          dart pub global activate melos 7.8.1
+          melos bootstrap
+      - name: Run AI-1 browser tool tests
+        working-directory: apps/weblibre
+        run: |
+          flutter test \
+            test/core/ai/tools/browser_tool_registry_test.dart \
+            test/core/ai/tools/browser_tool_executor_test.dart
+      - name: Run targeted container tests
+        working-directory: apps/weblibre
+        run: flutter test test/features/geckoview/features/tabs/data/models/container_data_test.dart
+      - name: Install Android NDK
+        run: |
+          set -euo pipefail
+          ANDROID_NDK_VERSION="$(
+            sed -n 's/^weblibre\.ndkVersion[[:space:]]*=[[:space:]]*//p' \
+              apps/weblibre/android/gradle.properties
+          )"
+          if [[ -z "$ANDROID_NDK_VERSION" ]]; then
+            echo "Missing weblibre.ndkVersion in apps/weblibre/android/gradle.properties" >&2
+            exit 1
+          fi
+          set +e
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;$ANDROID_NDK_VERSION"
+          sdkmanager_status=${PIPESTATUS[1]}
+          set -e
+          if [[ $sdkmanager_status -ne 0 ]]; then
+            exit "$sdkmanager_status"
+          fi
+          test -f "$ANDROID_HOME/ndk/$ANDROID_NDK_VERSION/source.properties"
+          {
+            echo "ANDROID_NDK_VERSION=$ANDROID_NDK_VERSION"
+            echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/$ANDROID_NDK_VERSION"
+            echo "ANDROID_NDK_ROOT=$ANDROID_HOME/ndk/$ANDROID_NDK_VERSION"
+            echo "NDK_HOME=$ANDROID_HOME/ndk/$ANDROID_NDK_VERSION"
+          } >> "$GITHUB_ENV"
+      - name: Checkout native runtime sources
+        run: |
+          set -euo pipefail
+          source native/go_mobile_runtime/pins.env
+
+          git clone https://github.com/SagerNet/sing-box.git "$RUNNER_TEMP/sing-box"
+          git -C "$RUNNER_TEMP/sing-box" checkout "$SING_BOX_TAG"
+          test "$(git -C "$RUNNER_TEMP/sing-box" rev-parse HEAD)" = "$SING_BOX_COMMIT"
+
+          git clone https://github.com/tladesignz/IPtProxy.git "$RUNNER_TEMP/IPtProxy"
+          git -C "$RUNNER_TEMP/IPtProxy" checkout "$IPTPROXY_TAG"
+          test "$(git -C "$RUNNER_TEMP/IPtProxy" rev-parse HEAD)" = "$IPTPROXY_COMMIT"
+          git -C "$RUNNER_TEMP/IPtProxy" submodule update --init dnstt
+      - name: Build native gomobile runtime
+        env:
+          SING_BOX_SOURCE: ${{ runner.temp }}/sing-box
+          IPTPROXY_SOURCE: ${{ runner.temp }}/IPtProxy
+        run: melos run build-go-runtime --no-select
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+        with:
+          gradle-version: 9.4.1
+      - name: Run targeted native container tests
+        working-directory: apps/weblibre/android
+        run: |
+          set +e
+          gradle --no-daemon --stacktrace :flutter_mozilla_components:testDebugUnitTest \
+            --tests 'eu.weblibre.flutter_mozilla_components.feature.ContainerUserAgentStoreTest' \
+            --tests 'eu.weblibre.flutter_mozilla_components.feature.ContainerProxyFeatureTest' 2>&1 | tee native-gradle-output.txt
+          status=${PIPESTATUS[0]}
+          exit "$status"
+      - name: Collect native test diagnostics
+        if: failure()
+        working-directory: apps/weblibre/android
+        run: |
+          set +e
+          mkdir -p ci-diagnostics
+          cp native-gradle-output.txt ci-diagnostics/native-gradle-output.txt 2>/dev/null || true
+          {
+            echo '===== test result files ====='
+            find . -path '*/build/test-results/*' -type f -print -exec sh -c 'echo "===== $1 ====="; cat "$1"' _ {} \;
+            echo '===== test report files ====='
+            find . -path '*/build/reports/tests/*' -type f -print -exec sh -c 'echo "===== $1 ====="; cat "$1"' _ {} \;
+            echo '===== Gradle failure markers ====='
+            grep -nE 'FAILURE:|Caused by:|Exception|Could not|FAILED|failed|What went wrong|Execution failed' native-gradle-output.txt || true
+          } > ci-diagnostics/test-diagnostics.txt 2>&1
+      - name: Upload native test diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-test-diagnostics
+          path: apps/weblibre/android/ci-diagnostics
+          if-no-files-found: warn

@@ -534,6 +534,7 @@ class GeckoTabsApiImpl : GeckoTabsApi {
         parentId: String?,
         flags: LoadUrlFlagsValue,
         contextId: String?,
+        userAgent: String?,
         source: SourceValue,
         private: Boolean,
         historyMetadata: PigeonHistoryMetadataKey?,
@@ -542,6 +543,12 @@ class GeckoTabsApiImpl : GeckoTabsApi {
     ): String {
         try {
             val loadFlags = EngineSession.LoadUrlFlags.select(flags.value.toInt())
+            val engineSession = components.core.engine.createSession(
+                private = private,
+                contextId = contextId,
+            ).also { session ->
+                session.settings.userAgentString = userAgent
+            }
 
             // Inlined from TabsUseCases.AddNewTabUseCase so the exclusion can be
             // marked *between* creating the tab and dispatching it, exactly as
@@ -556,6 +563,7 @@ class GeckoTabsApiImpl : GeckoTabsApi {
                 private = private,
                 source = restoreSource(source),
                 contextId = contextId,
+                engineSession = engineSession,
                 parent = parentId?.let { components.core.store.state.findTab(it) },
                 historyMetadata = historyMetadata?.let { metadata ->
                     HistoryMetadataKey(
@@ -725,16 +733,24 @@ class GeckoTabsApiImpl : GeckoTabsApi {
         selectTabId: String?,
         selectNewTab: Boolean,
         newContextId: String?,
+        userAgent: String?,
         excludeFromHistory: Boolean
     ): String {
         try {
             val tabState = selectTabId?.let { components.core.store.state.findTab(it) }
                 ?: throw IllegalArgumentException("Tab not found")
+            val engineSession = components.core.engine.createSession(
+                private = tabState.content.private,
+                contextId = newContextId,
+            ).also { session ->
+                session.settings.userAgentString = userAgent
+            }
 
             val duplicate = createTab(
                 url = tabState.content.url,
                 private = tabState.content.private,
                 contextId = newContextId,
+                engineSession = engineSession,
                 parent = tabState,
                 engineSessionState = tabState.engineState.engineSessionState,
             )
@@ -802,6 +818,12 @@ class GeckoTabsApiImpl : GeckoTabsApi {
                     private = params.private,
                     source = restoreSource(params.source),
                     contextId = params.contextId,
+                    engineSession = components.core.engine.createSession(
+                        private = params.private,
+                        contextId = params.contextId,
+                    ).also { session ->
+                        session.settings.userAgentString = params.userAgent
+                    },
                     //ParentId currently not supported for multiple tabs
                     //parent = params.parentId?.let { components.core.store.state.findTab(it) },
                     historyMetadata = params.historyMetadata?.let { metadata ->
