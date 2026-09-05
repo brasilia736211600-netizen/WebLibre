@@ -14,7 +14,6 @@ import mozilla.components.browser.state.action.BrowserAction
 import mozilla.components.browser.state.action.EngineAction
 import mozilla.components.browser.state.selector.findTabOrCustomTab
 import mozilla.components.browser.state.state.BrowserState
-import mozilla.components.browser.state.state.EngineState
 import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.lib.state.Middleware
@@ -50,8 +49,7 @@ class ContainerUserAgentCreateSessionMiddleware(
             return
         }
 
-        val tab = store.state.findTabOrCustomTab(action.tabId)
-        val engineState = tab?.engineState
+        val engineState = store.state.findTabOrCustomTab(action.tabId)?.engineState
         if (engineState?.initializing == false &&
             engineState.engineSession == null &&
             !engineState.crashed
@@ -60,7 +58,7 @@ class ContainerUserAgentCreateSessionMiddleware(
                 EngineAction.UpdateEngineSessionInitializingAction(action.tabId, true),
             )
             scope.launch {
-                createEngineSession(store, action, tab.id, tab.contextId, tab.content.private, engineState)
+                createEngineSession(store, action)
                 action.followupAction?.let { store.dispatch(it) }
             }
         } else {
@@ -73,31 +71,47 @@ class ContainerUserAgentCreateSessionMiddleware(
     private fun createEngineSession(
         store: Store<BrowserState, BrowserAction>,
         action: EngineAction.CreateEngineSessionAction,
-        tabId: String,
-        contextId: String?,
-        privateMode: Boolean,
-        engineState: EngineState,
     ) {
-        logger.debug("Request to create engine session for tab $tabId")
+        logger.debug("Request to create engine session for tab ${action.tabId}")
 
-        val engineSession = engine.createSession(privateMode, contextId)
-        val persistedUserAgent = ContainerUserAgentStore.get(profileContext, contextId)
+        // Re-read the tab after scheduling the work. The state captured when the
+        // action first arrived can become stale if the tab is removed, recreated,
+        // or linked by another path before this coroutine runs.
+        val tab = store.state.findTabOrCustomTab(action.tabId)
+        if (tab == null) {
+            logger.warn("Requested engine session for missing tab ${action.tabId}")
+            return
+        }
+        if (tab.engineState.crashed) {
+            logger.warn("Not creating engine session for crashed tab ${action.tabId}")
+            return
+        }
+        tab.engineState.engineSession?.let {
+            logger.debug("Engine session already exists for tab ${action.tabId}")
+            return
+        }
 
-        applyUserAgent(engineSession, tabId, contextId, persistedUserAgent)
+        val engineSession = engine.createSession(tab.content.private, tab.contextId)
+        val persistedUserAgent = ContainerUserAgentStore.get(
+            profileContext,
+            tab.contextId,
+        )
 
-        val skipLoading = engineState.engineSessionState?.let {
+        applyUserAgent(engineSession, tab.id, tab.contextId, persistedUserAgent)
+
+        val skipLoading = tab.engineState.engineSessionState?.let {
             engineSession.restoreState(it)
         } ?: false
 
         // Keep the setting explicit after state restoration as well. This is still
-        // before the LinkEngineSessionAction can trigger a load when skipLoading is
+        // before LinkEngineSessionAction can trigger a load when skipLoading is
         // false, and protects the intended setting from an engine implementation
         // that changes session settings during state restoration.
-        applyUserAgent(engineSession, tabId, contextId, persistedUserAgent)
+        applyUserAgent(engineSession, tab.id, tab.contextId, persistedUserAgent)
 
         store.dispatch(
             EngineAction.LinkEngineSessionAction(
-                tabId = tabId,
+                tabId = tab.id,
                 engineSession = engineSession,
                 skipLoading = skipLoading,
             ),
