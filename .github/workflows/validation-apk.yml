@@ -32,7 +32,6 @@ jobs:
           large-packages: false
           docker-images: false
           swap-storage: false
-          swap-storage: false
 
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
