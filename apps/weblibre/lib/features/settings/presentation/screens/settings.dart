@@ -7,7 +7,7 @@
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
+ * License, or any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -210,20 +210,6 @@ _CategoryGroups _buildCategories() {
       keywords: const ['addons', 'unsigned extensions'],
       sections: extensionsSettingsSections,
       onTap: (context) => ExtensionsSettingsRoute().push(context),
-    ),
-    _SettingsCategoryDefinition(
-      title: 'WebLibre Account',
-      subtitle: 'Sign in, sync settings',
-      icon: Icons.account_circle_outlined,
-      keywords: const ['account', 'subscription'],
-      onTap: (context) => AccountSettingsRoute().push(context),
-    ),
-    _SettingsCategoryDefinition(
-      title: 'Firefox Sync',
-      subtitle: 'Account, sync now, engine selection',
-      icon: Icons.sync,
-      keywords: const ['pair', 'device name', 'engines'],
-      onTap: (context) => SyncSettingsRoute().push(context),
     ),
     _SettingsCategoryDefinition(
       title: 'Advanced',

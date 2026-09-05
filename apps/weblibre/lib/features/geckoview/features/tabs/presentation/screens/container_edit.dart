@@ -118,7 +118,11 @@ class ContainerEditScreen extends HookConsumerWidget {
     final textController = useTextEditingController(
       text: initialContainer.name,
     );
+    final userAgentController = useTextEditingController(
+      text: initialContainer.metadata.userAgent ?? '',
+    );
     useListenable(textController);
+    useListenable(userAgentController);
 
     ContainerData buildContainer() {
       final name = textController.text.trim();
@@ -130,6 +134,7 @@ class ContainerEditScreen extends HookConsumerWidget {
             .copyWith(
               contextualIdentity: contextualIdentity.value,
               iconData: selectedIcon.value,
+              userAgent: userAgentController.text,
               proxyConnectionId: contextualIdentity.value != null
                   ? proxyConnectionId.value
                   : null,
@@ -519,6 +524,25 @@ class ContainerEditScreen extends HookConsumerWidget {
                                   }
                                 }
                               : null,
+                        ),
+                        const Divider(height: 1, indent: 56),
+                        TextField(
+                          controller: userAgentController,
+                          minLines: 2,
+                          maxLines: 4,
+                          keyboardType: TextInputType.multiline,
+                          textInputAction: TextInputAction.newline,
+                          decoration: const InputDecoration(
+                            prefixIcon: Icon(Icons.language_outlined),
+                            labelText: 'User-Agent',
+                            hintText: 'Use the browser default',
+                            helperText:
+                                'Custom UA is applied to new sessions in this container.',
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
+                          ),
                         ),
                         const Divider(height: 1, indent: 56),
                         SwitchListTile.adaptive(

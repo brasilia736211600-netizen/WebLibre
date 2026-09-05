@@ -1,0 +1,156 @@
+# WebLibre — Consolidated Android Runtime Validation Checklist
+
+**Purpose:** one device validation pass for the browser foundation; this document does not claim runtime proof until the steps are actually exercised on a real Android device.
+
+## Evidence rule
+
+Record:
+- exact APK/build identifier;
+- app version/commit under test;
+- device model and Android version;
+- timestamp of each scenario;
+- observed UA/container/proxy outcome;
+- pass/fail and any logs/screenshots needed to reproduce a failure.
+
+`SOURCE-VERIFIED` and `CI-VERIFIED` are not runtime proof. `ARTIFACT-VERIFIED` does not imply `RELEASE-ASSET-VERIFIED`.
+
+## Distribution precondition
+
+For the validation build used here, prefer the individually downloadable GitHub Release assets when available:
+- `app-stable-arm64-v8a-release.apk`
+- `app-stable-armeabi-v7a-release.apk`
+
+Verify the Release assets belong to the exact intended workflow run and `head_sha`. Do not infer their existence from a ZIP artifact. The ZIP artifact may coexist as additional evidence, but it is not equivalent to direct Release assets.
+
+## Preconditions
+
+1. Use one integrated APK produced from a checkpoint whose source and CI state are already known.
+2. Start from a clean, controlled app state unless the scenario explicitly tests restoration.
+3. Use two distinct containers, A and B.
+4. Assign visibly distinct UAs to A and B.
+5. Configure distinct proxy behavior for A and B where supported by the existing UI/configuration.
+6. Do not change implementation or settings mid-scenario unless the step explicitly requires it.
+7. Record the exact APK asset URL/name used.
+
+## Scenario 1 — Cold start / restored UA
+
+1. Create/open a tab in Container A.
+2. Navigate to a page that can expose the request User-Agent.
+3. Record the observed UA and tab/container identity.
+4. Fully terminate the app process.
+5. Relaunch the app and allow normal restoration.
+6. Verify the restored tab remains associated with Container A.
+7. Verify the restored navigation uses Container A's persisted UA before/at first network navigation.
+
+**Pass condition:** restored tab keeps its container identity and its persisted per-container UA.
+
+### Scenario 1 runtime evidence — 2026-08-31
+
+APK under test: validation prerelease `validation-stable-5-3aa06cf6ee090e42c9b7bff6abbf17f737b1fef5`, ARM64 asset `app-stable-arm64-v8a-release.apk`.
+
+Before process termination, the request-observed UA in Google Search was:
+`Mozilla/5.0 (Linux; Android 14; SM-S928B/DS) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.230 Mobile Safari/537.36`
+
+The tab was associated with `Container A`.
+
+After process termination and relaunch, the restored tab remained in `Container A`, but the request-observed UA changed to:
+`Mozilla/5.0 (Android 12; Mobile; rv:152.0) Gecko/152.0 Firefox/152.0`
+
+Therefore the runtime result is **FAIL**: container identity restored, but the persisted per-container UA was not applied to the restored navigation.
+
+The post-relaunch screenshot also shows the restored page directly; there was no `Resume last tab` control at that point. The earlier home-state `Resume last tab` button must not be interpreted as proof of post-relaunch deferred restoration.
+
+**Stop condition triggered:** preserve the first causal runtime failure and inspect the existing restore/session UA call chain before any unrelated scenario or architecture change.
+
+## Scenario 2 — Container A/B isolation
+
+1. Create one tab in A with UA-A.
+2. Create one tab in B with UA-B.
+3. Navigate both to a UA-reporting endpoint/page.
+4. Record UA-A and UA-B independently.
+5. Duplicate a tab in A and verify the duplicate remains in A with UA-A.
+6. Duplicate a tab in B and verify the duplicate remains in B with UA-B.
+7. Switch repeatedly between A and B and re-check both identities and UAs.
+
+**Pass condition:** no tab crosses containers and no container receives the other container's UA.
+
+## Scenario 3 — Restore isolation
+
+1. Leave at least one meaningful tab in A and one in B.
+2. Ensure both have distinct, observable UAs.
+3. Terminate the app process.
+4. Relaunch and wait for restoration to complete.
+5. Verify each restored tab retains its original `contextId`/container identity.
+6. Verify each restored tab uses its original container UA.
+
+**Pass condition:** restoration does not collapse A/B into a shared UA or wrong container.
+
+## Scenario 4 — Proxy A/B isolation
+
+1. Configure the existing proxy path for A and B with intentionally distinguishable behavior/endpoints.
+2. Navigate an A tab and record the observed proxy result.
+3. Navigate a B tab and record the observed proxy result.
+4. Switch between containers and repeat without changing configuration.
+5. Verify A traffic remains on A's proxy path and B traffic remains on B's path.
+
+**Pass condition:** proxy selection is isolated by container and does not leak across tabs/containers.
+
+## Scenario 5 — Proxy fail-closed
+
+1. Select a container whose proxy is configured through the existing fail-closed path.
+2. Make the configured proxy unavailable or otherwise trigger the existing failure condition.
+3. Attempt navigation.
+4. Verify the app does not silently bypass the required proxy and send the request directly.
+5. Restore valid proxy connectivity and verify normal navigation resumes.
+
+**Pass condition:** required proxy failure blocks/breaks navigation rather than silently falling back to direct traffic.
+
+## Scenario 6 — No cross-container mutation
+
+1. Establish known A and B state: UA, proxy, and tabs.
+2. Perform ordinary operations in A: open, duplicate, switch, close.
+3. Verify B's tab list, UA, and proxy configuration remain unchanged.
+4. Perform the corresponding operations in B.
+5. Verify A remains unchanged.
+6. Repeat once after app restoration if practical in the same session.
+
+**Pass condition:** operations in one container do not mutate another container's state.
+
+## Result matrix
+
+| Scenario | Runtime result | Evidence |
+|---|---|---|
+| Cold start / restored UA | **FAIL** | Container A restored; UA changed from Chrome/120 to Gecko/152 Firefox/152 after process death |
+| Container A/B UA isolation | BLOCKED | first-causal Scenario 1 failure |
+| Restore isolation | BLOCKED | first-causal Scenario 1 failure |
+| Proxy A/B isolation | BLOCKED | first-causal Scenario 1 failure |
+| Proxy fail-closed | BLOCKED | first-causal Scenario 1 failure |
+| No cross-container mutation | BLOCKED | first-causal Scenario 1 failure |
+
+## Stop conditions
+
+Stop the validation pass and preserve evidence if any scenario fails. Do not compensate by changing multiple layers. Reproduce the first causal failure, inspect the existing call chain, and change only the minimum code required if source/runtime evidence proves the current implementation insufficient.
+
+## Performance / navigation observations — 2026-08-31
+
+Captured during the first device pass; these are observations, not measured regressions:
+- The browser feels relatively heavy during use.
+- Previously visited pages should not be unnecessarily reloaded as first visits. This is a product requirement to investigate, not evidence that browser/HTTP caching is disabled.
+- Before changing implementation or removing features, measure cold start, time to first usable content, memory footprint, tab/session restoration behavior, engine-session recreation, cache behavior where observable, and APK composition.
+
+## Product direction — professional UA/profile identity
+
+The raw UA-string UI is considered insufficient for the intended product. The target is a coherent per-container/profile identity editor with presets and expert controls, not arbitrary UA text alone. Candidate dimensions include OS/platform, browser family/version, device/display metrics, locale/timezone/geolocation, proxy/network, and only those fingerprint surfaces that the actual Gecko/Android stack can control coherently. Research and requirements are recorded in `docs/WEBLIBRE_UA_FINGERPRINT_PRODUCT_REQUIREMENTS_2026-08-31.md`.
+
+Commercial anti-detect products commonly keep related identity fields internally consistent rather than exposing arbitrary independent combinations. WebLibre should follow the consistency principle and avoid cosmetic choices that its underlying engine cannot reproduce.
+
+## CI / release evidence
+
+For every build/release checkpoint verify:
+`intended change -> commit SHA -> workflow revision -> run.head_sha -> required job SUCCESS -> required step SUCCESS (not SKIPPED) -> expected artifact/release exists -> exact asset names/URLs/checksum verified`.
+
+A successful older run cannot prove a later workflow change. A workflow-artifact ZIP cannot prove direct Release assets.
+
+## Relationship to CI
+
+The existing Quality workflow validates source/unit/native checks but cannot establish Android process-death or real-device network behavior. The release workflow builds the native runtime and stable split-ABI APKs/app bundle. This checklist is therefore a manual/device validation checkpoint, not a replacement for CI.

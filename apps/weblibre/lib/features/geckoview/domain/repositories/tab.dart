@@ -195,6 +195,7 @@ class TabRepository extends _$TabRepository {
           parentId: validatedParentId,
           flags: flags,
           contextId: effectiveContextId,
+          userAgent: assignedContainer?.metadata.userAgent,
           source: source,
           private: tabMode is PrivateTabMode,
           historyMetadata: historyMetadata,
@@ -277,9 +278,17 @@ class TabRepository extends _$TabRepository {
       SpecificContainerTabSelection(:final container) => container,
     };
 
+    final effectiveTabs = tabs.toList(growable: true);
+    if (assignedContainer != null) {
+      for (final tab in effectiveTabs) {
+        // The destination container is authoritative for session identity.
+        tab.userAgent = assignedContainer.metadata.userAgent;
+      }
+    }
+
     final createdTabIds = await db.transaction(() async {
       final createdTabIds = await _tabsService.addMultipleTabs(
-        tabs: tabs,
+        tabs: effectiveTabs,
         selectTabId: selectTabId,
         // Carried into the engine so the exclusion is in place before these tabs
         // load; the replicated snapshot only follows once their rows are
@@ -388,6 +397,7 @@ class TabRepository extends _$TabRepository {
           selectTabId: selectTabId,
           newContextId: effectiveContextId,
           selectNewTab: selectTab,
+          userAgent: containerData?.metadata.userAgent,
           excludeFromHistory:
               containerData?.metadata.excludeFromHistory ?? false,
         );

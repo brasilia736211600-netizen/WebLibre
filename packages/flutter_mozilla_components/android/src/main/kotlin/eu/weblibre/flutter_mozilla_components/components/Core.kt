@@ -20,6 +20,7 @@ import eu.weblibre.flutter_mozilla_components.EngineProvider.getOrCreateRuntime
 import eu.weblibre.flutter_mozilla_components.GlobalComponents
 import eu.weblibre.flutter_mozilla_components.history.FallbackHistoryDelegate
 import eu.weblibre.flutter_mozilla_components.middleware.HistoryDelegateBindingMiddleware
+import eu.weblibre.flutter_mozilla_components.middleware.ContainerUserAgentCreateSessionMiddleware
 import eu.weblibre.flutter_mozilla_components.PermissionStorage
 import eu.weblibre.flutter_mozilla_components.services.MediaSessionService
 import eu.weblibre.flutter_mozilla_components.activities.NotificationActivity
@@ -106,12 +107,6 @@ class Core(
     val engineSettings by lazy {
         DefaultSettings(
             requestInterceptor = requestInterceptor,
-            // Engine-wide fallback only. Every session in the store is given its
-            // own TabScopedHistoryDelegate by HistoryDelegateBindingMiddleware,
-            // which is what enforces exclude-from-history and tags visits with
-            // their container. The fallback covers sessions that have no binding
-            // (yet) and, unable to identify them, refuses to record while any
-            // exclusion is active — see FallbackHistoryDelegate.
             historyTrackingDelegate = FallbackHistoryDelegate(historyStorageDelegate),
             testingModeEnabled = false,
             remoteDebuggingEnabled = false,
@@ -123,20 +118,9 @@ class Core(
             },
             enterpriseRootsEnabled = false,
             emailTrackerBlockingPrivateBrowsing = true,
-//            clearColor = ContextCompat.getColor(
-//                context,
-//                R.color.fx_mobile_layer_color_1,
-//            ),
-
             trackingProtectionPolicy = createTrackingProtectionPolicy(TrackingProtectionPolicy.strict()),
-            //FP Protection is handled by trackingPolicy
-            //fingerprintingProtection
-            //fingerprintingProtectionPrivateBrowsing
             httpsOnlyMode = Engine.HttpsOnlyMode.ENABLED,
             globalPrivacyControlEnabled = true,
-            // Resolve the last persisted choice so cold-started Custom Tab / PWA
-            // sessions report the correct `prefers-color-scheme` before Flutter
-            // (the source of truth) runs. Defaults to System. See issue #436.
             preferredColorScheme = ColorSchemePreference.read(prefs),
             cookieBannerHandlingMode = EngineSession.CookieBannerHandlingMode.REJECT_ALL,
             cookieBannerHandlingModePrivateBrowsing = EngineSession.CookieBannerHandlingMode.REJECT_ALL,
@@ -164,26 +148,18 @@ class Core(
         EngineProvider.createEngine(context, engineSettings, extensionEvents, flutterEvents)
     }
 
-    /**
-     * The [Client] implementation (`concept-fetch`) used for HTTP requests.
-     */
     val client: Client by lazy {
         EngineProvider.createClient(context)
     }
 
     val thumbnailStorage by lazy { ThumbnailStorage(context) }
-
     val icons by lazy { BrowserIcons(context, client) }
 
-    /**
-     * A storage component for site permissions.
-     */
     val geckoSitePermissionsStorage by lazy {
         val geckoRuntime = EngineProvider.getOrCreateRuntime(context)
         GeckoSitePermissionsStorage(geckoRuntime, OnDiskSitePermissionsStorage(context))
     }
 
-    // Addons
     val addonManager by lazy {
         AddonManager(store, engine, addonsProvider, addonUpdater)
     }
@@ -228,29 +204,28 @@ class Core(
         HistoryMetadataService(storage = historyStorage)
     }
 
-    // Wraps the WebNotificationFeature delegate so headless push deliveries can
-    // wait for the service worker to actually post its notification before the
-    // process loses foreground priority. Installed when [store] is created.
     val webNotificationDrainCoordinator = WebNotificationDrainCoordinator()
 
     @OptIn(FlowPreview::class)
     val store by lazy {
         BrowserStore(
             middleware = listOf(
-                // Must run before any engine middleware so we can rewrite
-                // sandbox new-tab URLs before Gecko issues a request.
                 SandboxCaptureMiddleware,
-                // WebLibre-owned app-link pending-request invalidation + suppression clearing.
                 AppLinkNavigationMiddleware(
                     PendingAppLinkStores.forProfile(
                         components.profileApplicationContext.relativePath,
                     ),
                 ),
                 HistoryMetadataMiddleware(historyMetadataService),
-                // Must run before the engine middleware: it swaps each session's
-                // history delegate for a tab-scoped one before that session is
-                // linked and starts loading.
-                HistoryDelegateBindingMiddleware(historyStorageDelegate),
+                ContainerUserAgentCreateSessionMiddleware(
+                    engine = engine,
+                    profileContext = components.profileApplicationContext,
+                    scope = MainScope(),
+                ),
+                HistoryDelegateBindingMiddleware(
+                    profileContext = components.profileApplicationContext,
+                    storageDelegate = historyStorageDelegate,
+                ),
                 FlutterEventMiddleware(flutterEvents),
                 DownloadMiddleware(
                     applicationContext = context,
@@ -273,8 +248,6 @@ class Core(
                 SaveToPDFMiddleware(),
                 FileUploadsDirCleanerMiddleware(fileUploadsDirCleaner),
                 LastMediaAccessMiddleware(),
-                // Keep parity with Fenix: do not initialize translations on store init.
-                // EngineObserver will dispatch InitTranslationsBrowserState after first completed page load.
                 TranslationsMiddleware(
                     engine,
                     MainScope(),
@@ -282,13 +255,6 @@ class Core(
                     isTranslationsEnabled = { true }),
             ) + EngineMiddleware.create(
                 engine,
-                // We are disabling automatic suspending of engine sessions under memory pressure.
-                // Instead we solely rely on GeckoView and the Android system to reclaim memory
-                // when needed. For details, see:
-                // https://bugzilla.mozilla.org/show_bug.cgi?id=1752594
-                // https://github.com/mozilla-mobile/fenix/issues/12731
-                // https://github.com/mozilla-mobile/android-components/issues/11300
-                // https://github.com/mozilla-mobile/android-components/issues/11653
                 trimMemoryAutomatically = false,
             )
         ).apply {
@@ -296,10 +262,6 @@ class Core(
 
             icons.install(engine, this)
 
-            // WebNotificationFeature self-registers as the engine's notification
-            // delegate in its init; immediately wrap it with the drain
-            // coordinator so headless deliveries observe onShowNotification while
-            // notifications still display exactly as before.
             val webNotificationFeature = WebNotificationFeature(
                 context,
                 engine,
@@ -316,35 +278,19 @@ class Core(
         }
     }
 
-    /**
-     * The [CustomTabsServiceStore] holds global custom tabs related data.
-     */
     val customTabsStore by lazy { CustomTabsServiceStore() }
-
     val webAppManifestStorage by lazy { ManifestStorage(context) }
 
     val webAppShortcutManager by lazy {
         WebAppShortcutManager(context, client, webAppManifestStorage)
     }
 
-    /**
-     * The storage component for persisting browser tab sessions.
-     */
     val sessionStorage: SessionStorage by lazy {
         SessionStorage(context, engine)
     }
 
-    /**
-     * The storage component to persist browsing history (with the exception of
-     * private sessions).
-     */
     val lazyHistoryStorage = lazy { PlacesHistoryStorage(context) }
 
-    /**
-     * Writes visits to Places. Wrapped per session by [TabScopedHistoryDelegate]
-     * so exclude-from-history and container tagging can be decided from the tab
-     * that produced the visit.
-     */
     val historyStorageDelegate: HistoryTrackingDelegate by lazy {
         HistoryDelegate(lazyHistoryStorage)
     }
@@ -352,9 +298,6 @@ class Core(
     val lazyBookmarksStorage = lazy { PlacesBookmarksStorage(context) }
     val lazyRemoteTabsStorage = lazy { RemoteTabsStorage(context, noOpCrashReporter) }
 
-    /**
-     * A convenience accessor to the [PlacesHistoryStorage].
-     */
     val historyStorage by lazy { lazyHistoryStorage.value }
     val bookmarksStorage by lazy { lazyBookmarksStorage.value }
     val remoteTabsStorage by lazy { lazyRemoteTabsStorage.value }
@@ -363,17 +306,6 @@ class Core(
 
     val requestInterceptor = AppRequestInterceptor(context)
 
-    /**
-     * Constructs a [TrackingProtectionPolicy] based on current preferences.
-     *
-     * @param prefs the shared preferences to use when reading tracking
-     * protection settings.
-     * @param normalMode whether or not tracking protection should be enabled
-     * in normal browsing mode, defaults to the current preference value.
-     * @param privateMode whether or not tracking protection should be enabled
-     * in private browsing mode, default to the current preference value.
-     * @return the constructed tracking protection policy based on preferences.
-     */
     private fun createTrackingProtectionPolicy(
         trackingPolicy: EngineSession.TrackingProtectionPolicyForSessionTypes,
         normalMode: Boolean = true,

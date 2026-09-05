@@ -40,9 +40,6 @@
     <!-- Needed for uploading media files on devices with Android 13 and later. -->
     <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
 
-    <!-- Needed to interact with all apps installed on a device -->
-    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
-
     <!-- Needed to support Credential Manager with Android 14 and later. -->
     <uses-permission android:name="android.permission.CREDENTIAL_MANAGER_SET_ORIGIN" />
     <uses-permission android:name="android.permission.CREDENTIAL_MANAGER_QUERY_CANDIDATE_CREDENTIALS" />
@@ -99,10 +96,10 @@
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize">
-            <!-- We do want to ahndle "open with" by ourselfs. Prevents automatically pushing routes. -->
+            <!-- We do want to ahndle \"open with\" by ourselfs. Prevents automatically pushing routes. -->
             <meta-data android:name="flutter_deeplinking_enabled" android:value="false" />
-            <!-- Specifies an Android theme to apply to this Activity as soon as
-                 the Android process has started. This theme is visible to the user
+            <!-- Specifies an Android theme to apply to the MainActivity as soon as
+                 the process has started. This theme is visible to the user
                  while the Flutter UI initializes. After that, this theme continues
                  to determine the Window background behind the Flutter UI. -->
             <meta-data
@@ -118,14 +115,6 @@
 
             <intent-filter>
                 <action android:name="es.antonborri.home_widget.action.LAUNCH" />
-            </intent-filter>
-
-            <!-- WebLibre Account auth callback deep link -->
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="weblibre" android:host="account" />
             </intent-filter>
         </activity>
 
@@ -192,7 +181,7 @@
 
             <!-- PWA launch from home screen shortcut -->
             <intent-filter>
-                <action android:name="mozilla.components.feature.pwa.VIEW_PWA" />
+                <action android:name="mozilla.components.pwa.VIEW_PWA" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:scheme="https" />
             </intent-filter>

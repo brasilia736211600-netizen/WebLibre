@@ -1,21 +1,7 @@
 /*
  * Copyright (c) 2024-2026 Fabian Freund.
  *
- * This file is part of WebLibre
- * (see https://weblibre.eu).
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ * This file is part of WebLibre and is licensed under the GNU Affero General Public License v3.
  */
 import 'dart:async';
 
@@ -27,7 +13,6 @@ import 'package:simple_intent_receiver/simple_intent_receiver.dart';
 import 'package:uri_to_file/uri_to_file.dart' as uri_to_file;
 import 'package:weblibre/core/logger.dart';
 import 'package:weblibre/data/models/received_intent_parameter.dart';
-import 'package:weblibre/features/account/domain/services/account_callback_handler.dart';
 import 'package:weblibre/features/intent_gatekeeper/domain/entities/intent_source_policy.dart';
 import 'package:weblibre/features/intent_gatekeeper/domain/services/intent_gatekeeper.dart';
 import 'package:weblibre/features/share_intent/domain/entities/intent_container_mode.dart';
@@ -44,13 +29,6 @@ _buildSharingIntentTransformer(
   GeneralSettingsRepository settingsRepository,
 ) => StreamTransformer<Intent, ReceivedIntentParameter>.fromHandlers(
   handleData: (intent, sink) async {
-    if (_extractAccountCallback(intent) != null) {
-      // Account callback intents are consumed by accountCallbackStreamProvider —
-      // suppress them from the regular share/sharing intent pipeline so they
-      // don't open a browser tab.
-      return;
-    }
-
     final alwaysAllowPackage =
         intent.extra[_alwaysAllowPackageExtra] as String?;
     if (alwaysAllowPackage != null) {
@@ -100,7 +78,6 @@ _buildSharingIntentTransformer(
       _ => null,
     };
 
-    // Extract container context from shortcut intents.
     final contextId = shortcutContextId;
 
     if (data != null) {
@@ -139,7 +116,6 @@ _buildSharingIntentTransformer(
           }
         } catch (e) {
           logger.e('Failed to convert URI to file: $e');
-          // Fallback: pass the original URI
           sink.add(
             ReceivedIntentParameter(
               data,
@@ -163,8 +139,6 @@ _buildSharingIntentTransformer(
   },
 );
 
-/// Shared intent receiver instance. Both the sharing intent stream
-/// and the account callback handler listen to its broadcast events.
 @Riverpod(keepAlive: true)
 Raw<IntentReceiver> intentReceiver(Ref ref) {
   final receiver = IntentReceiver.setUp();
@@ -172,20 +146,12 @@ Raw<IntentReceiver> intentReceiver(Ref ref) {
   return receiver;
 }
 
-/// Runs the receiver event stream through [transformer] and forwards it into a
-/// fresh single-subscription controller wired up to [ref]'s lifecycle.
-///
-/// Centralising this in one helper means the two intent-consuming providers
-/// below (sharing intents + account callbacks) agree on the receiver semantics:
-/// `receiver.events` includes the recovered cold-start intent for each
-/// listener, plus all live intents.
 Raw<Stream<T>> _consumeIntents<T>(
   Ref ref,
   IntentReceiver receiver,
   StreamTransformer<Intent, T> transformer,
 ) {
   final controller = StreamController<T>();
-
   final sub = receiver.events
       .transform(transformer)
       .listen(controller.add, onError: controller.addError);
@@ -210,32 +176,4 @@ Raw<Stream<ReceivedIntentParameter>> sharingIntentStream(Ref ref) {
     receiver,
     _buildSharingIntentTransformer(gatekeeper, settingsRepository),
   );
-}
-
-/// Stream of account callback handoff codes extracted from deep link intents.
-@Riverpod(keepAlive: true)
-Raw<Stream<String>> accountCallbackStream(Ref ref) {
-  final receiver = ref.watch(intentReceiverProvider);
-  return _consumeIntents(ref, receiver, _accountCallbackTransformer);
-}
-
-/// Transformer that yields handoff codes for matching VIEW intents and
-/// drops everything else. Shared with the sharing-intent suppression
-/// branch via [_extractAccountCallback] so the two streams agree on which
-/// intents are "account callbacks".
-final _accountCallbackTransformer =
-    StreamTransformer<Intent, String>.fromHandlers(
-      handleData: (intent, sink) {
-        final callback = _extractAccountCallback(intent);
-        if (callback != null) {
-          sink.add(callback.handoffCode);
-        }
-      },
-    );
-
-AccountCallback? _extractAccountCallback(Intent intent) {
-  if (intent.action != 'android.intent.action.VIEW' || intent.data == null) {
-    return null;
-  }
-  return tryParseAccountCallback(intent.data!);
 }

@@ -41,6 +41,10 @@ class ContainerMetadata with FastEquatable {
   )
   final ProxyConnectionId? proxyConnectionId;
 
+  /// Optional User-Agent override scoped to this container's Gecko sessions.
+  /// A null or blank value means use GeckoView's/default configured UA.
+  final String? userAgent;
+
   @JsonKey(defaultValue: false)
   final bool clearDataOnExit;
 
@@ -97,6 +101,7 @@ class ContainerMetadata with FastEquatable {
     required this.iconData,
     required this.contextualIdentity,
     required this.proxyConnectionId,
+    required this.userAgent,
     required this.clearDataOnExit,
     required this.excludeFromIndex,
     required this.excludeFromHistory,
@@ -111,6 +116,7 @@ class ContainerMetadata with FastEquatable {
     IconData? iconData,
     String? contextualIdentity,
     ProxyConnectionId? proxyConnectionId,
+    String? userAgent,
     bool? clearDataOnExit,
     bool? excludeFromIndex,
     bool? excludeFromHistory,
@@ -123,6 +129,7 @@ class ContainerMetadata with FastEquatable {
          iconData: iconData,
          contextualIdentity: contextualIdentity,
          proxyConnectionId: proxyConnectionId,
+         userAgent: _normalizeUserAgent(userAgent),
          clearDataOnExit: clearDataOnExit ?? false,
          excludeFromIndex: excludeFromIndex ?? false,
          excludeFromHistory: excludeFromHistory ?? false,
@@ -185,6 +192,7 @@ class ContainerMetadata with FastEquatable {
     iconData,
     contextualIdentity,
     proxyConnectionId,
+    userAgent,
     clearDataOnExit,
     excludeFromIndex,
     excludeFromHistory,
@@ -194,6 +202,11 @@ class ContainerMetadata with FastEquatable {
     strictMode,
     isolatedAppLinkSettings,
   ];
+}
+
+String? _normalizeUserAgent(String? value) {
+  final normalized = value?.trim();
+  return normalized == null || normalized.isEmpty ? null : normalized;
 }
 
 @JsonSerializable()

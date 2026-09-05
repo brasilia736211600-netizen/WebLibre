@@ -5,6 +5,16 @@ on:
     tags:
       - "v*"
   workflow_dispatch:
+    inputs:
+      build_type:
+        description: "Android build variant"
+        required: true
+        default: stable
+        type: choice
+        options:
+          - stable
+          - alpha
+          - alphaLegacy
 
 jobs:
   build:
@@ -67,16 +77,33 @@ jobs:
       - name: Determine build type
         id: build-type
         run: |
-          if [[ "${{ github.ref_name }}" =~ (pre|alpha) ]]; then
-            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            case "${{ inputs.build_type }}" in
+              alpha)
+                echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
+                echo "variant=alpha" >> "$GITHUB_OUTPUT"
+                ;;
+              alphaLegacy)
+                echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
+                echo "variant=alphaLegacy" >> "$GITHUB_OUTPUT"
+                ;;
+              stable)
+                echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
+                echo "variant=stable" >> "$GITHUB_OUTPUT"
+                ;;
+            esac
+          elif [[ "${{ github.ref_name }}" =~ (pre|alpha) ]]; then
+            echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
+            echo "variant=alpha" >> "$GITHUB_OUTPUT"
             echo "Build type: Prerelease (APK only)"
           else
-            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+            echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
+            echo "variant=stable" >> "$GITHUB_OUTPUT"
             echo "Build type: Full release (APK + Bundle + Play Console)"
           fi
 
       - uses: ruby/setup-ruby@v1
-        if: steps.build-type.outputs.is_prerelease == 'false'
+        if: steps.build-type.outputs.is_prerelease == 'false' && github.event_name != 'workflow_dispatch'
         with:
           ruby-version: '3.3'
           bundler-cache: true
@@ -99,7 +126,7 @@ jobs:
             ${{ runner.os }}-go-runtime-
 
       - name: Download bundle dependencies
-        if: steps.build-type.outputs.is_prerelease == 'false'
+        if: steps.build-type.outputs.is_prerelease == 'false' && github.event_name != 'workflow_dispatch'
         run: |
           gem install bundler
           bundle config path vendor/bundle
@@ -149,44 +176,66 @@ jobs:
         run: melos run build-go-runtime --no-select
 
       - name: Build APK (Alpha)
-        if: steps.build-type.outputs.is_prerelease == 'true'
+        if: steps.build-type.outputs.variant == 'alpha'
         run: melos run build-browser-alpha --no-select
 
       - name: Build APK (Alpha, Legacy renderer)
-        if: steps.build-type.outputs.is_prerelease == 'true'
+        if: steps.build-type.outputs.variant == 'alphaLegacy'
         run: melos run build-browser-alpha-legacy --no-select
 
       - name: Build APK (Stable)
-        if: steps.build-type.outputs.is_prerelease == 'false'
+        if: steps.build-type.outputs.variant == 'stable'
         run: melos run build-browser --no-select
 
       - name: Build App Bundle
-        if: steps.build-type.outputs.is_prerelease == 'false'
+        if: steps.build-type.outputs.is_prerelease == 'false' && github.event_name != 'workflow_dispatch'
         working-directory: apps/weblibre
         run: flutter build appbundle --flavor stable --target-platform android-arm,android-arm64 --no-tree-shake-icons
 
+      - name: Upload Android APK artifacts (manual validation build)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: weblibre-${{ steps.build-type.outputs.variant }}-apk-${{ github.sha }}
+          path: |
+            apps/weblibre/build/app/outputs/apk/${{ steps.build-type.outputs.variant }}/release/*.apk
+            apps/weblibre/build/app/outputs/apk/${{ steps.build-type.outputs.variant }}/release/**/*.apk
+          if-no-files-found: error
+
+      - name: Create GitHub validation release (manual APK build)
+        if: github.event_name == 'workflow_dispatch'
+        uses: ncipollo/release-action@v1.17.0
+        with:
+          tag: validation-${{ steps.build-type.outputs.variant }}-${{ github.run_number }}-${{ github.sha }}
+          name: WebLibre ${{ steps.build-type.outputs.variant }} validation ${{ github.run_number }}
+          artifacts: "apps/weblibre/build/app/outputs/apk/${{ steps.build-type.outputs.variant }}/release/*.apk"
+          prerelease: true
+          allowUpdates: false
+          replacesArtifacts: false
+          generateReleaseNotes: true
+
       - name: Create github artifact release (Prerelease)
-        if: steps.build-type.outputs.is_prerelease == 'true'
+        if: steps.build-type.outputs.is_prerelease == 'true' && github.event_name != 'workflow_dispatch'
         uses: ncipollo/release-action@v1.17.0
         with:
           artifacts: "apps/weblibre/build/app/outputs/apk/alpha/release/*.apk,apps/weblibre/build/app/outputs/apk/alphaLegacy/release/*.apk"
           prerelease: true
 
       - name: Create github artifact release (Full)
-        if: steps.build-type.outputs.is_prerelease == 'false'
+        if: steps.build-type.outputs.is_prerelease == 'false' && github.event_name != 'workflow_dispatch'
         uses: ncipollo/release-action@v1.17.0
         with:
           artifacts: "apps/weblibre/build/app/outputs/apk/stable/release/*.apk,apps/weblibre/build/app/outputs/bundle/stableRelease/app-stable-release.aab"
 
       - name: Upload app bundle artifact
-        if: steps.build-type.outputs.is_prerelease == 'false'
+        if: steps.build-type.outputs.is_prerelease == 'false' && github.event_name != 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
           name: appbundle
           path: apps/weblibre/build/app/outputs/bundle/stableRelease/app-stable-release.aab
 
       - name: Release to Google Play (internal)
-        if: steps.build-type.outputs.is_prerelease == 'false'
+        if: steps.build-type.outputs.is_prerelease == 'false' && github.event_name != 'workflow_dispatch'
         working-directory: apps/weblibre
         env:
           SUPPLY_PACKAGE_NAME: ${{ secrets.ANDROID_PACKAGE_NAME }}

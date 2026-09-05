@@ -132,6 +132,7 @@ class AddTabParams {
   final String? parentId;
   final LoadUrlFlagsValue flags;
   final String? contextId;
+  final String? userAgent;
   final SourceValue source;
   final bool private;
   final HistoryMetadataKey? historyMetadata;
@@ -143,6 +144,7 @@ class AddTabParams {
     this.parentId,
     required this.flags,
     this.contextId,
+    this.userAgent,
     required this.source,
     required this.private,
     this.historyMetadata,
@@ -1716,6 +1718,7 @@ abstract class GeckoTabsApi {
     required String? parentId,
     required LoadUrlFlagsValue flags,
     required String? contextId,
+    required String? userAgent,
     //engineSession: EngineSession? = null,
     required SourceValue source, //Internal.NewTab
     //searchTerms: String = "",
@@ -1780,6 +1783,7 @@ abstract class GeckoTabsApi {
     required String? selectTabId,
     required bool selectNewTab,
     required String? newContextId,
+    required String? userAgent,
 
     /// Whether the container the duplicate is being created in is excluded from
     /// history. Cannot be inherited from the source tab: a duplicate can be sent

@@ -8,14 +8,6 @@
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
@@ -26,16 +18,10 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:weblibre/core/design/app_colors.dart';
 import 'package:weblibre/core/providers/persisted_bool.dart';
 import 'package:weblibre/core/routing/routes.dart';
-import 'package:weblibre/features/account/domain/repositories/account_auth.dart';
 import 'package:weblibre/features/account/domain/repositories/subscription_repository.dart';
 import 'package:weblibre/features/geckoview/features/open_link_tools/presentation/utils/open_in_custom_tab.dart';
 
-/// Promotional banner shown above the quote card on the browser home page,
-/// inviting non-subscribers to become a WebLibre Supporter.
-///
-/// It hides itself when the user already has an active subscription or has
-/// dismissed it. Includes its own bottom spacing so the host layout doesn't
-/// leave a gap when the banner is absent.
+/// Promotional banner shown above the quote card on the browser home page.
 class SupporterHomeBanner extends HookConsumerWidget {
   const SupporterHomeBanner({super.key});
 
@@ -53,31 +39,16 @@ class SupporterHomeBanner extends HookConsumerWidget {
     final dismissed = ref.watch(
       persistedBoolProvider(PersistedBoolKey.supporterBannerDismissed),
     );
-
-    // Only nudge people who aren't already supporting, and only once we have a
-    // definitive answer. The subscription provider reports `inactive` while the
-    // account session is still being restored from the secure store, so gating
-    // on it alone would flash the banner at a subscriber until auth settles.
-    // We therefore wait for auth to resolve first:
-    //  - still loading / signing in / error  -> stay hidden
-    //  - signed out                          -> definitely no subscription
-    //  - signed in                           -> wait for subscription status
-    final authAsync = ref.watch(accountAuthRepositoryProvider);
     final subscriptionAsync = ref.watch(subscriptionRepositoryProvider);
 
+    // Subscription status is now a local compatibility boundary. Keep the
+    // banner hidden until the status is known, then show it only when inactive.
     final shouldShow =
-        // In debug builds, bypass the subscriber/auth auto-hide so the banner
-        // is always available to work on regardless of account state.
         kDebugMode ||
-        switch (authAsync) {
-          AsyncData(value: final auth) when auth.isSignedOut => true,
-          AsyncData(value: final auth) when auth.isSignedIn =>
-            subscriptionAsync.maybeWhen(
-              data: (status) => !status.isActive,
-              orElse: () => false,
-            ),
-          _ => false,
-        };
+        subscriptionAsync.maybeWhen(
+          data: (status) => !status.isActive,
+          orElse: () => false,
+        );
 
     if (dismissed || !shouldShow) {
       return const SizedBox.shrink();

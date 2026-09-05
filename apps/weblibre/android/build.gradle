@@ -1,4 +1,3 @@
-//Required by background_fetch build
 ext {
     compileSdkVersion   = 37
     targetSdkVersion    = 37
@@ -9,8 +8,6 @@ allprojects {
     repositories {
         google()
         mavenCentral()
-        //Required by background_fetch build
-        maven { url "${project(':background_fetch').projectDir}/libs" }
     }
 
     configurations.configureEach {

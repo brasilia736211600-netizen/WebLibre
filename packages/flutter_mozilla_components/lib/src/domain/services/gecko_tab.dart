@@ -66,6 +66,7 @@ class GeckoTabService {
     String? parentId,
     LoadUrlFlags flags = LoadUrlFlags.NONE,
     String? contextId,
+    String? userAgent,
     Source source = Internal.newTab,
     bool private = false,
     HistoryMetadataKey? historyMetadata,
@@ -79,6 +80,7 @@ class GeckoTabService {
       parentId: parentId,
       flags: flags.toValue(),
       contextId: contextId,
+      userAgent: userAgent,
       source: source.toValue(),
       private: private,
       historyMetadata: historyMetadata,
@@ -155,6 +157,7 @@ class GeckoTabService {
   Future<String> duplicateTab({
     required String? selectTabId,
     required String? newContextId,
+    String? userAgent,
     bool selectNewTab = true,
     bool excludeFromHistory = false,
   }) {
@@ -162,6 +165,7 @@ class GeckoTabService {
       selectTabId: selectTabId,
       selectNewTab: selectNewTab,
       newContextId: newContextId,
+      userAgent: userAgent,
       excludeFromHistory: excludeFromHistory,
     );
   }

@@ -7,7 +7,7 @@
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
+ * License, or any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -23,7 +23,6 @@ import 'package:exceptions/exceptions.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:weblibre/core/providers/format.dart';
 import 'package:weblibre/features/about/domain/providers.dart';
-import 'package:weblibre/features/account/domain/services/account_callback_handler.dart';
 import 'package:weblibre/features/bangs/data/models/bang_group.dart';
 import 'package:weblibre/features/bangs/domain/repositories/sync.dart';
 
@@ -78,9 +77,6 @@ class AppInitializationService extends _$AppInitializationService {
       for (final MapEntry(value: result) in bangSyncResults.entries) {
         result.onFailure(errors.add);
       }
-
-      // Activate account callback deep link handler
-      ref.read(accountCallbackHandlerProvider);
 
       return (initialized: true, stage: null, errors: errors);
     });
