@@ -135,6 +135,8 @@ jobs:
           ls -lh apps/weblibre/build/app/outputs/apk/stable/release/
           test -n "$(find apps/weblibre/build/app/outputs/apk/stable/release -maxdepth 1 -name '*.apk' -print -quit)"
           test -f apps/weblibre/build/app/outputs/flutter-apk/app-stable-debug.apk
+          find apps/weblibre/build/app/outputs/apk/stable/release -maxdepth 1 -name '*.apk' -print0 | xargs -0 -r sha256sum
+          sha256sum apps/weblibre/build/app/outputs/flutter-apk/app-stable-debug.apk
 
       - name: Upload validation APKs
         uses: actions/upload-artifact@v4
