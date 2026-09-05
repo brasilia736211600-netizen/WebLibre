@@ -2,21 +2,19 @@
 
 **Last synchronized:** 2026-09-05
 **Branch:** `weblibre-ua-mainline-v3`
-**Source HEAD at current checkpoint:** `e0e1124a9b969f7412f1642ccd6aafd8702b3faf`
-**Functional code checkpoint:** `3be7de126e6342a2ade388a897c5e51674acb018`
+**Current source/workflow HEAD:** `8a407ea47ef855bf08d722d52d63dcc4f08d3da7`
+**Functional code checkpoint:** `8089e68a60f40cef6f36943fb8489e349290d951`
 
 ## Source of truth
 GitHub code, refs, commits, CI/build/release runs, artifacts and release assets are authoritative. Chat memory is not evidence.
 
 ## Current checkpoint
-- PR #3 remains OPEN and DRAFT, base `main`.
-- The latest functional UA change remains at `3be7de126e6342a2ade388a897c5e51674acb018`; later commits preserve durable state and build hygiene.
-- `ContainerUserAgentCreateSessionMiddleware` remains the source-level lifecycle correction: it creates the restored session, applies persisted container UA before `restoreState()`, reapplies it defensively, then links the session.
+- PR #3 remains OPEN and DRAFT, base `main`, current head `8a407ea47ef855bf08d722d52d63dcc4f08d3da7`.
+- The functional UA correction is `ContainerUserAgentCreateSessionMiddleware`: it creates the restored session, applies the persisted container UA before `restoreState()`, reapplies it defensively, then links the session.
+- The follow-up lifecycle hardening at `8089e68a60f40cef6f36943fb8489e349290d951` re-reads the tab from live store state after coroutine scheduling to reduce stale-state races.
 - AI-1 remains a six-tool model-independent Browser Tool slice with explicit permissions, side-effect metadata, deterministic errors, audit callback, and focused regression coverage.
-- Quality run #79 (`33901450964`) tested the merge ref for PR #3 and FAILED during AI-1 tests because `SupporterHomeBanner` still imported the deleted `account_auth.dart` repository/provider. The same run also reported missing declared asset directories `assets/quotes/`, `assets/sites/`, and `assets/ublock/` during Flutter package setup.
-- The account compile dependency was corrected in `1de32328ac4af22058ba6506037a9add1f2a61a7` by moving `SupporterHomeBanner` to the retained local `SubscriptionRepository` boundary and removing the deleted auth dependency.
-- The three declared asset directories were restored as Git-tracked placeholders in commits `c09b2f4ea3277736834e3d15cb639299faf28a3d`, `4b533448035027cf85539ad6e9aea46d64fab952`, and `e0e1124a9b969f7412f1642ccd6aafd8702b3faf`.
-- A new Quality run #83 (`33983996063`) is now running on the latest branch head. It has not yet reached the AI-1 test step, so the fixes are NOT CI-VERIFIED yet.
+- Quality run #92 (`33998587053`) is executing against `ae5463fbd647b9a3ae9922f6578d2b3ed2c2480e`; AI-1 tests and targeted container tests have passed and native runtime build is in progress. No final conclusion has been claimed yet.
+- The later commits `8a407ea47ef855bf08d722d52d63dcc4f08d3da7` and its validation-workflow parent are workflow-only/hardening changes; no browser source behavior was changed after the functional checkpoint.
 
 ## Browser / Android runtime
 Scenario 1 remains **FAIL / runtime revalidation pending**:
@@ -26,11 +24,23 @@ Scenario 1 remains **FAIL / runtime revalidation pending**:
 - After relaunch: restored navigation observed Gecko/Firefox 152 UA.
 - No usable `Resume last tab` control was present in the prior post-relaunch state.
 
-The lifecycle fix intended to close this failure is source-committed but not yet CI- or Android-runtime-verified. Do not run Scenarios 2–6 until Scenario 1 passes.
+The current lifecycle fix remains source-verified but has no fresh Android-runtime evidence. Do not run Scenarios 2–6 until Scenario 1 passes.
+
+## Validation APK / emulator gate
+`.github/workflows/validation-apk.yml` is now strengthened to:
+- build stable split APKs and a stable debug APK;
+- upload both as a SHA-named workflow artifact;
+- install the debug APK on an API 35 x86_64 emulator;
+- assert SDK/package installation;
+- launch, assert live process and resumed activity, check the crash buffer, force-stop, and relaunch;
+- always upload emulator logcat for diagnosis;
+- trigger on branch pushes and on relevant PR changes.
+
+The available GitHub connector exposes PR-triggered workflow runs, but workflow-dispatch is not exposed. Therefore no current validation APK artifact is claimed until a retrievable exact-head run exists.
 
 ## AI-1
 Six-tool model-independent Browser Tool slice: `get_tabs`, `get_current_tab`, `create_tab`, `switch_tab`, `close_tab`, `open_url`.
-Contracts, registry, executor, mappings and focused tests remain SOURCE-VERIFIED. Quality must pass on the current branch before AI-2 starts.
+Contracts, registry, executor, mappings and focused tests remain SOURCE-VERIFIED. Quality run #92 has already passed the AI-1 and targeted container stages on `ae5463f...`; the full run is still pending.
 
 ## Privacy / personal-product hardening
 - Legacy account callback/handoff cleanup remains removed.
@@ -66,7 +76,7 @@ Validation release `validation-stable-5-3aa06cf6ee090e42c9b7bff6abbf17f737b1fef5
 `SOURCE-VERIFIED -> CI-VERIFIED -> ANDROID-RUNTIME-VERIFIED -> ARTIFACT-VERIFIED -> RELEASE-ASSET-VERIFIED` are separate states.
 
 ## FIRST NEXT STEP — exactly one
-**Validate Quality run #83 on the latest head; if green, generate the consolidated validation APK and execute Android Scenario 1.**
+**Obtain a retrievable exact-head validation workflow run; then verify its APK artifact and Android API 35 smoke result, and only after that execute Scenario 1.**
 
 ## Mandatory loop
 `READ -> VERIFY -> RECONCILE -> PLAN -> EXECUTE -> TEST -> DIFF -> COMMIT -> SAVE STATE`
