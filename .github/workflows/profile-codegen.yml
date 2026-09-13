@@ -48,14 +48,17 @@ jobs:
           generated="${files[0]}"
           source="${generated%.g.dart}.dart"
           test -f "$source"
-          printf 'generated=%s\nsource=%s\n' "$generated" "$source" >> "$GITHUB_OUTPUT"
+          package_relative="${generated#apps/weblibre/}"
+          test "$package_relative" != "$generated"
+          printf 'generated=%s\nsource=%s\npackage_relative=%s\n' "$generated" "$source" "$package_relative" >> "$GITHUB_OUTPUT"
           echo "Generated: $generated"
           echo "Source: $source"
+          echo "Package-relative: $package_relative"
 
       - name: Regenerate profile.g.dart with pinned workspace dependencies
         working-directory: apps/weblibre
         env:
-          GENERATED: ${{ steps.profile.outputs.generated }}
+          GENERATED: ${{ steps.profile.outputs.package_relative }}
         run: |
           set -euo pipefail
           dart run build_runner build --delete-conflicting-outputs --build-filter="$GENERATED"
@@ -74,7 +77,7 @@ jobs:
           SOURCE: ${{ steps.profile.outputs.source }}
         run: |
           set -euo pipefail
-          test_dir="${SOURCE#lib/}"
+          test_dir="${SOURCE#apps/weblibre/lib/}"
           test_dir="${test_dir%/*}"
           candidates=(
             "test/$test_dir"
