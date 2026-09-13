@@ -39,17 +39,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mapfile -t files < <(find apps packages -type f -name 'profile.g.dart' -print | sort)
-          if [[ ${#files[@]} -ne 1 ]]; then
-            printf 'Expected exactly one profile.g.dart, found %s:\n' "${#files[@]}"
-            printf '%s\n' "${files[@]}"
-            exit 1
-          fi
-          generated="${files[0]}"
+          generated="apps/weblibre/lib/features/user/domain/repositories/profile.g.dart"
           source="${generated%.g.dart}.dart"
+          test -f "$generated"
           test -f "$source"
           package_relative="${generated#apps/weblibre/}"
-          test "$package_relative" != "$generated"
           printf 'generated=%s\nsource=%s\npackage_relative=%s\n' "$generated" "$source" "$package_relative" >> "$GITHUB_OUTPUT"
           echo "Generated: $generated"
           echo "Source: $source"
