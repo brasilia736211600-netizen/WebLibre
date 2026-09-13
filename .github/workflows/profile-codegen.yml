@@ -1,0 +1,96 @@
+name: Profile Codegen TDD
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [fas-weblibre-next]
+    paths:
+      - 'apps/weblibre/**'
+      - 'packages/**'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - 'melos.yaml'
+      - '.github/workflows/profile-codegen.yml'
+
+concurrency:
+  group: profile-codegen-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  codegen-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.0
+          cache: true
+
+      - name: Bootstrap locked workspace
+        run: |
+          set -euo pipefail
+          dart pub global activate melos 7.8.1
+          melos bootstrap
+
+      - name: Locate profile generated artifact
+        id: profile
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(find apps packages -type f -name 'profile.g.dart' -print | sort)
+          if [[ ${#files[@]} -ne 1 ]]; then
+            printf 'Expected exactly one profile.g.dart, found %s:\n' "${#files[@]}"
+            printf '%s\n' "${files[@]}"
+            exit 1
+          fi
+          generated="${files[0]}"
+          source="${generated%.g.dart}.dart"
+          test -f "$source"
+          printf 'generated=%s\nsource=%s\n' "$generated" "$source" >> "$GITHUB_OUTPUT"
+          echo "Generated: $generated"
+          echo "Source: $source"
+
+      - name: Regenerate profile.g.dart with pinned workspace dependencies
+        working-directory: apps/weblibre
+        env:
+          GENERATED: ${{ steps.profile.outputs.generated }}
+        run: |
+          set -euo pipefail
+          dart run build_runner build --delete-conflicting-outputs --build-filter="$GENERATED"
+
+      - name: Verify generated file is reproducible
+        env:
+          GENERATED: ${{ steps.profile.outputs.generated }}
+        run: |
+          set -euo pipefail
+          git diff --check
+          git diff --exit-code -- "$GENERATED"
+
+      - name: Run focused profile tests
+        working-directory: apps/weblibre
+        env:
+          SOURCE: ${{ steps.profile.outputs.source }}
+        run: |
+          set -euo pipefail
+          test_dir="${SOURCE#lib/}"
+          test_dir="${test_dir%/*}"
+          candidates=(
+            "test/$test_dir"
+            "test/${test_dir%/domain/*}"
+            "test"
+          )
+          ran=0
+          for candidate in "${candidates[@]}"; do
+            if find "$candidate" -type f -name '*_test.dart' -print -quit 2>/dev/null | grep -q .; then
+              echo "Running focused tests under $candidate"
+              flutter test "$candidate"
+              ran=1
+              break
+            fi
+          done
+          if [[ $ran -eq 0 ]]; then
+            echo "No focused profile test directory was discoverable; running Dart test discovery."
+            flutter test
+          fi
