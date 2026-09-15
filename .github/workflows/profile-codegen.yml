@@ -49,13 +49,11 @@ jobs:
           echo "Source: $source"
           echo "Package-relative: $package_relative"
 
-      - name: Regenerate profile.g.dart with pinned workspace dependencies
+      - name: Regenerate generated outputs with pinned workspace dependencies
         working-directory: apps/weblibre
-        env:
-          GENERATED: ${{ steps.profile.outputs.package_relative }}
         run: |
           set -euo pipefail
-          dart run build_runner build --delete-conflicting-outputs --build-filter="$GENERATED"
+          dart run build_runner build
 
       - name: Verify generated file is reproducible
         env:
